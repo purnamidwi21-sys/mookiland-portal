@@ -1,0 +1,116 @@
+/* Mookiland Staff Portal - gaya dasar.
+   Warna didefinisikan sebagai variabel agar mudah disesuaikan dengan
+   identitas visual Mookiland di tahap berikutnya. */
+
+:root {
+  --bg: #f5f6f8;
+  --surface: #ffffff;
+  --text: #1c2430;
+  --text-muted: #5b6676;
+  --border: #dde1e7;
+  --brand: #2f5d8a;
+  --brand-contrast: #ffffff;
+  --ok-bg: #e7f5ec;
+  --ok-text: #1d6b3a;
+  --error-bg: #fdecec;
+  --error-text: #a12a2a;
+  --info-bg: #eaf1f8;
+  --info-text: #2f5d8a;
+  --radius: 10px;
+  --shadow: 0 1px 2px rgba(20, 30, 45, 0.06);
+  --font: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #12161c;
+    --surface: #1b2129;
+    --text: #e6eaf0;
+    --text-muted: #9aa5b4;
+    --border: #2c3440;
+    --brand: #6f9fd0;
+    --brand-contrast: #0f141a;
+    --ok-bg: #16301f;
+    --ok-text: #8fd6a6;
+    --error-bg: #3a1c1c;
+    --error-text: #f1a3a3;
+    --info-bg: #182638;
+    --info-text: #9cc2ea;
+  }
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+
+html, body { margin: 0; padding: 0; }
+
+body {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font);
+  font-size: 16px;
+  line-height: 1.5;
+}
+
+.topbar {
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  padding: 12px 16px;
+}
+
+.brand { display: flex; align-items: center; gap: 10px; max-width: 720px; margin: 0 auto; }
+
+.brand-mark {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 32px; height: 32px; border-radius: 8px;
+  background: var(--brand); color: var(--brand-contrast);
+  font-weight: 700;
+}
+
+.brand-name { font-weight: 600; }
+
+.container { flex: 1; width: 100%; max-width: 720px; margin: 0 auto; padding: 24px 16px; }
+
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 20px;
+}
+
+h1 { font-size: 1.35rem; margin: 0 0 4px; }
+
+.muted { color: var(--text-muted); margin: 0 0 16px; }
+
+.result { border-radius: 8px; padding: 14px 16px; margin: 0 0 16px; }
+.result strong { display: block; margin-bottom: 4px; }
+.result .muted { margin: 0; }
+.result-idle { background: var(--bg); }
+.result-info { background: var(--info-bg); color: var(--info-text); }
+.result-ok { background: var(--ok-bg); color: var(--ok-text); }
+.result-error { background: var(--error-bg); color: var(--error-text); }
+
+.kv { display: grid; grid-template-columns: max-content 1fr; gap: 4px 16px; margin: 8px 0 0; }
+.kv dt { font-weight: 600; }
+.kv dd { margin: 0; overflow-wrap: anywhere; }
+
+.btn {
+  display: inline-flex; align-items: center; justify-content: center;
+  min-height: 44px; padding: 0 20px;
+  border: 1px solid transparent; border-radius: 8px;
+  font: inherit; font-weight: 600; cursor: pointer;
+}
+.btn-primary { background: var(--brand); color: var(--brand-contrast); }
+.btn:disabled { opacity: 0.6; cursor: wait; }
+.btn:focus-visible { outline: 3px solid var(--info-text); outline-offset: 2px; }
+
+.footer { padding: 16px; text-align: center; color: var(--text-muted); font-size: 0.875rem; }
+
+@media (max-width: 480px) {
+  .btn { width: 100%; }
+  .kv { grid-template-columns: 1fr; }
+  .kv dd { margin-bottom: 6px; }
+}

@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="id">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <!-- Content Security Policy: skrip dan gaya hanya dari situs ini,
+       koneksi data hanya ke server Google Apps Script. -->
+  <meta http-equiv="Content-Security-Policy"
+        content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; font-src 'self'; connect-src https://script.google.com https://script.googleusercontent.com; object-src 'none'; base-uri 'self'; form-action 'self'">
+  <meta name="referrer" content="no-referrer">
+  <meta name="robots" content="noindex, nofollow">
+  <title>Mookiland Staff Portal</title>
+  <link rel="stylesheet" href="assets/css/main.css">
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">
+      <span class="brand-mark" aria-hidden="true">M</span>
+      <span class="brand-name">Mookiland Staff Portal</span>
+    </div>
+  </header>
+
+  <main class="container">
+    <section class="card" aria-labelledby="status-title">
+      <h1 id="status-title">Status Koneksi Server</h1>
+      <p class="muted">Halaman uji Tahap 2. Halaman Masuk (login) tersedia mulai Tahap 3.</p>
+
+      <div id="result" class="result result-idle" role="status" aria-live="polite">
+        <strong>Belum diperiksa</strong>
+        <p class="muted">Tekan tombol <b>Cek Koneksi</b> untuk menguji hubungan ke server.</p>
+      </div>
+
+      <button id="btn-check" class="btn btn-primary" type="button">Cek Koneksi</button>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <span id="app-version"></span>
+  </footer>
+
+  <script src="config.js"></script>
+  <script src="assets/js/core/api.js"></script>
+  <script src="assets/js/app.js"></script>
+</body>
+</html>
