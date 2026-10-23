@@ -20,11 +20,12 @@ untuk kenyamanan; server memeriksa ulang setiap permintaan.
 | `assets/js/core/nav.js` | Navigasi halaman |
 | `assets/js/core/lookups.js` | Pilihan baku (status, jenis hubungan kerja) dan daftar jabatan |
 | `assets/js/help-content.js` | Isi Pusat Bantuan |
-| `assets/js/pages/*.js` | Halaman: Masuk, Lupa Password, Ganti Password, Beranda, Pengumuman, Notifikasi, Profil Saya, Kepegawaian Saya, Kontrak Saya, BPJS Saya, Dokumen Saya, Karyawan (termasuk kontrak, BPJS, dokumen), Impor Karyawan, Jabatan, Kontrak, BPJS, Template Kontrak, Kelola Pengumuman, Pengguna, Role & Permission, Log Aktivitas, Pusat Bantuan |
+| `assets/js/pages/*.js` | Halaman: Masuk, Lupa Password, Ganti Password, Beranda, Pengumuman, Notifikasi, Profil Saya, Kepegawaian Saya, Kontrak Saya, BPJS Saya, Dokumen Saya, Absen, Jadwal Saya, Absensi Saya, Susun Jadwal, Rekap Absensi, Impor Absensi Raptor, Shift & Lokasi, Karyawan (termasuk kontrak, BPJS, dokumen), Impor Karyawan, Jabatan, Kontrak, BPJS, Template Kontrak, Kelola Pengumuman, Pengguna, Role & Permission, Log Aktivitas, Pusat Bantuan |
 | `assets/js/app.js` | Tata letak, menu, alur masuk/keluar |
 
 ## Versi
 
+- 0.6.0 — Tahap 3c-1: shift, lokasi kerja, jadwal mingguan (draf/terbit), absen GPS dari ponsel, Jadwal Saya, Absensi Saya, rekap absensi, catat manual HR, impor absensi Raptor.
 - 0.5.0 — Tahap 3b-2: kontrak kerja (template Word -> PDF, tanda tangan, perpanjangan, pengingat), BPJS, dokumen karyawan, pengumuman, notifikasi lonceng, halaman Saya.
 - 0.4.0 — Tahap 3b-1: data karyawan, impor Excel/CSV, jabatan, akun karyawan (satu per satu dan massal, kartu akun), Profil Saya, Kepegawaian Saya.
 - 0.3.0 — Tahap 3a: login, ganti password, pengelolaan pengguna, log, Pusat Bantuan.

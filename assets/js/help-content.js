@@ -13,8 +13,8 @@
  * perm : null = semua pengguna; selain itu cukup salah satu permission
  */
 window.MklHelp = {
-  version: '0.5.0',
-  updatedAt: '2026-10-23',
+  version: '0.6.0',
+  updatedAt: '2026-10-24',
 
   topics: [
     // ------------------------------------------------------------ semua pengguna
@@ -163,6 +163,45 @@ window.MklHelp = {
       notes: ['Untuk menambah atau mengganti dokumen, serahkan dokumen ke HR.']
     },
     {
+      id: 'absen', guide: 'staff', perm: ['attendance.clock.own'], title: 'Absen masuk dan pulang',
+      intro: 'Absen dilakukan dari ponsel di lokasi kerja. Sistem memeriksa posisi GPS ponsel dan memakai jam server (WITA).',
+      steps: [
+        'Nyalakan Lokasi/GPS di ponsel.',
+        'Buka menu Absen (atau tekan tombol Absen Masuk di Beranda).',
+        'Periksa jadwal Anda hari ini, lalu tekan Absen Masuk.',
+        'Jika browser meminta izin lokasi, pilih Izinkan.',
+        'Saat selesai bekerja, buka menu Absen lagi dan tekan Absen Pulang.'
+      ],
+      result: 'Muncul pesan "Absen masuk tercatat pukul ..." (atau "Absen pulang tercatat ..."), dan jam tampil di kotak Masuk/Pulang.',
+      notes: [
+        'Absen hanya bisa di dalam radius lokasi kerja. Jika ditolak karena jarak, pastikan Anda berada di area Mookiland lalu coba lagi.',
+        'Jika pesan menyebut sinyal GPS kurang akurat, tunggu beberapa detik di tempat terbuka lalu tekan lagi.',
+        'Lupa absen atau ponsel bermasalah? Hubungi HR untuk dicatat manual. Jangan meminta rekan memakai akun Anda.'
+      ]
+    },
+    {
+      id: 'jadwal-saya', guide: 'staff', perm: ['schedule.read.own'], title: 'Melihat jadwal kerja',
+      intro: 'Menu Jadwal Saya menampilkan shift Anda yang sudah diterbitkan untuk dua minggu.',
+      steps: [
+        'Buka menu Jadwal Saya.',
+        'Hari ini ditandai dengan warna dan tulisan (hari ini).',
+        'Tekan Berikutnya → untuk melihat dua minggu berikutnya, atau ← Sebelumnya untuk dua minggu sebelumnya.'
+      ],
+      result: 'Anda melihat kode shift, nama shift, dan jam masuk–pulang setiap hari, atau Libur.',
+      notes: ['Jika jadwal Anda diubah setelah terbit, Anda mendapat notifikasi di ikon lonceng.', '"Belum ada jadwal" berarti jadwal hari itu belum diterbitkan atasan/HR.']
+    },
+    {
+      id: 'absensi-saya', guide: 'staff', perm: ['attendance.read.own'], title: 'Melihat catatan absensi',
+      intro: 'Menu Absensi Saya menampilkan jam masuk, jam pulang, dan status kehadiran Anda per bulan.',
+      steps: [
+        'Buka menu Absensi Saya.',
+        'Lihat Ringkasan: hari terjadwal, hadir, terlambat, tidak hadir, belum absen pulang, dan total jam kerja.',
+        'Gulir ke Rincian harian untuk melihat setiap hari. Tekan ← Bulan lalu untuk bulan sebelumnya.'
+      ],
+      result: 'Anda mengetahui catatan kehadiran Anda yang dipakai perusahaan.',
+      notes: ['Jika ada yang salah (misalnya tertulis Tidak hadir padahal Anda masuk), hubungi HR dengan menyebut tanggalnya.']
+    },
+    {
       id: 'keluar', guide: 'staff', perm: null, title: 'Keluar dengan aman',
       intro: 'Selalu keluar setelah selesai, terutama di perangkat milik orang lain.',
       steps: [
@@ -201,6 +240,35 @@ window.MklHelp = {
         'Anggota tim ditentukan HR melalui kolom Atasan langsung pada data karyawan.',
         'Jika daftar kosong padahal Anda punya tim, akun Anda mungkin belum terhubung dengan data karyawan Anda. Hubungi HR atau admin.'
       ]
+    },
+
+    {
+      id: 'susun-jadwal', guide: 'supervisor', perm: ['schedule.manage.all', 'schedule.manage.team'], title: 'Menyusun dan menerbitkan jadwal mingguan',
+      intro: 'Jadwal disusun per minggu (Senin–Minggu). Supervisor hanya bisa menjadwalkan anggota timnya; HR bisa menjadwalkan semua karyawan.',
+      steps: [
+        'Buka menu Susun Jadwal. Pilih minggu dengan ← Minggu lalu / Minggu depan →.',
+        'Untuk memulai dari jadwal minggu sebelumnya, tekan Salin dari Minggu Lalu. Sel yang sudah terisi tidak ditimpa.',
+        'Di setiap kotak (karyawan × hari), pilih shift, Libur, atau – (kosong). Kotak yang diubah berwarna kuning.',
+        'Tekan Simpan Draf. Draf (warna biru) belum terlihat oleh karyawan.',
+        'Jika sudah benar, tekan Terbitkan lalu konfirmasi.'
+      ],
+      result: 'Muncul pesan "Jadwal ... diterbitkan". Karyawan yang jadwalnya berubah mendapat notifikasi dan bisa melihatnya di Jadwal Saya.',
+      notes: [
+        'Absensi (terlambat, tidak hadir) dihitung dari jadwal yang sudah terbit.',
+        'Mengubah jadwal yang sudah terbit tidak langsung terlihat karyawan sampai Anda menekan Terbitkan lagi.',
+        'Di ponsel, geser tabel ke kanan untuk melihat hari lainnya.'
+      ]
+    },
+    {
+      id: 'rekap-absensi', guide: 'supervisor', perm: ['attendance.read.all', 'attendance.read.team'], title: 'Melihat rekap absensi',
+      intro: 'Rekap Absensi menampilkan kehadiran, keterlambatan, dan jam kerja per karyawan. Supervisor hanya melihat anggota timnya.',
+      steps: [
+        'Buka menu Rekap Absensi.',
+        'Isi Dari dan Sampai (maksimal 62 hari), lalu tekan Tampilkan.',
+        'Tekan Rincian pada seorang karyawan untuk melihat setiap hari: jadwal, jam masuk/pulang, status, dan sumber data (Aplikasi, Raptor, atau Dicatat HR).'
+      ],
+      result: 'Rekap dan rincian per hari tampil di layar.',
+      notes: ['Tidak hadir = ada jadwal terbit tetapi tidak ada absen. Belum lengkap = absen masuk tanpa absen pulang.']
     },
 
     // ------------------------------------------------------------ HR Admin
@@ -446,6 +514,69 @@ window.MklHelp = {
       notes: ['Pengumuman yang sudah terbit tidak bisa diubah. Jika salah, arsipkan lalu buat yang baru.', 'Jangan mencantumkan data pribadi, gaji, atau password di pengumuman.']
     },
 
+    {
+      id: 'hr-shift', guide: 'hr', perm: ['schedule.manage.all'], title: 'Membuat daftar shift',
+      intro: 'Shift adalah jam kerja yang dipilih saat menyusun jadwal, misalnya masuk 08:00. Buat sekali, lalu dipakai terus.',
+      steps: [
+        'Buka menu Shift & Lokasi, lalu tekan Tambah Shift.',
+        'Isi Kode (singkat, tampil di tabel jadwal), Nama shift, Jam masuk, dan Jam pulang.',
+        'Isi Istirahat (menit) dan Toleransi terlambat (menit), pilih Warna, lalu tekan Simpan.',
+        'Ulangi untuk setiap jam masuk yang dipakai (misalnya 07:00, 08:00, 10:00, 11:00, 13:00).'
+      ],
+      result: 'Shift tampil di daftar dan bisa dipilih di Susun Jadwal.',
+      notes: [
+        'Jam pulang yang lebih awal dari jam masuk (misalnya 22:00–06:00) otomatis dianggap selesai keesokan hari.',
+        'Shift yang tidak dipakai lagi: tekan Ubah, hapus centang Aktif. Jadwal lama tetap terbaca.',
+        'Mengubah jam shift berlaku juga untuk jadwal yang sudah dibuat dengan shift itu.',
+        'Toleransi terlambat dan aturan potongan [Perlu konfirmasi HR].'
+      ]
+    },
+    {
+      id: 'hr-lokasi', guide: 'hr', perm: ['attendance.manage'], title: 'Mengatur lokasi kerja untuk absen GPS',
+      intro: 'Karyawan hanya bisa absen dari ponsel di dalam radius lokasi kerja yang aktif.',
+      steps: [
+        'Berdirilah di area absen (misalnya pintu masuk karyawan) dengan ponsel.',
+        'Buka menu Shift & Lokasi, lalu tekan Tambah Lokasi.',
+        'Isi Nama lokasi, tekan Pakai Lokasi Saya Sekarang (atau ketik Latitude dan Longitude dari Google Maps).',
+        'Isi Radius (saran 100 meter) dan Alasan, lalu tekan Simpan.',
+        'Tekan koordinat di tabel untuk memeriksa titiknya di Google Maps.'
+      ],
+      result: 'Lokasi tampil dengan status Aktif dan karyawan bisa mulai absen.',
+      notes: ['Radius terlalu kecil membuat absen sering gagal karena GPS ponsel bisa meleset puluhan meter.', 'Sistem tidak bisa mendeteksi aplikasi pemalsu lokasi. Cocokkan dengan data Raptor bila ada kecurigaan.']
+    },
+    {
+      id: 'hr-absen-manual', guide: 'hr', perm: ['attendance.manage'], title: 'Mencatat atau memperbaiki absensi',
+      intro: 'Dipakai bila karyawan lupa absen, ponselnya rusak, atau jam dari Raptor salah.',
+      steps: [
+        'Buka menu Rekap Absensi, pilih rentang tanggal, tekan Tampilkan.',
+        'Tekan Rincian pada karyawan yang dimaksud.',
+        'Pada tanggal yang salah, tekan Catat (belum ada absen) atau Ubah.',
+        'Isi Jam masuk dan/atau Jam pulang. Centang Pulang keesokan hari untuk shift malam.',
+        'Isi Alasan, lalu tekan Simpan.'
+      ],
+      result: 'Kolom Sumber berisi "Dicatat HR" dan Keterangan berisi alasan Anda. Perubahan tercatat di audit log.',
+      notes: ['Catatan HR tidak akan ditimpa oleh impor Raptor berikutnya.']
+    },
+    {
+      id: 'hr-impor-raptor', guide: 'hr', perm: ['attendance.import'], title: 'Mengimpor absensi dari Raptor',
+      intro: 'Jam masuk/pulang dari laporan Raptor "Employee\'s Time / Attendance" bisa dimasukkan ke portal.',
+      steps: [
+        'Di Raptor, buka laporan Employee\'s Time / Attendance, pilih periode, lalu ekspor ke Excel.',
+        'Di portal, buka Rekap Absensi lalu tekan Impor dari Raptor.',
+        'Pilih file .xls atau .xlsx tersebut, lalu tekan Periksa File.',
+        'Periksa kolom Karyawan di portal untuk setiap nomor Raptor. Pilih karyawan yang benar, atau Abaikan (bukan karyawan). Pilihan disimpan untuk impor berikutnya.',
+        'Buka Catatan yang perlu dicek bila ada, lalu tekan Impor Absensi dan konfirmasi.'
+      ],
+      result: 'Halaman Hasil impor menampilkan jumlah hari baru, diperbarui, dan dilewati.',
+      notes: [
+        'Beberapa sesi dalam sehari (misalnya keluar saat istirahat) digabung: jam masuk pertama dan jam pulang terakhir.',
+        'Sesi tanpa jam pulang atau lebih dari 16 jam dianggap lupa absen pulang dan ditandai perlu dicek. [Perlu konfirmasi HR]',
+        'Absen dari aplikasi (GPS) dan catatan HR tidak pernah ditimpa. Selisih jam masuk ≥ 15 menit antara aplikasi dan Raptor ditampilkan untuk dicek.',
+        'Mengimpor file yang sama dua kali tidak menggandakan data.',
+        'File Raptor tidak disimpan di server.'
+      ]
+    },
+
     // ------------------------------------------------------------ System Admin
     {
       id: 'admin-tambah', guide: 'sysadmin', perm: ['user.manage', 'user.manage.privileged'], title: 'Menambah pengguna',
@@ -621,7 +752,9 @@ window.MklHelp = {
     { q: 'Bolehkah saya masuk di ponsel dan komputer sekaligus?', a: 'Boleh. Jika Anda mengganti password, perangkat lain otomatis dikeluarkan.' },
     { q: 'Mengapa menu saya berbeda dengan rekan kerja?', a: 'Menu menyesuaikan role masing-masing. Jika merasa membutuhkan akses tambahan, tanyakan kepada atasan atau admin.' },
     { q: 'Siapa yang bisa melihat kontrak dan upah saya?', a: 'Hanya Anda dan HR. Atasan dan admin teknis tidak bisa melihat kontrak atau upah Anda.', perm: ['contract.read.own'] },
-    { q: 'Menu absensi, cuti, dan slip gaji belum ada. Kapan tersedia?', a: 'Fitur tersebut sedang dibuat bertahap dan akan muncul di menu setelah selesai diuji.' },
+    { q: 'Menu cuti, lembur, dan slip gaji belum ada. Kapan tersedia?', a: 'Fitur tersebut sedang dibuat bertahap dan akan muncul di menu setelah selesai diuji.' },
+    { q: 'Apakah lokasi saya dilacak terus?', a: 'Tidak. Lokasi hanya dibaca saat Anda menekan Absen Masuk atau Absen Pulang, dan disimpan sebagai bukti absen.', perm: ['attendance.clock.own'] },
+    { q: 'Jam absen saya berbeda dengan jam di ponsel. Mengapa?', a: 'Sistem selalu memakai jam server (WITA) agar adil dan tidak bisa diubah dari ponsel.', perm: ['attendance.clock.own'] },
     { q: 'Data pribadi saya salah. Bagaimana memperbaikinya?', a: 'Nomor HP, email pribadi, alamat, dan kontak darurat bisa Anda ubah sendiri di Profil Saya. Data lain (nama, tanggal lahir, KTP, jabatan) diperbaiki HR.', perm: ['profile.read.own'] },
     { q: 'Siapa yang bisa melihat nomor KTP saya?', a: 'Hanya HR. Di layar pun nomor ditampilkan tersamar, dan setiap kali HR menampilkan nomor lengkap, tindakan itu tercatat.', perm: ['profile.read.own'] }
   ],
@@ -669,6 +802,15 @@ window.MklHelp = {
     },
     {
       problem: 'Ikon lonceng tidak berubah setelah pengumuman terbit', cause: 'Angka diperbarui setiap 3 menit.', check: 'Tunggu beberapa menit atau muat ulang halaman.', solution: 'Buka menu Pengumuman untuk melihat langsung.', contact: 'Admin jika tetap tidak muncul'
+    },
+    {
+      problem: 'Absen: "Izin lokasi ditolak"', cause: 'Browser tidak diizinkan memakai lokasi.', check: 'Lihat ikon gembok/lokasi di samping alamat portal.', solution: 'Buka pengaturan situs di browser, ubah Lokasi menjadi Izinkan, lalu muat ulang halaman.', contact: 'HR jika tetap gagal'
+    },
+    {
+      problem: 'Absen: "Anda berada sekitar ... m dari ..."', cause: 'Posisi ponsel di luar radius lokasi kerja, atau GPS meleset.', check: 'Pastikan Anda di area Mookiland dan GPS menyala.', solution: 'Pindah ke tempat terbuka, tunggu beberapa detik, coba lagi. Jika selalu gagal di tempat yang benar, minta HR memeriksa titik dan radius lokasi.', contact: 'HR'
+    },
+    {
+      problem: 'Impor Raptor: "Susunan laporan Raptor tidak dikenali"', cause: 'File bukan laporan Employee\'s Time / Attendance, atau sudah diubah.', check: 'Buka file di Excel: harus ada judul EmpNo, Name, lalu Date In, Time In, Date Out, Time Out.', solution: 'Ekspor ulang dari Raptor tanpa mengubah isinya.', contact: 'Admin'
     },
     {
       problem: 'Pesan "Terjadi kesalahan pada server" dengan kode', cause: 'Kesalahan tak terduga di sistem.', check: 'Catat Kode permintaan.', solution: 'Laporkan dengan screenshot dan kode tersebut.', contact: 'Admin'

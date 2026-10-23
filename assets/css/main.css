@@ -419,3 +419,68 @@ a.stat:hover { border-color: var(--brand); color: var(--text); }
 .notif-title { font-weight: 600; }
 .notif-list li:last-child .notif-item { border-bottom: 0; }
 fieldset[hidden] { display: none; }
+
+/* ---------------------------------------------------------------- Tahap 3c-1: jadwal & absensi */
+
+.card-head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 12px; }
+.card-head .card-title { margin: 0; }
+.plain-list { margin: 0; padding-left: 20px; }
+.plain-list li + li { margin-top: 4px; }
+.stack-tight { display: flex; flex-direction: column; align-items: flex-start; gap: 4px; }
+.stack-tight .input { min-width: 0; width: 100%; max-width: 320px; }
+
+.week-nav { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-bottom: 12px; }
+.week-label { min-width: 0; text-align: center; flex: 1 1 160px; }
+
+.shift-chip { display: inline-block; min-width: 2.2em; padding: 1px 6px; border-radius: 6px; font-weight: 700; font-size: 0.8125rem; text-align: center; color: #fff; }
+.shift-biru { background: #2f6db5; }
+.shift-hijau { background: #2c8a4b; }
+.shift-oranye { background: #b8620b; }
+.shift-ungu { background: #6d4bb3; }
+.shift-merah { background: #b42f2f; }
+.shift-abu { background: #5f6873; }
+
+.clock-card .kv { margin-bottom: 12px; }
+.clock-status { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 16px; }
+.clock-box { display: flex; flex-direction: column; align-items: center; padding: 12px; border: 1px solid var(--border); border-radius: 8px; background: var(--surface-2); }
+.clock-time { font-size: 1.8rem; font-weight: 700; font-variant-numeric: tabular-nums; }
+.clock-actions { display: flex; flex-direction: column; gap: 8px; }
+.btn-clock { width: 100%; min-height: 56px; font-size: 1.15rem; }
+
+.day-list { list-style: none; margin: 0 0 8px; padding: 0; }
+.day-item { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 4px 12px; padding: 10px 4px; border-bottom: 1px solid var(--border); }
+.day-item.is-today { background: var(--info-bg); border-radius: 6px; padding-left: 8px; padding-right: 8px; }
+.day-name { font-weight: 600; }
+
+.grid-scroll { overflow-x: auto; max-width: 100%; border: 1px solid var(--border); border-radius: 8px; }
+.grid-scroll:focus-visible { outline: 3px solid var(--focus); outline-offset: 2px; }
+.sched-grid { border-collapse: collapse; min-width: 760px; width: 100%; }
+.sched-grid th, .sched-grid td { border-bottom: 1px solid var(--border); padding: 6px; text-align: center; font-size: 0.875rem; }
+.sched-grid thead th { background: var(--surface-2); position: sticky; top: 0; }
+.sched-grid th.is-today { color: var(--brand); }
+.sched-grid .sched-name { text-align: left; position: sticky; left: 0; background: var(--surface); min-width: 120px; z-index: 1; }
+.sched-grid thead .sched-name { background: var(--surface-2); z-index: 2; }
+.sched-grid .sched-name span { display: block; }
+.sched-select { padding: 4px; min-height: 36px; font-size: 0.8125rem; width: 100%; min-width: 72px; }
+.sched-cell { border-left: 3px solid transparent; }
+.sched-cell.is-off .sched-select { color: var(--text-muted); }
+.sched-cell.shift-bg-biru { border-left-color: #2f6db5; }
+.sched-cell.shift-bg-hijau { border-left-color: #2c8a4b; }
+.sched-cell.shift-bg-oranye { border-left-color: #b8620b; }
+.sched-cell.shift-bg-ungu { border-left-color: #6d4bb3; }
+.sched-cell.shift-bg-merah { border-left-color: #b42f2f; }
+.sched-cell.shift-bg-abu { border-left-color: #5f6873; }
+.sched-cell.is-draft { background: var(--info-bg); }
+.sched-cell.is-dirty { background: var(--warning-bg); }
+.sched-legend { display: flex; flex-wrap: wrap; gap: 8px 16px; margin-top: 10px; }
+.legend-box { display: inline-block; width: 14px; height: 14px; border-radius: 3px; vertical-align: middle; border: 1px solid var(--border); }
+.legend-box.is-draft { background: var(--info-bg); }
+.legend-box.is-dirty { background: var(--warning-bg); }
+.sticky-actions { position: sticky; bottom: 0; background: var(--bg); padding: 10px 0; z-index: 3; flex-wrap: wrap; }
+@media (max-width: 520px) {
+  .sticky-actions .btn { flex: 1 1 100%; }
+}
+@media (min-width: 641px) {
+  .recap-table .table th { white-space: normal; }
+  .recap-table .table th, .recap-table .table td { padding: 8px 10px; }
+}

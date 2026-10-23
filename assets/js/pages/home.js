@@ -1,7 +1,7 @@
 /*
  * Halaman Beranda: akun, ringkasan kepegawaian sendiri, dan ringkasan
- * karyawan untuk HR atau tim untuk Supervisor. Ringkasan jadwal, absensi,
- * cuti, dan slip gaji ditambahkan setelah modul-modul tersebut selesai.
+ * karyawan untuk HR atau tim untuk Supervisor, dan jadwal/absen hari ini.
+ * Ringkasan cuti dan slip gaji ditambahkan setelah modulnya selesai.
  */
 (function () {
   'use strict';
@@ -38,6 +38,26 @@
           })));
           if (res.data.items.length > 3) annBody.appendChild(h('p', null, h('a', { href: '#/pengumuman' }, 'Lihat semua pengumuman')));
         });
+      }
+
+      if (MklState.can('attendance.clock.own')) {
+        root.appendChild(summaryCard('Hari ini', function (body) {
+          MklApi.call('me.attendanceToday', {}).then(function (res) {
+            MklUI.clear(body);
+            if (!res.success) { body.appendChild(MklUI.alertBox('error', res.message)); return; }
+            var t = res.data;
+            if (!t.linked) { body.appendChild(h('p', { class: 'muted' }, 'Akun Anda belum terhubung dengan data karyawan. Hubungi HR.')); return; }
+            body.appendChild(MklUI.infoList([
+              ['Jadwal', t.shift ? t.shift.name + ' ' + t.shift.start + '–' + t.shift.end : (t.off ? 'Libur' : 'Tidak ada jadwal terbit')],
+              ['Masuk', t.clockIn || '-'],
+              ['Pulang', t.clockOut || '-']
+            ]));
+            var label = t.canClockOut ? 'Absen Pulang' : (t.canClockIn ? 'Absen Masuk' : 'Lihat Absen');
+            body.appendChild(h('div', { class: 'form-actions' },
+              h('a', { class: 'btn ' + (t.canClockIn || t.canClockOut ? 'btn-primary' : 'btn-secondary') + ' btn-small', href: '#/absen' }, label),
+              MklState.can('schedule.read.own') ? h('a', { class: 'btn btn-secondary btn-small', href: '#/jadwal-saya' }, 'Jadwal Saya') : null));
+          });
+        }));
       }
 
       if (MklState.can('profile.read.own')) {
@@ -116,7 +136,7 @@
       root.appendChild(MklUI.card('Yang bisa Anda lakukan saat ini', list));
 
       root.appendChild(MklUI.card('Sedang dikembangkan', h('p', { class: 'muted' },
-        'Jadwal, absensi, cuti, lembur, dan slip gaji akan muncul di menu setelah tahap berikutnya selesai dan diuji.')));
+        'Cuti, izin, lembur, koreksi absensi, dan slip gaji akan muncul di menu setelah tahap berikutnya selesai dan diuji.')));
     }
   });
 })();
