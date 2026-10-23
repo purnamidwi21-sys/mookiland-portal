@@ -7,6 +7,8 @@
 
   var SECTION_TITLES = {
     staff: 'Untuk semua pengguna',
+    supervisor: 'Untuk Supervisor',
+    hr: 'Untuk HR',
     sysadmin: 'Untuk System Admin',
     management: 'Untuk Manajemen'
   };

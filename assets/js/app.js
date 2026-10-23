@@ -4,7 +4,7 @@
 (function () {
   'use strict';
   var h = MklUI.h;
-  var VERSION = '0.3.0';
+  var VERSION = '0.4.0';
 
   function appRoot() {
     return document.getElementById('app');
@@ -38,12 +38,17 @@
     var nav = h('nav', { class: 'sidebar', id: 'sidebar', 'aria-label': 'Menu utama' });
     var lastSection = null;
     var list = h('ul', { class: 'nav-list' });
+    // Menu yang disorot: alamat menu terpanjang yang cocok (mis. Jabatan, bukan Karyawan).
+    var activeMenu = '';
+    items.forEach(function (it) {
+      if ((activePath === it.path || activePath.indexOf(it.path + '/') === 0) && it.path.length > activeMenu.length) activeMenu = it.path;
+    });
     items.forEach(function (it) {
       if (it.section && it.section !== lastSection) {
         list.appendChild(h('li', { class: 'nav-section' }, it.section));
         lastSection = it.section;
       }
-      var current = activePath === it.path || activePath.indexOf(it.path + '/') === 0;
+      var current = it.path === activeMenu;
       list.appendChild(h('li', null, h('a', { href: '#' + it.path, class: 'nav-link', 'aria-current': current ? 'page' : null }, it.label)));
     });
     var logoutBtn = h('button', { class: 'nav-link nav-button', type: 'button' }, 'Keluar');

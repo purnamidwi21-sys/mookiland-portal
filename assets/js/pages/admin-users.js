@@ -215,6 +215,8 @@
           h('div', { class: 'form-actions' }, renameBtn)
         ]));
 
+        container.appendChild(employeeLinkCard(u));
+
         // Role
         var assignable = roleInfo.roles.map(function (r) {
           var copy = {};
@@ -329,6 +331,75 @@
             }, blocked);
         }
         container.appendChild(MklUI.card('Tindakan', actions));
+      }
+
+      /** Hubungan akun dengan data karyawan (agar Profil Saya dan data tim bisa terbaca). */
+      function employeeLinkCard(u) {
+        var parts = [];
+        if (u.employee) {
+          parts.push(MklUI.infoList([['Karyawan', u.employee.fullName + ' (' + u.employee.employeeId + ')']]));
+          var un = h('button', { class: 'btn btn-secondary btn-small', type: 'button', disabled: u.canManage ? null : true }, 'Putus Hubungan');
+          un.addEventListener('click', function () {
+            MklUI.confirmAction({
+              title: 'Putus hubungan dengan data karyawan',
+              message: 'Akun ' + u.username + ' tidak lagi terhubung dengan ' + u.employee.fullName + '. Pengguna tidak bisa membuka Profil Saya sampai dihubungkan lagi.',
+              confirmLabel: 'Putus Hubungan', reasonLabel: 'Alasan', reasonRequired: true,
+              onConfirm: function (reason) {
+                return MklApi.call('hr.employees.accountUnlink', { employeeId: u.employee.employeeId, reason: reason }).then(function (res) {
+                  if (res.success) { MklUI.toast(res.message, 'success'); load(); }
+                  return res;
+                });
+              }
+            });
+          });
+          parts.push(h('div', { class: 'form-actions' }, un));
+        } else {
+          parts.push(h('p', null, 'Akun ini belum terhubung dengan data karyawan.'));
+          parts.push(h('p', { class: 'muted small' }, 'Hubungkan jika pemilik akun adalah karyawan (misalnya Manajer Operasional). Akun Direktur yang bukan karyawan tidak perlu dihubungkan.'));
+          var ln = h('button', { class: 'btn btn-secondary btn-small', type: 'button', disabled: u.canManage ? null : true }, 'Hubungkan ke Karyawan');
+          ln.addEventListener('click', function () { openLinkEmployee(u); });
+          parts.push(h('div', { class: 'form-actions' }, ln));
+        }
+        return MklUI.card('Data karyawan', parts);
+      }
+
+      function openLinkEmployee(u) {
+        var body = h('div', null, MklUI.loadingState('Memuat karyawan yang belum punya akun...'));
+        var ctl = MklUI.modal({ title: 'Hubungkan ke Karyawan', content: body });
+        MklApi.call('admin.users.unlinkedEmployees', {}).then(function (res) {
+          MklUI.clear(body);
+          if (!res.success) { body.appendChild(MklUI.alertBox('error', res.message)); return; }
+          if (!res.data.items.length) { body.appendChild(MklUI.alertBox('info', 'Semua karyawan aktif sudah terhubung dengan akun. Data karyawan ditambahkan oleh HR.')); return; }
+          ctl.close();
+          var form = h('form', { class: 'stack', novalidate: true });
+          var emp = MklUI.selectField({ label: 'Karyawan', name: 'employeeId', required: true, value: '', options: [{ value: '', label: 'Pilih karyawan' }].concat(res.data.items.map(function (e) {
+            return { value: e.employeeId, label: e.fullName + ' (' + e.employeeId + (e.positionName ? ', ' + e.positionName : '') + ')' };
+          })) });
+          var reason = MklUI.field({ label: 'Alasan', name: 'reason', required: true, multiline: true, rows: 2, maxLength: 300, hint: 'Contoh: Akun Manajer Operasional dibuat sebelum data karyawan diimpor.' });
+          var alertSlot = h('div');
+          [h('p', null, 'Pilih data karyawan milik pemilik akun ', h('strong', null, u.username), '.'), emp.wrap, reason.wrap, alertSlot].forEach(function (x) { form.appendChild(x); });
+          var c2 = MklUI.modal({ title: 'Hubungkan ke Karyawan', content: form, actions: [
+            { label: 'Batal', onClick: function (c) { c.close(); } },
+            { label: 'Hubungkan', variant: 'primary', id: 'ok', onClick: submit }
+          ] });
+          form.addEventListener('submit', function (e) { e.preventDefault(); submit(c2, c2.buttons.ok); });
+          function submit(c, btn) {
+            MklUI.clearFieldErrors(form);
+            MklUI.clear(alertSlot);
+            if (!emp.input.value) { MklUI.showFieldErrors(form, { details: { fields: { employeeId: 'Pilih karyawan.' } } }); return; }
+            MklUI.setBusy(btn, true, 'Menghubungkan...');
+            MklApi.call('hr.employees.accountLink', { employeeId: emp.input.value, username: u.username, reason: reason.input.value.trim() }).then(function (r) {
+              MklUI.setBusy(btn, false);
+              if (!r.success) {
+                if (!MklUI.showFieldErrors(form, r)) alertSlot.appendChild(MklUI.alertBox('error', r.message));
+                return;
+              }
+              c.close();
+              MklUI.toast(r.message, 'success');
+              load();
+            });
+          }
+        });
       }
 
       function openRename(u) {

@@ -69,6 +69,24 @@
     }
   }
 
+  var MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'];
+  /** '2023-02-01' -> '1 Feb 2023'. Tanggal tanpa jam tidak diubah zona waktunya. */
+  function fmtDate(ymd) {
+    var m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(ymd || ''));
+    if (!m) return ymd ? String(ymd) : '-';
+    return parseInt(m[3], 10) + ' ' + MONTHS[parseInt(m[2], 10) - 1] + ' ' + m[1];
+  }
+
+  /** Tanggal hari ini (WITA) dalam format YYYY-MM-DD. */
+  function todayYmd() {
+    try {
+      var parts = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Makassar', year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date());
+      if (/^\d{4}-\d{2}-\d{2}$/.test(parts)) return parts;
+    } catch (e) { /* lanjut */ }
+    var d = new Date(Date.now() + 8 * 3600000);
+    return d.toISOString().slice(0, 10);
+  }
+
   // ------------------------------------------------------------------ badge, state
 
   function badge(text, variant) {
@@ -197,8 +215,20 @@
       select.appendChild(h('option', { value: o.value, selected: o.value === opts.value ? true : null }, o.label));
     });
     var wrap = h('div', { class: 'field' + (opts.inline ? ' field-inline' : '') },
-      h('label', { for: id }, opts.label), select);
+      h('label', { for: id }, opts.label, opts.required ? h('span', { class: 'req', 'aria-hidden': 'true' }, ' *') : null), select,
+      opts.hint ? h('p', { class: 'hint' }, opts.hint) : null,
+      h('p', { class: 'field-error', 'data-error-for': opts.name }));
     return { wrap: wrap, input: select };
+  }
+
+  /** Kotak centang tunggal. opts: {label, name, checked, hint} */
+  function checkboxField(opts) {
+    var id = uid('c');
+    var input = h('input', { type: 'checkbox', id: id, name: opts.name, checked: opts.checked ? true : null });
+    var wrap = h('div', { class: 'checkbox checkbox-plain' }, input,
+      h('label', { for: id }, h('span', { class: 'checkbox-title' }, opts.label), opts.hint ? h('span', { class: 'muted small' }, opts.hint) : null),
+      h('p', { class: 'field-error', 'data-error-for': opts.name }));
+    return { wrap: wrap, input: input };
   }
 
   function clearFieldErrors(form) {
@@ -211,17 +241,19 @@
     var fields = res && res.details && res.details.fields;
     if (!fields) return false;
     var first = null;
+    var shown = 0;
     Object.keys(fields).forEach(function (name) {
       var p = form.querySelector('[data-error-for="' + name + '"]');
       var input = form.querySelector('[name="' + name + '"]');
-      if (p) p.textContent = fields[name];
+      if (p) { p.textContent = fields[name]; shown++; }
       if (input) {
         input.setAttribute('aria-invalid', 'true');
         if (!first) first = input;
       }
     });
     if (first) first.focus();
-    return true;
+    // Jika tidak ada kolom yang cocok, pemanggil menampilkan pesan umum.
+    return shown > 0;
   }
 
   // ------------------------------------------------------------------ modal
@@ -368,6 +400,27 @@
     return btn;
   }
 
+  /** Menampilkan password sementara satu kali (tidak bisa ditutup dengan klik di luar). */
+  function tempPasswordModal(username, temp, intro) {
+    var code = h('code', { class: 'temp-password' }, temp);
+    return modal({
+      title: 'Password sementara',
+      dismissible: false,
+      content: h('div', { class: 'stack' },
+        h('p', null, intro + ' Password sementara untuk ', h('strong', null, username), ':'),
+        h('div', { class: 'temp-password-box' }, code, copyButton(temp)),
+        alertBox('warning', 'Password ini hanya ditampilkan sekali. Berikan langsung kepada pengguna, jangan lewat grup chat. Pengguna wajib menggantinya saat pertama masuk.')),
+      actions: [{ label: 'Saya sudah mencatatnya', variant: 'primary', onClick: function (c) { c.close(); } }]
+    });
+  }
+
+  /** Ukuran file yang mudah dibaca. */
+  function fmtBytes(n) {
+    if (n < 1024) return n + ' B';
+    if (n < 1048576) return (n / 1024).toFixed(0) + ' KB';
+    return (n / 1048576).toFixed(1).replace('.', ',') + ' MB';
+  }
+
   function pageHeader(title, subtitle, actions) {
     return h('div', { class: 'page-header' },
       h('div', null, h('h1', { tabindex: '-1', class: 'page-title' }, title), subtitle ? h('p', { class: 'muted' }, subtitle) : null),
@@ -388,13 +441,13 @@
 
   global.MklUI = Object.freeze({
     h: h, clear: clear, uid: uid,
-    fmtDateTime: fmtDateTime,
+    fmtDateTime: fmtDateTime, fmtDate: fmtDate, todayYmd: todayYmd, fmtBytes: fmtBytes,
     badge: badge, loadingState: loadingState, emptyState: emptyState, errorState: errorState, alertBox: alertBox,
     toast: toast, setBusy: setBusy,
-    field: field, passwordField: passwordField, selectField: selectField,
+    field: field, passwordField: passwordField, selectField: selectField, checkboxField: checkboxField,
     clearFieldErrors: clearFieldErrors, showFieldErrors: showFieldErrors,
     modal: modal, confirmAction: confirmAction,
-    table: table, pagination: pagination, copyButton: copyButton,
+    table: table, pagination: pagination, copyButton: copyButton, tempPasswordModal: tempPasswordModal,
     pageHeader: pageHeader, card: card, infoList: infoList
   });
 })(window);

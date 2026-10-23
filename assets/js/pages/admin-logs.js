@@ -24,7 +24,19 @@
     'user.password.reset': 'Reset password',
     'user.unlock': 'Membuka kunci akun',
     'user.sessions.revoke': 'Paksa keluar',
-    'access.denied': 'Akses ditolak'
+    'access.denied': 'Akses ditolak',
+    'user.employee.link': 'Menghubungkan akun ke karyawan',
+    'user.employee.unlink': 'Memutus hubungan akun dan karyawan',
+    'employee.create': 'Menambah karyawan',
+    'employee.update': 'Mengubah data karyawan',
+    'employee.status.change': 'Mengubah status karyawan',
+    'employee.sensitive.update': 'Mengubah data identitas',
+    'employee.sensitive.view': 'Menampilkan nomor KTP/NPWP',
+    'employee.import': 'Impor karyawan dari file',
+    'position.create': 'Menambah jabatan',
+    'position.update': 'Mengubah jabatan',
+    'profile.update': 'Mengubah kontak sendiri',
+    'settings.update': 'Mengubah pengaturan'
   };
 
   function resultBadge(code) {
