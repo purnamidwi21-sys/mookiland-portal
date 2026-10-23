@@ -4,7 +4,7 @@
 (function () {
   'use strict';
   var h = MklUI.h;
-  var VERSION = '0.4.0';
+  var VERSION = '0.5.0';
 
   function appRoot() {
     return document.getElementById('app');
@@ -32,6 +32,7 @@
       h('a', { class: 'brand', href: '#/beranda' },
         h('span', { class: 'brand-mark', 'aria-hidden': 'true' }, 'M'),
         h('span', { class: 'brand-name' }, 'Mookiland Staff Portal')),
+      bellLink(),
       h('span', { class: 'header-user' }, user.displayName));
 
     var items = MklNav.menuItems(MklState.canAny);
@@ -73,6 +74,61 @@
     root.appendChild(backdrop);
     root.appendChild(main);
     return main;
+  }
+
+  // ------------------------------------------------------------------ lonceng notifikasi
+  var notif = { count: 0, timer: null };
+
+  function bellIcon() {
+    var ns = 'http://www.w3.org/2000/svg';
+    var svg = document.createElementNS(ns, 'svg');
+    svg.setAttribute('viewBox', '0 0 24 24');
+    svg.setAttribute('width', '22');
+    svg.setAttribute('height', '22');
+    svg.setAttribute('aria-hidden', 'true');
+    var path = document.createElementNS(ns, 'path');
+    path.setAttribute('d', 'M12 22a2.5 2.5 0 0 0 2.45-2h-4.9A2.5 2.5 0 0 0 12 22zm7-6V11a7 7 0 0 0-5.5-6.84V3a1.5 1.5 0 0 0-3 0v1.16A7 7 0 0 0 5 11v5l-2 2v1h18v-1l-2-2z');
+    path.setAttribute('fill', 'currentColor');
+    svg.appendChild(path);
+    return svg;
+  }
+
+  function bellLink() {
+    var count = h('span', { class: 'bell-count', id: 'bell-count' });
+    var a = h('a', { class: 'bell', href: '#/notifikasi', id: 'bell-link' }, bellIcon(), count);
+    paintBell(a, count);
+    return a;
+  }
+
+  function paintBell(a, count) {
+    a = a || document.getElementById('bell-link');
+    count = count || document.getElementById('bell-count');
+    if (!a || !count) return;
+    count.textContent = notif.count > 99 ? '99+' : String(notif.count);
+    count.hidden = notif.count === 0;
+    a.setAttribute('aria-label', notif.count ? 'Notifikasi, ' + notif.count + ' belum dibaca' : 'Notifikasi');
+  }
+
+  function setNotificationCount(n) {
+    notif.count = Math.max(0, n || 0);
+    paintBell();
+  }
+
+  function refreshNotifications() {
+    if (!MklState.user || MklState.user.mustChangePassword) return;
+    MklApi.call('notifications.count', {}).then(function (res) { if (res.success) setNotificationCount(res.data.unread); });
+  }
+
+  function startNotificationPolling() {
+    stopNotificationPolling();
+    refreshNotifications();
+    notif.timer = window.setInterval(refreshNotifications, 180000);
+  }
+
+  function stopNotificationPolling() {
+    if (notif.timer) window.clearInterval(notif.timer);
+    notif.timer = null;
+    notif.count = 0;
   }
 
   function forbidden(container) {
@@ -128,6 +184,7 @@
   }
 
   function endSession(message, type) {
+    stopNotificationPolling();
     try { window.sessionStorage.removeItem(PREV_LOGIN_KEY); } catch (e) { /* abaikan */ }
     MklApi.setToken(null);
     MklState.clear();
@@ -148,10 +205,14 @@
   var MklApp = {
     VERSION: VERSION,
 
+    refreshNotifications: refreshNotifications,
+    setNotificationCount: setNotificationCount,
+
     afterLogin: function (user) {
       rememberPreviousLogin(user);
       MklState.set(user);
       startIdle();
+      startNotificationPolling();
       MklNav.go(user.mustChangePassword ? '/ganti-password' : '/beranda');
     },
 
@@ -176,6 +237,7 @@
         rememberPreviousLogin(res.data.user);
         MklState.set(res.data.user);
         startIdle();
+        startNotificationPolling();
       } else if (res.errorCode !== 'SESSION_EXPIRED' && res.errorCode !== 'UNAUTHENTICATED') {
         MklState.setFlash('error', res.message);
       }

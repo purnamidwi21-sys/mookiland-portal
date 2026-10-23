@@ -25,6 +25,21 @@
       var u = MklState.user;
       root.appendChild(MklUI.pageHeader('Selamat datang, ' + u.displayName));
 
+      if (MklState.can('announcement.read')) {
+        var annBody = h('div');
+        var annCard = MklUI.card('Pengumuman terbaru', annBody);
+        root.appendChild(annCard);
+        MklApi.call('announcements.feed', {}).then(function (res) {
+          if (!res.success || !res.data.items.length) { annCard.parentNode && annCard.parentNode.removeChild(annCard); return; }
+          annBody.appendChild(h('ul', { class: 'link-list' }, res.data.items.slice(0, 3).map(function (a) {
+            return h('li', null, h('a', { href: '#/pengumuman/' + a.announcementId }, a.title), ' ',
+              a.canAcknowledge && !a.read ? MklUI.badge('Baru', 'info') : null,
+              a.requiresAck && a.canAcknowledge && !a.acknowledged ? MklUI.badge('Perlu konfirmasi', 'warning') : null);
+          })));
+          if (res.data.items.length > 3) annBody.appendChild(h('p', null, h('a', { href: '#/pengumuman' }, 'Lihat semua pengumuman')));
+        });
+      }
+
       if (MklState.can('profile.read.own')) {
         root.appendChild(summaryCard('Kepegawaian Anda', function (body) {
           MklApi.call('me.profile', {}).then(function (res) {
@@ -59,10 +74,16 @@
             var items = res.data.items;
             var incomplete = items.filter(function (v) { return v.missing && v.missing.length; }).length;
             var noAccount = items.filter(function (v) { return !v.account; }).length;
-            body.appendChild(h('div', { class: 'stats' },
+            var statsRow = h('div', { class: 'stats' },
               stat('Karyawan aktif', res.data.total, '#/karyawan'),
               stat('Data belum lengkap', incomplete, '#/karyawan', incomplete ? 'warning' : null),
-              stat('Belum punya akun', noAccount, '#/karyawan', noAccount ? 'warning' : null)));
+              stat('Belum punya akun', noAccount, '#/karyawan', noAccount ? 'warning' : null));
+            body.appendChild(statsRow);
+            if (MklState.can('contract.manage')) {
+              MklApi.call('hr.contracts.overview', { within: 30 }).then(function (c) {
+                if (c.success) statsRow.appendChild(stat('Kontrak berakhir ≤ 30 hari', c.data.counts.within30, '#/kontrak', c.data.counts.within30 ? 'warning' : null));
+              });
+            }
             if (!res.data.total) {
               body.appendChild(h('p', null, 'Belum ada data karyawan. ', h('a', { href: '#/karyawan/impor' }, 'Impor dari Excel'), ' atau tambahkan satu per satu di menu Karyawan.'));
             }
@@ -95,7 +116,7 @@
       root.appendChild(MklUI.card('Yang bisa Anda lakukan saat ini', list));
 
       root.appendChild(MklUI.card('Sedang dikembangkan', h('p', { class: 'muted' },
-        'Kontrak, BPJS, pengumuman, jadwal, absensi, cuti, lembur, dan slip gaji akan muncul di menu setelah tahap berikutnya selesai dan diuji.')));
+        'Jadwal, absensi, cuti, lembur, dan slip gaji akan muncul di menu setelah tahap berikutnya selesai dan diuji.')));
     }
   });
 })();

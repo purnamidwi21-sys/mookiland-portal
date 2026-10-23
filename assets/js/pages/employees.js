@@ -433,6 +433,7 @@
 
         if (v.sensitive) container.appendChild(sensitiveCard(v));
         container.appendChild(accountCard(v));
+        if (window.MklEmployeeExtras) window.MklEmployeeExtras.render(container, v, load);
 
         container.appendChild(MklUI.card('Riwayat kepegawaian', MklUI.table([
           { label: 'Berlaku', render: function (x) { return MklUI.fmtDate(x.effectiveDate); } },

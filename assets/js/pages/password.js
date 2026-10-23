@@ -48,6 +48,7 @@
           MklUI.setBusy(submit, false);
           if (res.success) {
             if (MklState.user) MklState.user.mustChangePassword = false;
+            if (window.MklApp && MklApp.refreshNotifications) MklApp.refreshNotifications();
             MklUI.toast('Password berhasil diganti. Perangkat lain yang masuk dengan akun ini telah dikeluarkan.', 'success');
             MklNav.go('/beranda');
             return;

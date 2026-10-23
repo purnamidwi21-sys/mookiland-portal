@@ -13,7 +13,7 @@
  * perm : null = semua pengguna; selain itu cukup salah satu permission
  */
 window.MklHelp = {
-  version: '0.4.0',
+  version: '0.5.0',
   updatedAt: '2026-10-23',
 
   topics: [
@@ -116,6 +116,51 @@ window.MklHelp = {
       ],
       result: 'Anda mengetahui data kepegawaian yang tercatat di sistem.',
       notes: ['Jika ada data yang tidak sesuai, hubungi HR.']
+    },
+    {
+      id: 'pengumuman-baca', guide: 'staff', perm: ['announcement.read'], title: 'Membaca pengumuman',
+      intro: 'Pengumuman dari perusahaan tampil di menu Pengumuman dan di Beranda. Pengumuman baru juga muncul sebagai notifikasi di ikon lonceng.',
+      steps: [
+        'Buka menu Pengumuman. Pengumuman yang belum dibaca bertanda Baru.',
+        'Tekan judul atau Baca selengkapnya.',
+        'Jika ada tulisan "Pengumuman ini memerlukan konfirmasi", baca sampai selesai lalu tekan Saya sudah membaca dan memahami.'
+      ],
+      result: 'Tanda Baru hilang. Untuk pengumuman wajib konfirmasi, muncul kotak hijau bahwa Anda sudah mengonfirmasi.'
+    },
+    {
+      id: 'notifikasi', guide: 'staff', perm: null, title: 'Melihat notifikasi (ikon lonceng)',
+      intro: 'Ikon lonceng di kanan atas menunjukkan jumlah notifikasi yang belum dibaca, misalnya pengumuman baru atau kontrak yang sudah aktif.',
+      steps: [
+        'Tekan ikon lonceng di kanan atas.',
+        'Notifikasi yang belum dibaca bertanda garis biru di kiri. Tekan notifikasi untuk membuka halaman terkait.',
+        'Untuk menghapus angka di lonceng sekaligus, tekan Tandai Semua Sudah Dibaca.'
+      ],
+      result: 'Angka di lonceng berkurang atau hilang.',
+      notes: ['Angka di lonceng diperbarui otomatis setiap 3 menit. Notifikasi tidak pernah memuat gaji, nomor KTP, atau password.']
+    },
+    {
+      id: 'kontrak-saya', guide: 'staff', perm: ['contract.read.own'], title: 'Melihat dan mengunduh kontrak kerja',
+      intro: 'Kontrak yang sudah ditandatangani dan diaktifkan HR tampil di menu Kontrak Saya.',
+      steps: [
+        'Buka menu Kontrak Saya.',
+        'Periksa nomor kontrak, jenis, periode, status, dan upah.',
+        'Tekan Unduh PDF Kontrak untuk menyimpan salinan kontrak bertanda tangan.'
+      ],
+      result: 'File PDF kontrak tersimpan di ponsel atau komputer Anda.',
+      notes: ['Simpan file kontrak di tempat aman karena berisi nomor KTP Anda.', 'Draf kontrak yang belum ditandatangani tidak tampil di sini.']
+    },
+    {
+      id: 'bpjs-saya', guide: 'staff', perm: ['bpjs.read.own'], title: 'Melihat status BPJS',
+      intro: 'Menu BPJS Saya menampilkan status BPJS Kesehatan dan BPJS Ketenagakerjaan Anda yang tercatat di perusahaan.',
+      steps: ['Buka menu BPJS Saya.', 'Cocokkan nomor kartu dengan kartu BPJS atau aplikasi Mobile JKN / JMO Anda.'],
+      result: 'Anda mengetahui status kepesertaan BPJS. Jika berbeda, hubungi HR.'
+    },
+    {
+      id: 'dokumen-saya', guide: 'staff', perm: ['profile.read.own'], title: 'Mengunduh dokumen saya',
+      intro: 'Dokumen Anda yang disimpan HR (misalnya ijazah, sertifikat, kartu BPJS) bisa diunduh di menu Dokumen Saya.',
+      steps: ['Buka menu Dokumen Saya.', 'Tekan Unduh pada dokumen yang diperlukan.'],
+      result: 'File tersimpan di perangkat Anda.',
+      notes: ['Untuk menambah atau mengganti dokumen, serahkan dokumen ke HR.']
     },
     {
       id: 'keluar', guide: 'staff', perm: null, title: 'Keluar dengan aman',
@@ -294,6 +339,113 @@ window.MklHelp = {
       notes: ['Jabatan tidak bisa dihapus agar riwayat karyawan tetap terbaca.']
     },
 
+    {
+      id: 'hr-kontrak-buat', guide: 'hr', perm: ['contract.manage'], title: 'Membuat kontrak kerja',
+      intro: 'Kontrak dibuat dari halaman data karyawan. Alurnya: buat draf, buat PDF dari template, tanda tangani, unggah PDF bertanda tangan, lalu aktifkan.',
+      steps: [
+        'Buka menu Karyawan, tekan Kelola pada karyawan yang dimaksud, lalu gulir ke kotak Kontrak kerja.',
+        'Tekan Buat Kontrak.',
+        'Pilih Jenis kontrak (misalnya Harian untuk Perjanjian Pekerja Harian Masa Pelatihan), isi Tanggal kontrak, Tanggal mulai, Tanggal berakhir, Besaran upah, Satuan upah, dan Dibayar (mingguan/bulanan).',
+        'Tekan Simpan.'
+      ],
+      result: 'Muncul draf dengan nomor kontrak otomatis, misalnya PK/2026/001, beserta langkah berikutnya.',
+      notes: [
+        'Jika muncul jendela "Perlu diperiksa", misalnya total PKWT lebih dari 5 tahun, konsultasikan dulu dengan penasihat hukum sebelum ditandatangani.',
+        'Satu karyawan hanya boleh punya satu draf pada satu waktu.'
+      ]
+    },
+    {
+      id: 'hr-kontrak-pdf', guide: 'hr', perm: ['contract.manage'], title: 'Membuat PDF kontrak dari template',
+      intro: 'Sistem mengisi template Word dengan data karyawan dan kontrak, lalu membuat PDF siap cetak.',
+      steps: [
+        'Di kotak Kontrak kerja, pada draf, tekan Buat PDF dari Template.',
+        'Jika muncul "Data belum lengkap", lengkapi data yang disebut (misalnya alamat lewat Ubah Data, atau nomor KTP lewat Ubah Data Identitas), lalu tekan lagi.',
+        'PDF terunduh otomatis. Periksa isinya, lalu cetak dua rangkap.',
+        'Untuk mengunduh lagi, tekan Unduh PDF untuk Ditandatangani.'
+      ],
+      result: 'PDF kontrak berisi nama, alamat, nomor KTP, tanggal, dan upah karyawan, tanpa kolom isian {{...}} yang tersisa.',
+      notes: ['PDF memuat nomor KTP. Jangan kirim lewat chat. Draf PDF tidak terlihat oleh karyawan.', 'Tombol ini hanya muncul jika sudah ada template Word untuk jenis kontrak tersebut (menu Template Kontrak).']
+    },
+    {
+      id: 'hr-kontrak-aktif', guide: 'hr', perm: ['contract.manage'], title: 'Mengunggah kontrak bertanda tangan dan mengaktifkan',
+      intro: 'Kontrak baru berlaku di sistem setelah PDF bertanda tangan diunggah dan kontrak diaktifkan.',
+      steps: [
+        'Pindai (scan) kontrak yang sudah ditandatangani kedua pihak menjadi satu file PDF.',
+        'Pada draf, tekan Unggah PDF Bertanda Tangan, pilih file, lalu tekan Unggah.',
+        'Tekan Aktifkan Kontrak, isi Tanggal ditandatangani, lalu tekan Aktifkan.'
+      ],
+      result: 'Status kontrak menjadi Aktif. Jenis hubungan kerja dan akhir kontrak di data karyawan ikut diperbarui, dan karyawan mendapat notifikasi serta bisa mengunduh kontraknya di Kontrak Saya.'
+    },
+    {
+      id: 'hr-kontrak-perpanjang', guide: 'hr', perm: ['contract.manage'], title: 'Memperpanjang atau mengakhiri kontrak',
+      intro: 'Perpanjangan dibuat sebagai kontrak baru yang terhubung dengan kontrak sebelumnya.',
+      steps: [
+        'Pada kontrak berstatus Aktif, tekan Perpanjang. Tanggal mulai otomatis diisi sehari setelah kontrak lama berakhir.',
+        'Isi data kontrak baru, lalu ikuti langkah membuat PDF, tanda tangan, unggah, dan aktifkan.',
+        'Untuk mengakhiri kontrak lebih awal, tekan Akhiri Kontrak, isi tanggal dan alasan.'
+      ],
+      result: 'Setelah kontrak baru diaktifkan, kontrak lama berstatus Diperpanjang.',
+      notes: ['Mengakhiri kontrak tidak mengubah status karyawan. Jika karyawan berhenti bekerja, gunakan juga Ubah Status.', '[Perlu konfirmasi HR/penasihat hukum] Kompensasi akhir PKWT dan hak lain saat kontrak berakhir belum dihitung sistem.']
+    },
+    {
+      id: 'hr-kontrak-pengingat', guide: 'hr', perm: ['contract.manage'], title: 'Memantau kontrak yang akan berakhir',
+      intro: 'Sistem mengirim notifikasi ke HR 60, 30, 14, dan 7 hari sebelum kontrak berakhir, dan sekali lagi jika tanggalnya sudah lewat.',
+      steps: [
+        'Buka menu Kontrak. Secara bawaan tampil kontrak yang berakhir dalam 60 hari, diurutkan dari yang paling dekat.',
+        'Tekan Kelola untuk membuka data karyawan lalu perpanjang atau akhiri kontraknya.'
+      ],
+      result: 'Tidak ada kontrak yang berakhir tanpa diketahui HR.'
+    },
+    {
+      id: 'hr-template', guide: 'hr', perm: ['template.manage'], title: 'Mengganti template kontrak Word',
+      intro: 'Template adalah file Word (.docx) berisi kolom isian seperti {{NAMA_PEKERJA}} yang diisi otomatis oleh sistem.',
+      steps: [
+        'Buka menu Template Kontrak dan lihat daftar Kolom isian yang bisa dipakai.',
+        'Di Word, ketik kolom isian di tempat yang akan diisi, persis seperti di daftar (huruf besar, dengan tanda kurung kurawal ganda).',
+        'Tekan Unggah Template, pilih Jenis kontrak, isi nama, pilih file .docx, lalu tekan Unggah.'
+      ],
+      result: 'Template baru berstatus Dipakai dan versi lama menjadi Versi lama.',
+      notes: ['Jika ada kolom isian yang salah eja, template ditolak dan nama kolomnya disebut.', '[Perlu konfirmasi HR/penasihat hukum] Isi template menjadi tanggung jawab Mookiland.']
+    },
+    {
+      id: 'hr-bpjs', guide: 'hr', perm: ['bpjs.manage'], title: 'Mencatat BPJS karyawan',
+      intro: 'Setiap karyawan punya catatan BPJS Kesehatan dan BPJS Ketenagakerjaan.',
+      steps: [
+        'Buka data karyawan, gulir ke kotak BPJS.',
+        'Pada BPJS Kesehatan atau BPJS Ketenagakerjaan, tekan Ubah.',
+        'Pilih Status (Belum terdaftar, Sedang didaftarkan, Aktif, Nonaktif), isi nomor kepesertaan, tanggal mulai, dan untuk Ketenagakerjaan centang program yang diikuti.',
+        'Isi Alasan perubahan, lalu tekan Simpan.',
+        'Untuk melihat semua karyawan sekaligus, buka menu BPJS.'
+      ],
+      result: 'Status tersimpan dan tercatat di Riwayat status BPJS. Karyawan bisa melihatnya di BPJS Saya.',
+      notes: ['Status Aktif wajib disertai nomor kepesertaan.', 'Iuran dan potongan BPJS dihitung di modul payroll (Tahap 4).']
+    },
+    {
+      id: 'hr-dokumen', guide: 'hr', perm: ['contract.manage'], title: 'Menyimpan dokumen karyawan',
+      intro: 'Dokumen seperti KTP, KK, ijazah, dan sertifikat disimpan di Google Drive privat milik sistem dan hanya bisa dibuka lewat portal.',
+      steps: [
+        'Buka data karyawan, gulir ke kotak Dokumen, lalu tekan Unggah Dokumen.',
+        'Pilih Jenis dokumen, isi judul jika perlu, lalu pilih file PDF, JPG, atau PNG (maksimal 5 MB).',
+        'Hapus centang "Karyawan bisa melihat" jika dokumen hanya untuk HR, lalu tekan Unggah.',
+        'Untuk dokumen yang salah unggah, tekan Arsipkan dan isi alasannya.'
+      ],
+      result: 'Dokumen tampil di daftar. Dokumen yang boleh dilihat karyawan muncul di menu Dokumen Saya miliknya.',
+      notes: ['Dokumen identitas (KTP, KK, NPWP) bertanda Identitas dan setiap pembukaannya tercatat.', 'Dokumen yang diarsipkan tidak dihapus dan masih bisa dilihat HR.']
+    },
+    {
+      id: 'hr-pengumuman', guide: 'hr', perm: ['announcement.manage'], title: 'Membuat dan menerbitkan pengumuman',
+      intro: 'Pengumuman dibuat sebagai draf, lalu diterbitkan. Saat terbit, karyawan sasaran mendapat notifikasi di lonceng.',
+      steps: [
+        'Buka menu Kelola Pengumuman, tekan Buat Pengumuman.',
+        'Isi Judul, Kategori, dan Isi pengumuman. Pilih Untuk: Semua karyawan atau Jabatan tertentu.',
+        'Centang Wajib dikonfirmasi untuk aturan atau kebijakan yang harus dibaca semua orang. Isi Tampil sampai jika ada batas waktu.',
+        'Tekan Simpan Draf, periksa lagi, lalu tekan Terbitkan.',
+        'Tekan Pembaca untuk melihat siapa yang sudah dan belum membaca.'
+      ],
+      result: 'Pengumuman tampil di menu Pengumuman dan Beranda karyawan sasaran.',
+      notes: ['Pengumuman yang sudah terbit tidak bisa diubah. Jika salah, arsipkan lalu buat yang baru.', 'Jangan mencantumkan data pribadi, gaji, atau password di pengumuman.']
+    },
+
     // ------------------------------------------------------------ System Admin
     {
       id: 'admin-tambah', guide: 'sysadmin', perm: ['user.manage', 'user.manage.privileged'], title: 'Menambah pengguna',
@@ -468,6 +620,7 @@ window.MklHelp = {
     { q: 'Mengapa saya harus masuk lagi saat membuka tab baru?', a: 'Sesi hanya berlaku di tab tempat Anda masuk, agar lebih aman di perangkat bersama.' },
     { q: 'Bolehkah saya masuk di ponsel dan komputer sekaligus?', a: 'Boleh. Jika Anda mengganti password, perangkat lain otomatis dikeluarkan.' },
     { q: 'Mengapa menu saya berbeda dengan rekan kerja?', a: 'Menu menyesuaikan role masing-masing. Jika merasa membutuhkan akses tambahan, tanyakan kepada atasan atau admin.' },
+    { q: 'Siapa yang bisa melihat kontrak dan upah saya?', a: 'Hanya Anda dan HR. Atasan dan admin teknis tidak bisa melihat kontrak atau upah Anda.', perm: ['contract.read.own'] },
     { q: 'Menu absensi, cuti, dan slip gaji belum ada. Kapan tersedia?', a: 'Fitur tersebut sedang dibuat bertahap dan akan muncul di menu setelah selesai diuji.' },
     { q: 'Data pribadi saya salah. Bagaimana memperbaikinya?', a: 'Nomor HP, email pribadi, alamat, dan kontak darurat bisa Anda ubah sendiri di Profil Saya. Data lain (nama, tanggal lahir, KTP, jabatan) diperbaiki HR.', perm: ['profile.read.own'] },
     { q: 'Siapa yang bisa melihat nomor KTP saya?', a: 'Hanya HR. Di layar pun nomor ditampilkan tersamar, dan setiap kali HR menampilkan nomor lengkap, tindakan itu tercatat.', perm: ['profile.read.own'] }
@@ -507,6 +660,15 @@ window.MklHelp = {
     },
     {
       problem: 'Impor Excel: "Layanan Drive API belum aktif"', cause: 'Pemasangan server Tahap 3b-1 belum lengkap.', check: 'Admin menjalankan setupCekStatus di Apps Script.', solution: 'Admin memasang appsscript.json terbaru lalu menjalankan setupJalankanSemua.', contact: 'Admin'
+    },
+    {
+      problem: 'Buat PDF kontrak: "Data belum lengkap untuk mengisi template"', cause: 'Data yang dibutuhkan template kosong, misalnya alamat atau nomor KTP 16 digit.', check: 'Baca daftar data di pesan.', solution: 'Lengkapi lewat Ubah Data, Ubah Data Identitas, atau Ubah draf kontrak, lalu tekan Buat PDF lagi.', contact: 'HR'
+    },
+    {
+      problem: 'Unggah dokumen: "Jenis file tidak didukung"', cause: 'File bukan PDF, JPG, atau PNG, atau hanya diganti namanya.', check: 'Buka file di komputer.', solution: 'Simpan ulang sebagai PDF atau foto JPG/PNG.', contact: 'HR'
+    },
+    {
+      problem: 'Ikon lonceng tidak berubah setelah pengumuman terbit', cause: 'Angka diperbarui setiap 3 menit.', check: 'Tunggu beberapa menit atau muat ulang halaman.', solution: 'Buka menu Pengumuman untuk melihat langsung.', contact: 'Admin jika tetap tidak muncul'
     },
     {
       problem: 'Pesan "Terjadi kesalahan pada server" dengan kode', cause: 'Kesalahan tak terduga di sistem.', check: 'Catat Kode permintaan.', solution: 'Laporkan dengan screenshot dan kode tersebut.', contact: 'Admin'

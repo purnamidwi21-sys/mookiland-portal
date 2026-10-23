@@ -221,6 +221,17 @@
     return { wrap: wrap, input: select };
   }
 
+  /** Pilihan file. opts: {label, name, accept, hint, required} */
+  function fileField(opts) {
+    var id = uid('file');
+    var input = h('input', { type: 'file', id: id, name: opts.name, class: 'input', accept: opts.accept || null });
+    var wrap = h('div', { class: 'field' },
+      h('label', { for: id }, opts.label, opts.required ? h('span', { class: 'req', 'aria-hidden': 'true' }, ' *') : null), input,
+      opts.hint ? h('p', { class: 'hint' }, opts.hint) : null,
+      h('p', { class: 'field-error', 'data-error-for': opts.name }));
+    return { wrap: wrap, input: input };
+  }
+
   /** Kotak centang tunggal. opts: {label, name, checked, hint} */
   function checkboxField(opts) {
     var id = uid('c');
@@ -414,6 +425,34 @@
     });
   }
 
+  /** Rupiah tanpa desimal: 1500000 -> "Rp1.500.000". */
+  function fmtMoney(n) {
+    if (n === null || n === undefined || n === '') return '-';
+    return 'Rp' + String(Math.round(Number(n))).replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+  }
+
+  /** Membaca file pilihan pengguna sebagai base64 (tanpa awalan data:). */
+  function readFileBase64(file) {
+    return new Promise(function (resolve, reject) {
+      var reader = new FileReader();
+      reader.onload = function () { var s = String(reader.result || ''); resolve(s.slice(s.indexOf(',') + 1)); };
+      reader.onerror = function () { reject(reader.error); };
+      reader.readAsDataURL(file);
+    });
+  }
+
+  /** Menyimpan file dari server (base64) ke perangkat pengguna. */
+  function downloadBase64(fileName, mimeType, base64) {
+    var bin = global.atob(base64);
+    var bytes = new Uint8Array(bin.length);
+    for (var i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+    var url = global.URL.createObjectURL(new global.Blob([bytes], { type: mimeType || 'application/octet-stream' }));
+    var a = h('a', { href: url, download: fileName || 'dokumen' });
+    doc.body.appendChild(a);
+    a.click();
+    global.setTimeout(function () { global.URL.revokeObjectURL(url); if (a.parentNode) a.parentNode.removeChild(a); }, 1000);
+  }
+
   /** Ukuran file yang mudah dibaca. */
   function fmtBytes(n) {
     if (n < 1024) return n + ' B';
@@ -441,10 +480,11 @@
 
   global.MklUI = Object.freeze({
     h: h, clear: clear, uid: uid,
-    fmtDateTime: fmtDateTime, fmtDate: fmtDate, todayYmd: todayYmd, fmtBytes: fmtBytes,
+    fmtDateTime: fmtDateTime, fmtDate: fmtDate, todayYmd: todayYmd, fmtBytes: fmtBytes, fmtMoney: fmtMoney,
+    readFileBase64: readFileBase64, downloadBase64: downloadBase64,
     badge: badge, loadingState: loadingState, emptyState: emptyState, errorState: errorState, alertBox: alertBox,
     toast: toast, setBusy: setBusy,
-    field: field, passwordField: passwordField, selectField: selectField, checkboxField: checkboxField,
+    field: field, passwordField: passwordField, selectField: selectField, checkboxField: checkboxField, fileField: fileField,
     clearFieldErrors: clearFieldErrors, showFieldErrors: showFieldErrors,
     modal: modal, confirmAction: confirmAction,
     table: table, pagination: pagination, copyButton: copyButton, tempPasswordModal: tempPasswordModal,

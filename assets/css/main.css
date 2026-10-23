@@ -387,3 +387,35 @@ a.stat:hover { border-color: var(--brand); color: var(--text); }
   body.print-cards .account-card { break-inside: avoid; page-break-inside: avoid; border: 1px dashed #000; color: #000; background: #fff; }
   body.print-cards .kv dt { color: #000; }
 }
+
+/* ---------------------------------------------------------------- Tahap 3b-2 */
+
+.bell { position: relative; display: inline-flex; align-items: center; justify-content: center; width: 44px; height: 44px; margin-left: auto; border-radius: 8px; color: var(--text); text-decoration: none; }
+.bell:hover { background: var(--surface-2); color: var(--text); }
+.bell + .header-user { margin-left: 4px; }
+.bell-count { position: absolute; top: 4px; right: 2px; min-width: 18px; height: 18px; padding: 0 5px; border-radius: 999px; background: var(--danger); color: #fff; font-size: 0.7rem; font-weight: 700; line-height: 18px; text-align: center; }
+.bell-count[hidden] { display: none; }
+
+.announcement-body { white-space: pre-line; overflow-wrap: anywhere; margin: 8px 0 0; }
+.announcement-card.is-unread { border-left: 4px solid var(--brand); }
+.announcement-card .card-title { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+
+.contract-item { border: 1px solid var(--border); border-radius: 8px; padding: 14px; margin-bottom: 12px; }
+.contract-head { margin-bottom: 8px; font-size: 1.05rem; }
+.contract-steps { margin: 10px 0 0; padding-left: 22px; color: var(--text-muted); }
+.contract-steps li.done { color: var(--success-text); text-decoration: line-through; }
+.contract-steps li.skip { font-style: italic; }
+
+.bpjs-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 12px; margin-bottom: 12px; }
+.bpjs-box { border: 1px solid var(--border); border-radius: 8px; padding: 14px; }
+.bpjs-box h3 { margin: 0 0 10px; font-size: 1rem; }
+
+.stats-page { margin-bottom: 16px; }
+
+.notif-list { list-style: none; margin: 0; padding: 0; }
+.notif-item { display: flex; flex-direction: column; gap: 2px; padding: 12px; border-bottom: 1px solid var(--border); color: var(--text); text-decoration: none; }
+.notif-item:hover { background: var(--surface-2); color: var(--text); }
+.notif-item.is-unread { border-left: 4px solid var(--brand); background: var(--info-bg); }
+.notif-title { font-weight: 600; }
+.notif-list li:last-child .notif-item { border-bottom: 0; }
+fieldset[hidden] { display: none; }
