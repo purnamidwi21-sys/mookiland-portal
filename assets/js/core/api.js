@@ -10,7 +10,8 @@
   'use strict';
 
   var TOKEN_KEY = 'mkl_session_token';
-  var TIMEOUT_MS = 30000;
+  var TIMEOUT_MS = 45000;
+  var listeners = { authLost: [], passwordChange: [] };
 
   function getToken() {
     try { return global.sessionStorage.getItem(TOKEN_KEY); } catch (e) { return null; }
@@ -27,9 +28,15 @@
     return { success: false, errorCode: code, message: message };
   }
 
+  function emit(name, data) {
+    listeners[name].forEach(function (fn) {
+      try { fn(data); } catch (e) { /* abaikan */ }
+    });
+  }
+
   /**
    * Memanggil action di server.
-   * Selalu mengembalikan Promise berisi objek { success, data?, errorCode?, message }.
+   * Selalu mengembalikan Promise berisi objek { success, data?, errorCode?, message, details? }.
    * Tidak pernah melempar error, sehingga halaman cukup memeriksa res.success.
    */
   function call(action, payload) {
@@ -42,11 +49,13 @@
 
     var controller = (typeof AbortController !== 'undefined') ? new AbortController() : null;
     var timer = controller ? setTimeout(function () { controller.abort(); }, TIMEOUT_MS) : null;
+    var client = '';
+    try { client = String(global.navigator.userAgent || '').slice(0, 200); } catch (e) { client = ''; }
 
     var options = {
       method: 'POST',
       headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-      body: JSON.stringify({ action: action, payload: payload || {}, token: getToken() }),
+      body: JSON.stringify({ action: action, payload: payload || {}, token: getToken(), client: client }),
       redirect: 'follow',
       credentials: 'omit',
       cache: 'no-store'
@@ -69,24 +78,35 @@
           if (!data || typeof data.success !== 'boolean') {
             return failure('BAD_RESPONSE', 'Respons server tidak sesuai format.');
           }
-          if (data.errorCode === 'SESSION_EXPIRED' || data.errorCode === 'UNAUTHENTICATED') {
-            setToken(null);
-          }
           return data;
         });
       })
       .catch(function (err) {
         if (err && err.name === 'AbortError') {
-          return failure('TIMEOUT', 'Server terlalu lama merespons. Coba lagi.');
+          return failure('TIMEOUT', 'Server terlalu lama merespons. Periksa koneksi lalu coba lagi.');
         }
         return failure('NETWORK_ERROR',
-          'Tidak dapat terhubung ke server. Periksa koneksi internet, atau pastikan Web App di-deploy dengan akses "Anyone".');
+          'Tidak dapat terhubung ke server. Periksa koneksi internet Anda lalu coba lagi.');
       })
       .then(function (result) {
         if (timer) clearTimeout(timer);
+        if (!result.success && action !== 'auth.login') {
+          if (result.errorCode === 'SESSION_EXPIRED' || result.errorCode === 'UNAUTHENTICATED') {
+            setToken(null);
+            emit('authLost', result);
+          } else if (result.errorCode === 'PASSWORD_CHANGE_REQUIRED') {
+            emit('passwordChange', result);
+          }
+        }
         return result;
       });
   }
 
-  global.MklApi = Object.freeze({ call: call, getToken: getToken, setToken: setToken });
+  global.MklApi = Object.freeze({
+    call: call,
+    getToken: getToken,
+    setToken: setToken,
+    onAuthLost: function (fn) { listeners.authLost.push(fn); },
+    onPasswordChangeRequired: function (fn) { listeners.passwordChange.push(fn); }
+  });
 })(window);

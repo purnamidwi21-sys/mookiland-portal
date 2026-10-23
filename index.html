@@ -13,33 +13,26 @@
   <link rel="stylesheet" href="assets/css/main.css">
 </head>
 <body>
-  <header class="topbar">
-    <div class="brand">
-      <span class="brand-mark" aria-hidden="true">M</span>
-      <span class="brand-name">Mookiland Staff Portal</span>
-    </div>
-  </header>
-
-  <main class="container">
-    <section class="card" aria-labelledby="status-title">
-      <h1 id="status-title">Status Koneksi Server</h1>
-      <p class="muted">Halaman uji Tahap 2. Halaman Masuk (login) tersedia mulai Tahap 3.</p>
-
-      <div id="result" class="result result-idle" role="status" aria-live="polite">
-        <strong>Belum diperiksa</strong>
-        <p class="muted">Tekan tombol <b>Cek Koneksi</b> untuk menguji hubungan ke server.</p>
-      </div>
-
-      <button id="btn-check" class="btn btn-primary" type="button">Cek Koneksi</button>
-    </section>
-  </main>
-
-  <footer class="footer">
-    <span id="app-version"></span>
-  </footer>
+  <div id="app" class="app-loading">
+    <p class="state">Memuat Mookiland Staff Portal...</p>
+  </div>
+  <div id="toast-root" class="toast-root"></div>
+  <div id="modal-root"></div>
+  <noscript><p class="state">Aktifkan JavaScript di browser Anda untuk membuka Mookiland Staff Portal.</p></noscript>
 
   <script src="config.js"></script>
   <script src="assets/js/core/api.js"></script>
+  <script src="assets/js/core/ui.js"></script>
+  <script src="assets/js/core/state.js"></script>
+  <script src="assets/js/core/nav.js"></script>
+  <script src="assets/js/help-content.js"></script>
+  <script src="assets/js/pages/login.js"></script>
+  <script src="assets/js/pages/password.js"></script>
+  <script src="assets/js/pages/home.js"></script>
+  <script src="assets/js/pages/admin-users.js"></script>
+  <script src="assets/js/pages/admin-roles.js"></script>
+  <script src="assets/js/pages/admin-logs.js"></script>
+  <script src="assets/js/pages/help.js"></script>
   <script src="assets/js/app.js"></script>
 </body>
 </html>

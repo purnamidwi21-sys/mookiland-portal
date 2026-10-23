@@ -4,19 +4,25 @@ Tampilan web Mookiland Staff Management System, diterbitkan lewat GitHub Pages.
 
 **Repo ini publik.** Jangan pernah menyimpan password, token, API key, data karyawan,
 atau file dari Google Drive di sini. Semua data dan pemeriksaan hak akses ada di
-backend (repo privat `mookiland-sms-backend`).
+backend (repo privat `mookiland-sms-backend`). Menyembunyikan menu di sini hanya
+untuk kenyamanan; server memeriksa ulang setiap permintaan.
 
 ## Isi
 
 | File | Fungsi |
 | --- | --- |
-| `index.html` | Kerangka halaman dan Content Security Policy |
+| `index.html` | Kerangka aplikasi dan Content Security Policy |
 | `config.js` | Alamat Web App Apps Script (bukan rahasia) |
-| `assets/css/main.css` | Tampilan |
+| `assets/css/main.css` | Tampilan (desktop, ponsel, mode gelap) |
 | `assets/js/core/api.js` | Penghubung ke server |
-| `assets/js/app.js` | Logika halaman (Tahap 2: uji koneksi) |
-| `.nojekyll` | Mematikan pemrosesan Jekyll di GitHub Pages |
+| `assets/js/core/ui.js` | Komponen: form, tabel, dialog, notifikasi |
+| `assets/js/core/state.js` | Pengguna yang sedang masuk, keluar otomatis |
+| `assets/js/core/nav.js` | Navigasi halaman |
+| `assets/js/help-content.js` | Isi Pusat Bantuan |
+| `assets/js/pages/*.js` | Halaman: Masuk, Lupa Password, Ganti Password, Beranda, Pengguna, Role & Permission, Log Aktivitas, Pusat Bantuan |
+| `assets/js/app.js` | Tata letak, menu, alur masuk/keluar |
 
 ## Versi
 
-0.2.0 — Tahap 2: halaman uji koneksi ke server.
+- 0.3.0 — Tahap 3a: login, ganti password, pengelolaan pengguna, log, Pusat Bantuan.
+- 0.2.0 — Tahap 2: halaman uji koneksi.
