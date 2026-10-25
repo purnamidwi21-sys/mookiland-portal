@@ -484,3 +484,13 @@ fieldset[hidden] { display: none; }
   .recap-table .table th { white-space: normal; }
   .recap-table .table th, .recap-table .table td { padding: 8px 10px; }
 }
+
+/* ---------------------------------------------------------------- Tahap 3c-2: pengajuan & persetujuan */
+
+.field[hidden] { display: none; }
+.btn-row { display: flex; flex-wrap: wrap; gap: 6px; }
+.approval-card .kv { margin: 8px 0 0; }
+.approval-card .card-head { margin-bottom: 4px; }
+.approval-card > p.muted { margin: 0; }
+.modal h3 { font-size: 1rem; margin: 16px 0 8px; }
+.modal h3:first-child { margin-top: 0; }

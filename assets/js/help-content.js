@@ -13,7 +13,7 @@
  * perm : null = semua pengguna; selain itu cukup salah satu permission
  */
 window.MklHelp = {
-  version: '0.6.0',
+  version: '0.7.0',
   updatedAt: '2026-10-24',
 
   topics: [
@@ -199,7 +199,57 @@ window.MklHelp = {
         'Gulir ke Rincian harian untuk melihat setiap hari. Tekan ← Bulan lalu untuk bulan sebelumnya.'
       ],
       result: 'Anda mengetahui catatan kehadiran Anda yang dipakai perusahaan.',
-      notes: ['Jika ada yang salah (misalnya tertulis Tidak hadir padahal Anda masuk), hubungi HR dengan menyebut tanggalnya.']
+      notes: ['Jika ada yang salah (misalnya lupa absen pulang), tekan Ajukan Koreksi pada tanggal itu. Lihat topik "Mengajukan koreksi absensi".']
+    },
+    {
+      id: 'ajukan-cuti', guide: 'staff', perm: ['leave.request.own'], title: 'Mengajukan cuti, izin, atau sakit',
+      intro: 'Cuti tahunan hanya untuk karyawan bulanan yang ditetapkan HR. Semua karyawan bisa mengajukan sakit, izin, dan cuti khusus. Semua disetujui Manajer Operasional.',
+      steps: [
+        'Buka menu Pengajuan Saya, lalu tekan Ajukan Cuti / Izin / Sakit.',
+        'Pilih Jenis, lalu isi Tanggal mulai dan Tanggal selesai. Sistem langsung menampilkan jumlah hari (hari Libur di jadwal tidak dihitung) dan sisa cuti Anda.',
+        'Untuk sakit lebih dari 1 hari, pilih file surat dokter (PDF atau foto) di kolom Lampiran.',
+        'Isi Alasan, lalu tekan Kirim Pengajuan.'
+      ],
+      result: 'Pengajuan tampil di Riwayat pengajuan dengan status Menunggu. Setelah diputuskan, Anda mendapat notifikasi di ikon lonceng.',
+      notes: [
+        'Cuti tahunan diajukan paling lambat 3 hari sebelumnya. Untuk keadaan mendesak, hubungi Manajer Operasional.',
+        'Sakit dan izin boleh diajukan setelah kejadian, paling lama 30 hari ke belakang.',
+        'Saldo cuti baru berkurang setelah disetujui. Pengajuan yang masih menunggu sudah diperhitungkan agar tidak melebihi saldo.'
+      ]
+    },
+    {
+      id: 'ajukan-lembur', guide: 'staff', perm: ['overtime.request.own'], title: 'Mengajukan lembur',
+      intro: 'Lembur bisa diajukan sebelum (rencana) atau sesudah dikerjakan (laporan, untuk lembur mendadak).',
+      steps: [
+        'Buka menu Pengajuan Saya, lalu tekan Ajukan Lembur.',
+        'Isi Tanggal lembur, Jam mulai, dan Jam selesai. Lama lembur tampil di bawahnya.',
+        'Isi Alasan / pekerjaan, lalu tekan Kirim Pengajuan.'
+      ],
+      result: 'Pengajuan berstatus Menunggu. Manajer Operasional bisa menyetujui seluruhnya atau sebagian menit.',
+      notes: ['Tanggal hari ini atau ke depan dicatat sebagai rencana; tanggal yang sudah lewat sebagai laporan (paling lama 7 hari).', 'Lembur paling lama 4 jam per hari. [Perlu konfirmasi HR]']
+    },
+    {
+      id: 'ajukan-koreksi', guide: 'staff', perm: ['attendance.correction.request.own'], title: 'Mengajukan koreksi absensi',
+      intro: 'Dipakai jika Anda lupa absen masuk/pulang atau jam yang tercatat salah.',
+      steps: [
+        'Buka menu Absensi Saya. Pada tanggal yang salah, tekan Ajukan Koreksi (atau dari Pengajuan Saya tekan Ajukan Koreksi Absen).',
+        'Isi Jam masuk yang benar dan/atau Jam pulang yang benar. Kosongkan yang sudah benar.',
+        'Centang Pulang keesokan hari jika shift selesai lewat tengah malam.',
+        'Isi Alasan, lalu tekan Kirim Pengajuan.'
+      ],
+      result: 'Tanggal itu bertanda Koreksi menunggu. Setelah disetujui, jam di Absensi Saya berubah dan sumbernya tertulis Koreksi disetujui.',
+      notes: ['Koreksi hanya untuk hari ini atau tanggal yang sudah lewat, paling lama 31 hari ke belakang.']
+    },
+    {
+      id: 'pengajuan-saya', guide: 'staff', perm: ['leave.request.own', 'overtime.request.own', 'attendance.correction.request.own'], title: 'Melihat dan membatalkan pengajuan',
+      intro: 'Semua pengajuan Anda (cuti, izin, sakit, lembur, koreksi) ada di menu Pengajuan Saya beserta keputusannya.',
+      steps: [
+        'Buka menu Pengajuan Saya. Bagian atas menampilkan sisa cuti tahunan (jika Anda berhak).',
+        'Lihat kolom Status: Menunggu, Disetujui, Ditolak, atau Dibatalkan, beserta catatan dari penyetuju.',
+        'Untuk menarik pengajuan yang masih Menunggu, tekan Batalkan lalu konfirmasi.'
+      ],
+      result: 'Status pengajuan berubah menjadi Dibatalkan.',
+      notes: ['Pengajuan yang sudah disetujui hanya bisa dibatalkan HR. Hubungi Manajer Operasional.']
     },
     {
       id: 'keluar', guide: 'staff', perm: null, title: 'Keluar dengan aman',
@@ -577,6 +627,51 @@ window.MklHelp = {
       ]
     },
 
+    {
+      id: 'hr-persetujuan', guide: 'hr', perm: ['leave.manage', 'overtime.manage', 'attendance.manage'], title: 'Menyetujui atau menolak pengajuan',
+      intro: 'Semua pengajuan cuti, izin, sakit, lembur, dan koreksi absensi masuk ke menu Persetujuan. Jumlah yang menunggu tampil di Beranda.',
+      steps: [
+        'Buka menu Persetujuan, tab Menunggu.',
+        'Baca rincian setiap pengajuan: tanggal, alasan, saldo cuti, lampiran surat dokter (tekan Lihat Lampiran), atau jam absen hari itu untuk lembur dan koreksi.',
+        'Tekan Setujui (boleh isi catatan; untuk lembur, menit yang disetujui bisa dikurangi), atau Tolak dan isi alasan.',
+        'Tab Riwayat menampilkan keputusan 60 hari terakhir.'
+      ],
+      result: 'Karyawan mendapat notifikasi. Cuti mengurangi saldo; koreksi langsung mengubah jam absen; cuti/izin/sakit tampil di Rekap Absensi.',
+      notes: [
+        'Anda tidak bisa memutuskan pengajuan Anda sendiri. Pengajuan Manajer Operasional diputuskan oleh Direktur.',
+        'Persetujuan oleh Supervisor belum dipakai: semua pengajuan diputuskan Manajer Operasional.'
+      ]
+    },
+    {
+      id: 'hr-saldo-cuti', guide: 'hr', perm: ['leave.manage'], title: 'Mengatur hak dan saldo cuti tahunan',
+      intro: 'Cuti tahunan hanya untuk karyawan yang ditandai berhak (karyawan bulanan). Jatah 12 hari dicatat otomatis setiap 1 Januari.',
+      steps: [
+        'Buka menu Saldo Cuti.',
+        'Pada karyawan bulanan, tekan Atur, centang Berhak cuti tahunan, isi alasan, lalu tekan Simpan Hak Cuti. Jatah tahun berjalan langsung dicatat.',
+        'Saat mulai memakai sistem, masukkan sisa cuti lama: Atur → Penyesuaian saldo → Jumlah hari (misalnya 3) dan alasan → Simpan Penyesuaian.',
+        'Tekan Riwayat untuk melihat semua transaksi saldo dan pengajuan karyawan itu.'
+      ],
+      result: 'Kolom Sisa menunjukkan saldo terbaru dan karyawan melihat angka yang sama di Pengajuan Saya.',
+      notes: [
+        'Karyawan yang masuk di tahun berjalan mendapat jatah sebanding bulan penuh yang tersisa (contoh: masuk 1 Juli → 6 hari).',
+        'Sisa cuti dibawa seluruhnya ke tahun berikutnya. [Perlu konfirmasi HR/penasihat hukum]',
+        'Penyesuaian tidak boleh membuat saldo minus.'
+      ]
+    },
+    {
+      id: 'hr-batal-cuti', guide: 'hr', perm: ['leave.manage'], title: 'Membatalkan cuti yang sudah disetujui',
+      intro: 'Jika cuti yang sudah disetujui batal dilakukan, HR membatalkannya agar saldo kembali.',
+      steps: ['Buka menu Persetujuan, tab Riwayat.', 'Pada cuti yang dimaksud, tekan Batalkan Cuti.', 'Isi alasan, lalu tekan Batalkan Cuti.'],
+      result: 'Status menjadi Dibatalkan, saldo cuti tahunan dikembalikan, dan karyawan mendapat notifikasi.'
+    },
+    {
+      id: 'hr-catat-lembur', guide: 'hr', perm: ['overtime.manage'], title: 'Mencatat lembur untuk karyawan',
+      intro: 'Manajer Operasional bisa langsung mencatat lembur yang ia perintahkan, tanpa menunggu karyawan mengajukan.',
+      steps: ['Buka menu Persetujuan, tekan Catat Lembur Karyawan.', 'Pilih Karyawan, isi tanggal, jam mulai, jam selesai, dan alasan.', 'Tekan Simpan.'],
+      result: 'Lembur langsung tercatat disetujui, karyawan mendapat notifikasi, dan totalnya tampil di kolom Lembur disetujui pada Rekap Absensi.',
+      notes: ['Lembur untuk diri sendiri tetap harus disetujui Direktur.']
+    },
+
     // ------------------------------------------------------------ System Admin
     {
       id: 'admin-tambah', guide: 'sysadmin', perm: ['user.manage', 'user.manage.privileged'], title: 'Menambah pengguna',
@@ -735,6 +830,13 @@ window.MklHelp = {
       result: 'Manajer Operasional bisa membuka Profil Saya, melihat anggota timnya, dan tidak mendapat akun kedua saat pembuatan akun massal.'
     },
     {
+      id: 'mgmt-persetujuan', guide: 'management', perm: ['request.approve.hr'], title: 'Menyetujui pengajuan Manajer Operasional',
+      intro: 'Manajer Operasional tidak bisa menyetujui pengajuannya sendiri. Cuti, izin, lembur, dan koreksi absensinya diputuskan oleh Direktur.',
+      steps: ['Buka menu Persetujuan (jumlah yang menunggu juga tampil di Beranda).', 'Baca rinciannya, lalu tekan Setujui atau Tolak (alasan wajib untuk menolak).'],
+      result: 'Manajer Operasional mendapat notifikasi keputusan Anda.',
+      notes: ['Pengajuan karyawan lain tidak tampil untuk Direktur; semuanya diputuskan Manajer Operasional.']
+    },
+    {
       id: 'mgmt-akun-admin', guide: 'management', perm: ['user.manage.privileged'], title: 'Akun admin pertama',
       intro: 'Akun "admin" dibuat saat pemasangan dan memiliki role System Admin dan Manajemen.',
       steps: [
@@ -752,7 +854,9 @@ window.MklHelp = {
     { q: 'Bolehkah saya masuk di ponsel dan komputer sekaligus?', a: 'Boleh. Jika Anda mengganti password, perangkat lain otomatis dikeluarkan.' },
     { q: 'Mengapa menu saya berbeda dengan rekan kerja?', a: 'Menu menyesuaikan role masing-masing. Jika merasa membutuhkan akses tambahan, tanyakan kepada atasan atau admin.' },
     { q: 'Siapa yang bisa melihat kontrak dan upah saya?', a: 'Hanya Anda dan HR. Atasan dan admin teknis tidak bisa melihat kontrak atau upah Anda.', perm: ['contract.read.own'] },
-    { q: 'Menu cuti, lembur, dan slip gaji belum ada. Kapan tersedia?', a: 'Fitur tersebut sedang dibuat bertahap dan akan muncul di menu setelah selesai diuji.' },
+    { q: 'Menu slip gaji belum ada. Kapan tersedia?', a: 'Penggajian dan slip gaji sedang dibuat (Tahap 4) dan akan muncul di menu setelah selesai diuji.' },
+    { q: 'Mengapa saya tidak bisa memilih Cuti tahunan?', a: 'Cuti tahunan hanya untuk karyawan bulanan yang ditetapkan HR. Pekerja harian tetap bisa mengajukan sakit, izin, dan cuti khusus.', perm: ['leave.request.own'] },
+    { q: 'Apakah sisa cuti hangus di akhir tahun?', a: 'Tidak. Sisa cuti dibawa ke tahun berikutnya dan ditambah jatah baru setiap 1 Januari.', perm: ['leave.request.own'] },
     { q: 'Apakah lokasi saya dilacak terus?', a: 'Tidak. Lokasi hanya dibaca saat Anda menekan Absen Masuk atau Absen Pulang, dan disimpan sebagai bukti absen.', perm: ['attendance.clock.own'] },
     { q: 'Jam absen saya berbeda dengan jam di ponsel. Mengapa?', a: 'Sistem selalu memakai jam server (WITA) agar adil dan tidak bisa diubah dari ponsel.', perm: ['attendance.clock.own'] },
     { q: 'Data pribadi saya salah. Bagaimana memperbaikinya?', a: 'Nomor HP, email pribadi, alamat, dan kontak darurat bisa Anda ubah sendiri di Profil Saya. Data lain (nama, tanggal lahir, KTP, jabatan) diperbaiki HR.', perm: ['profile.read.own'] },
@@ -811,6 +915,12 @@ window.MklHelp = {
     },
     {
       problem: 'Impor Raptor: "Susunan laporan Raptor tidak dikenali"', cause: 'File bukan laporan Employee\'s Time / Attendance, atau sudah diubah.', check: 'Buka file di Excel: harus ada judul EmpNo, Name, lalu Date In, Time In, Date Out, Time Out.', solution: 'Ekspor ulang dari Raptor tanpa mengubah isinya.', contact: 'Admin'
+    },
+    {
+      problem: 'Pengajuan cuti: "Sisa cuti Anda ... hari"', cause: 'Jumlah hari melebihi sisa cuti, termasuk pengajuan lain yang masih menunggu.', check: 'Lihat sisa cuti di Pengajuan Saya.', solution: 'Kurangi jumlah hari, atau batalkan pengajuan lain yang masih menunggu.', contact: 'Manajer Operasional'
+    },
+    {
+      problem: 'Persetujuan: tombol Setujui tidak ada', cause: 'Pengajuan itu milik Anda sendiri.', check: 'Lihat nama di kartu pengajuan.', solution: 'Pengajuan Anda diputuskan Direktur atau pengelola HR lain.', contact: 'Direktur'
     },
     {
       problem: 'Pesan "Terjadi kesalahan pada server" dengan kode', cause: 'Kesalahan tak terduga di sistem.', check: 'Catat Kode permintaan.', solution: 'Laporkan dengan screenshot dan kode tersebut.', contact: 'Admin'

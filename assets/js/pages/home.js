@@ -47,17 +47,37 @@
             if (!res.success) { body.appendChild(MklUI.alertBox('error', res.message)); return; }
             var t = res.data;
             if (!t.linked) { body.appendChild(h('p', { class: 'muted' }, 'Akun Anda belum terhubung dengan data karyawan. Hubungi HR.')); return; }
-            body.appendChild(MklUI.infoList([
+            var info = MklUI.infoList([
               ['Jadwal', t.shift ? t.shift.name + ' ' + t.shift.start + '–' + t.shift.end : (t.off ? 'Libur' : 'Tidak ada jadwal terbit')],
               ['Masuk', t.clockIn || '-'],
               ['Pulang', t.clockOut || '-']
-            ]));
+            ]);
+            body.appendChild(info);
+            if (MklState.can('leave.request.own')) {
+              MklApi.call('me.leave.summary', {}).then(function (ls) {
+                if (ls.success && ls.data.eligible && ls.data.balance) {
+                  info.appendChild(h('dt', null, 'Sisa cuti'));
+                  info.appendChild(h('dd', null, ls.data.balance.available + ' hari'));
+                }
+              });
+            }
             var label = t.canClockOut ? 'Absen Pulang' : (t.canClockIn ? 'Absen Masuk' : 'Lihat Absen');
             body.appendChild(h('div', { class: 'form-actions' },
               h('a', { class: 'btn ' + (t.canClockIn || t.canClockOut ? 'btn-primary' : 'btn-secondary') + ' btn-small', href: '#/absen' }, label),
               MklState.can('schedule.read.own') ? h('a', { class: 'btn btn-secondary btn-small', href: '#/jadwal-saya' }, 'Jadwal Saya') : null));
           });
         }));
+      }
+
+      if (MklState.canAny(['leave.manage', 'overtime.manage', 'attendance.manage', 'request.approve.hr'])) {
+        var apBody = h('div');
+        var apCard = MklUI.card('Persetujuan', apBody);
+        root.appendChild(apCard);
+        MklApi.call('approvals.count', {}).then(function (res) {
+          if (!res.success) { apCard.parentNode && apCard.parentNode.removeChild(apCard); return; }
+          var n = res.data.pending;
+          apBody.appendChild(h('div', { class: 'stats' }, stat('Menunggu persetujuan Anda', n, '#/persetujuan', n ? 'warning' : null)));
+        });
       }
 
       if (MklState.can('profile.read.own')) {
@@ -136,7 +156,7 @@
       root.appendChild(MklUI.card('Yang bisa Anda lakukan saat ini', list));
 
       root.appendChild(MklUI.card('Sedang dikembangkan', h('p', { class: 'muted' },
-        'Cuti, izin, lembur, koreksi absensi, dan slip gaji akan muncul di menu setelah tahap berikutnya selesai dan diuji.')));
+        'Penggajian dan slip gaji (termasuk komisi kasir) akan muncul di menu setelah Tahap 4 selesai dan diuji.')));
     }
   });
 })();

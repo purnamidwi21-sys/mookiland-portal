@@ -8,7 +8,7 @@
   var h = MklUI.h;
   var T = window.MklTimeUI;
 
-  var SOURCE_LABEL = { aplikasi: 'Aplikasi (GPS)', manual_hr: 'Dicatat HR', raptor: 'Raptor' };
+  var SOURCE_LABEL = { aplikasi: 'Aplikasi (GPS)', manual_hr: 'Dicatat HR', raptor: 'Raptor', koreksi: 'Koreksi disetujui' };
   function sourceText(s) {
     return String(s || '').split(', ').filter(Boolean).map(function (x) { return SOURCE_LABEL[x] || x; }).join(', ');
   }
@@ -57,7 +57,8 @@
               { label: 'Pulang cepat', render: function (i) { return String(i.summary.early); } },
               { label: 'Tidak hadir', render: function (i) { return i.summary.absent ? MklUI.badge(String(i.summary.absent), 'danger') : '0'; } },
               { label: 'Belum lengkap', render: function (i) { return i.summary.incomplete ? MklUI.badge(String(i.summary.incomplete), 'warning') : '0'; } },
-              { label: 'Tanpa jadwal', render: function (i) { return i.summary.unscheduled ? MklUI.badge(String(i.summary.unscheduled), 'warning') : '0'; } },
+              { label: 'Cuti / sakit / izin', render: function (i) { var s = i.summary; return (s.leave || 0) + ' / ' + (s.sick || 0) + ' / ' + (s.permit || 0); } },
+              { label: 'Lembur disetujui', render: function (i) { return i.summary.overtimeMinutes ? T.fmtMinutes(i.summary.overtimeMinutes) : '0'; } },
               { label: 'Jam kerja', render: function (i) { return T.fmtMinutes(i.summary.workedMinutes); } },
               { label: 'Aksi', className: 'col-action', render: function (i) {
                 var b = h('button', { class: 'btn btn-secondary btn-small', type: 'button' }, 'Rincian');
@@ -65,7 +66,7 @@
                 return b;
               } }
             ], d.items, 'Tidak ada karyawan pada rekap ini.')),
-            h('p', { class: 'muted small' }, 'Hadir = hari dengan absen masuk, dari jumlah hari terjadwal. Tidak hadir = ada jadwal terbit tetapi tidak ada absen. Belum lengkap = absen masuk tanpa absen pulang. Hari yang belum terbit jadwalnya tidak dihitung.')
+            h('p', { class: 'muted small' }, 'Hadir = hari dengan absen masuk, dari jumlah hari terjadwal. Tidak hadir = ada jadwal terbit tetapi tidak ada absen, cuti, izin, atau sakit yang disetujui. Belum lengkap = absen masuk tanpa absen pulang. Hari yang belum terbit jadwalnya tidak dihitung.')
           ]));
         });
       }
