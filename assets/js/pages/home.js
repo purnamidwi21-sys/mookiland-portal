@@ -1,7 +1,7 @@
 /*
  * Halaman Beranda: akun, ringkasan kepegawaian sendiri, dan ringkasan
  * karyawan untuk HR atau tim untuk Supervisor, dan jadwal/absen hari ini.
- * Ringkasan cuti dan slip gaji ditambahkan setelah modulnya selesai.
+ * Juga sisa cuti, antrean persetujuan, status penggajian, dan slip gaji terbaru.
  */
 (function () {
   'use strict';
@@ -77,6 +77,41 @@
           if (!res.success) { apCard.parentNode && apCard.parentNode.removeChild(apCard); return; }
           var n = res.data.pending;
           apBody.appendChild(h('div', { class: 'stats' }, stat('Menunggu persetujuan Anda', n, '#/persetujuan', n ? 'warning' : null)));
+        });
+      }
+
+      if (MklState.canAny(['payroll.prepare', 'payroll.approve'])) {
+        var pyBody = h('div');
+        var pyCard = MklUI.card('Penggajian', pyBody);
+        root.appendChild(pyCard);
+        MklApi.call('hr.payroll.periods', {}).then(function (res) {
+          if (!res.success) { pyCard.parentNode && pyCard.parentNode.removeChild(pyCard); return; }
+          var items = res.data.items;
+          var waiting = items.filter(function (p) { return p.status === 'diajukan'; }).length;
+          var row = h('div', { class: 'stats' });
+          if (MklState.can('payroll.approve')) row.appendChild(stat('Gaji menunggu persetujuan', waiting, '#/penggajian', waiting ? 'warning' : null));
+          if (MklState.can('payroll.prepare')) {
+            var open = items.filter(function (p) { return p.status === 'draf' || p.status === 'dihitung'; }).length;
+            var unpaid = items.filter(function (p) { return p.status === 'disetujui'; }).length;
+            row.appendChild(stat('Periode belum diajukan', open, '#/penggajian'));
+            row.appendChild(stat('Disetujui, belum dibayar', unpaid, '#/penggajian', unpaid ? 'warning' : null));
+          }
+          pyBody.appendChild(row);
+          if (items[0]) pyBody.appendChild(h('p', { class: 'small' }, 'Periode terakhir: ', h('a', { href: '#/penggajian/' + items[0].periodId }, items[0].label), ' · ' + items[0].statusLabel));
+        });
+      }
+
+      if (MklState.can('payslip.read.own')) {
+        var psBody = h('div');
+        var psCard = MklUI.card('Slip gaji', psBody);
+        root.appendChild(psCard);
+        MklApi.call('me.payslips', {}).then(function (res) {
+          if (!res.success || !res.data.linked) { psCard.parentNode && psCard.parentNode.removeChild(psCard); return; }
+          var last = res.data.items[0];
+          psBody.appendChild(last
+            ? h('p', null, 'Slip terbaru: ', h('strong', null, last.periodLabel), ' (dibayar ' + MklUI.fmtDate(last.paidAt) + ').')
+            : h('p', { class: 'muted' }, 'Belum ada slip gaji. Slip muncul setelah gaji dibayar.'));
+          psBody.appendChild(h('div', { class: 'form-actions' }, h('a', { class: 'btn btn-secondary btn-small', href: '#/slip-saya' }, 'Slip Gaji Saya')));
         });
       }
 
@@ -156,7 +191,7 @@
       root.appendChild(MklUI.card('Yang bisa Anda lakukan saat ini', list));
 
       root.appendChild(MklUI.card('Sedang dikembangkan', h('p', { class: 'muted' },
-        'Penggajian dan slip gaji (termasuk komisi kasir) akan muncul di menu setelah Tahap 4 selesai dan diuji.')));
+        'Impor komisi kasir (Tahap 4b) dan notifikasi WhatsApp (Tahap 4c) akan muncul setelah selesai dan diuji.')));
     }
   });
 })();

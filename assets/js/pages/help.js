@@ -9,6 +9,7 @@
     staff: 'Untuk semua pengguna',
     supervisor: 'Untuk Supervisor',
     hr: 'Untuk HR',
+    payroll: 'Untuk Payroll',
     sysadmin: 'Untuk System Admin',
     management: 'Untuk Manajemen'
   };

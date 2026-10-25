@@ -13,8 +13,8 @@
  * perm : null = semua pengguna; selain itu cukup salah satu permission
  */
 window.MklHelp = {
-  version: '0.7.0',
-  updatedAt: '2026-10-24',
+  version: '0.8.0',
+  updatedAt: '2026-10-25',
 
   topics: [
     // ------------------------------------------------------------ semua pengguna
@@ -250,6 +250,21 @@ window.MklHelp = {
       ],
       result: 'Status pengajuan berubah menjadi Dibatalkan.',
       notes: ['Pengajuan yang sudah disetujui hanya bisa dibatalkan HR. Hubungi Manajer Operasional.']
+    },
+    {
+      id: 'slip-saya', guide: 'staff', perm: ['payslip.read.own'], title: 'Melihat dan mengunduh slip gaji',
+      intro: 'Slip gaji setiap periode (tanggal 27 sampai 26) tersedia di menu Slip Gaji Saya setelah gaji periode itu dibayar.',
+      steps: [
+        'Buka menu Slip Gaji Saya.',
+        'Cari baris periode yang ingin dilihat, misalnya Desember 2026.',
+        'Tekan Unduh PDF.'
+      ],
+      result: 'File PDF slip gaji tersimpan di ponsel atau komputer Anda. Isinya: rincian upah atau gaji, lembur, tambahan, potongan, dan gaji bersih.',
+      notes: [
+        'Slip belum muncul jika gaji periode itu belum ditandai dibayar. Anda mendapat notifikasi di lonceng saat slip tersedia.',
+        'Simpan file slip di tempat aman dan jangan dibagikan di grup chat.',
+        'Jika ada angka yang tidak sesuai, hubungi Manajer Operasional.'
+      ]
     },
     {
       id: 'keluar', guide: 'staff', perm: null, title: 'Keluar dengan aman',
@@ -672,6 +687,130 @@ window.MklHelp = {
       notes: ['Lembur untuk diri sendiri tetap harus disetujui Direktur.']
     },
 
+    // ------------------------------------------------------------ Payroll
+    {
+      id: 'payroll-profil', guide: 'payroll', perm: ['payroll.prepare'], title: 'Mengatur profil gaji karyawan',
+      intro: 'Setiap karyawan aktif butuh profil gaji agar gajinya bisa dihitung: jenis gaji, tarif, dan aturan jam. Karyawan tanpa profil gaji tidak dihitung.',
+      steps: [
+        'Buka menu Profil Gaji. Kotak kuning di atas menyebut berapa karyawan yang belum punya profil.',
+        'Tekan Atur Gaji (atau Ubah Gaji) pada baris karyawan.',
+        'Pilih Jenis gaji: Harian (dibayar per jam hadir) atau Bulanan (gaji tetap).',
+        'Untuk harian, isi Tarif harian (Rp). Untuk bulanan, isi Gaji bulanan (Rp).',
+        'Pilih Jam dibayar per hari (maksimal): 8 jam, atau 9 jam untuk karyawan yang memang dibayar 9 jam.',
+        'Centang Bulatkan jam masuk ke jam shift bila jam masuk karyawan ini dibulatkan seperti di file gaji lama. Hapus centang untuk memakai jam masuk asli.',
+        'Centang Dapat upah lembur bila karyawan ini dibayar lembur.',
+        'Khusus bulanan: centang Potong jam kurang bila jam kurang dari jam wajib dipotong, lalu isi Jam wajib per hari (menit, termasuk istirahat), misalnya 540 untuk 9 jam.',
+        'Isi Berlaku mulai dan Alasan, lalu tekan Simpan.'
+      ],
+      result: 'Muncul pesan "Profil gaji ... disimpan, berlaku mulai ...". Kolom Tarif / gaji dan Aturan di tabel terisi.',
+      notes: [
+        'Kenaikan tarif tidak menimpa tarif lama. Isi tanggal Berlaku mulai, maka periode yang berakhir sebelum tanggal itu tetap memakai tarif lama. Tekan Riwayat untuk melihat semua perubahan.',
+        'Tanggal Berlaku mulai tidak boleh jatuh di periode yang sudah disetujui Direktur.',
+        'Setiap perubahan tercatat di Audit Log payroll.'
+      ]
+    },
+    {
+      id: 'payroll-rekening', guide: 'payroll', perm: ['bank.read.all'], title: 'Mencatat rekening bank karyawan',
+      intro: 'Nomor rekening dipakai untuk Daftar Transfer. Di tabel nomor ditampilkan tersamar (****1234).',
+      steps: [
+        'Buka menu Profil Gaji.',
+        'Tekan Rekening pada baris karyawan. Jika sudah ada, nomor lengkap tampil (pembukaan ini tercatat di Audit Log).',
+        'Isi Bank, Nomor rekening (angka saja), Atas nama, dan Alasan.',
+        'Tekan Simpan.'
+      ],
+      result: 'Muncul pesan "Rekening ... disimpan". Kolom Rekening menampilkan nama bank dan 4 angka terakhir.',
+      notes: ['Cocokkan nomor rekening dengan buku tabungan atau konfirmasi langsung dari karyawan, bukan dari pesan yang diteruskan orang lain.']
+    },
+    {
+      id: 'payroll-aturan', guide: 'payroll', perm: ['payroll.prepare'], title: 'Cara gaji dihitung',
+      intro: 'Perhitungan mengikuti rumus file gaji Mookiland yang lama. Rincian per hari bisa dilihat di tombol Rincian pada setiap karyawan.',
+      steps: [
+        'Jam masuk dibulatkan (jika dicentang di profil): sebelum 07:00 → 07:00; sampai 08:30 → 08:00; sampai 10:30 → jam asli; sampai 11:20 → 11:00; sampai 13:05 → 13:00; setelah itu → 13:00.',
+        'Lama hadir = jam pulang − jam masuk (setelah dibulatkan), termasuk istirahat. Jika Raptor mencatat istirahat dan istirahatnya lebih pendek dari 50 menit, sisa sampai 60 menit ditambahkan.',
+        'Harian: tarif per jam = tarif harian ÷ 8. Jam dibayar = jam penuh lama hadir, paling banyak 8 (atau 9). Jika kurang dari 8 jam, dibayar sesuai menit hadir.',
+        'Lembur = lama hadir di atas 8 (atau 9) jam, minimal 15 menit, dibayar 1× tarif per jam.',
+        'Bulanan: gaji tetap. Jika Potong jam kurang aktif, jam di bawah jam wajib pada hari hadir dipotong gaji ÷ 173 per jam.',
+        'Hari tanpa jam pulang tidak dibayar dan muncul sebagai peringatan. Perbaiki absensinya dulu (Rekap Absensi > Rincian, atau impor Raptor), lalu Hitung Ulang.'
+      ],
+      result: 'Angka di Penggajian sama dengan hasil rumus file gaji lama untuk data absensi yang sama.',
+      notes: [
+        'Lembur dihitung dari jam absen (tidak perlu disetujui dulu) dan dibayar 1× tarif per jam, sesuai file gaji lama dan keputusan pemilik. [Perlu konfirmasi HR/penasihat hukum: PP 35/2021 mengatur upah lembur 1,5× untuk jam pertama dan 2× untuk jam berikutnya.]',
+        'Pembulatan jam masuk setelah 13:05 menjadi 13:00 mengikuti file lama dan memang disengaja (keputusan pemilik).',
+        'BPJS dan PPh 21 ditanggung perusahaan dan tidak dipotong dari gaji. Sistem tidak menghitung PPh 21; perhitungan dan pelaporan pajak perusahaan tetap dilakukan di luar sistem. [Perlu konfirmasi konsultan pajak]',
+        'Pengaturan angka-angka ini ada di sheet Settings (payroll_...). Ubah hanya bila sudah disepakati.'
+      ]
+    },
+    {
+      id: 'payroll-periode', guide: 'payroll', perm: ['payroll.prepare'], title: 'Membuat periode dan menghitung gaji',
+      intro: 'Gaji bulan X dihitung dari absensi tanggal 27 bulan sebelumnya sampai tanggal 26 bulan X.',
+      steps: [
+        'Pastikan absensi periode itu sudah lengkap: impor Raptor sudah dilakukan dan absen tanpa jam pulang sudah diperbaiki.',
+        'Buka menu Penggajian, lalu tekan Buat Periode.',
+        'Pilih Bulan gaji. Di bawahnya tampil tanggal periode. Isi Rencana tanggal bayar jika perlu, lalu tekan Buat Periode.',
+        'Di halaman periode, tekan Hitung Gaji.',
+        'Baca kotak kuning (jika ada): karyawan tanpa profil gaji, atau hari tanpa jam pulang.',
+        'Periksa tabel Per karyawan: Hadir, Jam dibayar, Upah / gaji, Lembur, Tambahan, Potongan, Bersih.'
+      ],
+      result: 'Status periode menjadi Sudah dihitung dan Ringkasan menampilkan Total bersih.',
+      notes: [
+        'Jika absensi, profil gaji, atau tambahan/potongan berubah setelah dihitung, muncul peringatan. Tekan Hitung Ulang.',
+        'Hitung Ulang aman dilakukan berkali-kali sebelum diajukan. Hasil lama disimpan sebagai versi sebelumnya.'
+      ]
+    },
+    {
+      id: 'payroll-rincian', guide: 'payroll', perm: ['payroll.prepare'], title: 'Memeriksa rincian dan menambah tambahan/potongan',
+      intro: 'Bonus, insentif, kasbon, atau potongan lain dicatat manual per karyawan, dengan alasan.',
+      steps: [
+        'Di halaman periode, tekan Rincian pada baris karyawan.',
+        'Periksa Komponen gaji dan Rincian per hari (jam masuk asli dan yang dihitung, pulang, lama hadir, dibayar, lembur).',
+        'Untuk menambah, tekan Tambah / Potong Manual.',
+        'Pilih Jenis (Tambahan atau Potongan), isi Keterangan di slip, Jumlah (Rp), dan Alasan, lalu tekan Simpan.',
+        'Tutup jendela Rincian, lalu tekan Hitung Ulang.'
+      ],
+      result: 'Kolom Tambahan atau Potongan karyawan itu berubah, dan Keterangan di slip tampil di slip gaji.',
+      notes: [
+        'Untuk menghapus tambahan/potongan yang salah, tekan Hapus di baris komponen bertanda manual, isi alasan, lalu Hitung Ulang.',
+        'Tambahan/potongan tidak bisa diubah setelah periode diajukan, kecuali Direktur menolaknya.'
+      ]
+    },
+    {
+      id: 'payroll-ajukan', guide: 'payroll', perm: ['payroll.prepare'], title: 'Mengajukan gaji ke Direktur',
+      intro: 'Gaji harus disetujui Direktur sebelum dibayar. Yang menghitung tidak bisa menyetujui sendiri.',
+      steps: [
+        'Pastikan tidak ada peringatan "Ada perubahan ... Tekan Hitung Ulang".',
+        'Tekan Ajukan ke Direktur.',
+        'Periksa jumlah karyawan dan total bersih di jendela konfirmasi, lalu tekan Ajukan.'
+      ],
+      result: 'Status menjadi Menunggu persetujuan Direktur. Direktur mendapat notifikasi.',
+      notes: ['Jika Direktur menolak, status kembali Draf dan alasan penolakan tampil di halaman periode. Perbaiki, Hitung Ulang, lalu ajukan lagi.']
+    },
+    {
+      id: 'payroll-bayar', guide: 'payroll', perm: ['payroll.mark_paid'], title: 'Daftar transfer dan menandai sudah dibayar',
+      intro: 'Setelah disetujui, angka terkunci dan slip gaji PDF dibuat. Karyawan baru bisa melihat slip setelah ditandai dibayar.',
+      steps: [
+        'Buka periode yang berstatus Disetujui.',
+        'Tekan Unduh Daftar Transfer. File CSV berisi nama, bank, nomor rekening, dan jumlah bersih, dengan baris TOTAL di akhir.',
+        'Buka file di Excel dan lakukan transfer lewat internet banking.',
+        'Setelah semua transfer selesai, tekan Tandai Sudah Dibayar, isi Tanggal dibayar, lalu tekan Tandai Sudah Dibayar.'
+      ],
+      result: 'Status menjadi Sudah dibayar. Karyawan mendapat notifikasi dan slip muncul di Slip Gaji Saya.',
+      notes: [
+        'Baris "BELUM ADA REKENING" di file transfer berarti rekening karyawan itu belum dicatat. Lengkapi di Profil Gaji > Rekening.',
+        'File transfer berisi nomor rekening lengkap. Simpan di komputer kantor, jangan dikirim lewat grup chat, dan hapus setelah selesai.'
+      ]
+    },
+    {
+      id: 'payroll-slip', guide: 'payroll', perm: ['payroll.prepare', 'payslip.read.all'], title: 'Mengunduh slip gaji karyawan',
+      intro: 'Slip gaji setiap karyawan ada di bagian Slip gaji pada halaman periode yang sudah disetujui.',
+      steps: [
+        'Buka menu Penggajian, lalu tekan Buka pada periode.',
+        'Di bagian Slip gaji, cari nama karyawan.',
+        'Tekan Unduh PDF.'
+      ],
+      result: 'File PDF slip tersimpan. Kolom Dibuka karyawan menunjukkan apakah karyawan sudah membuka slipnya.',
+      notes: ['Setiap unduhan slip tercatat di Audit Log.']
+    },
+
     // ------------------------------------------------------------ System Admin
     {
       id: 'admin-tambah', guide: 'sysadmin', perm: ['user.manage', 'user.manage.privileged'], title: 'Menambah pengguna',
@@ -837,6 +976,21 @@ window.MklHelp = {
       notes: ['Pengajuan karyawan lain tidak tampil untuk Direktur; semuanya diputuskan Manajer Operasional.']
     },
     {
+      id: 'mgmt-gaji', guide: 'management', perm: ['payroll.approve'], title: 'Menyetujui atau menolak gaji',
+      intro: 'Gaji yang diajukan Payroll (Manajer Operasional) menunggu persetujuan Anda sebelum dibayar.',
+      steps: [
+        'Buka menu Penggajian. Periode yang menunggu berstatus Menunggu persetujuan Direktur. Beranda juga menampilkan jumlahnya.',
+        'Tekan Buka pada periode itu.',
+        'Periksa Ringkasan dan tabel Per karyawan. Tekan Rincian untuk melihat rincian per hari seorang karyawan.',
+        'Tekan Setujui (catatan boleh dikosongkan), atau Tolak dan isi Alasan penolakan.'
+      ],
+      result: 'Jika disetujui: status menjadi Disetujui, angka terkunci, dan slip gaji PDF dibuat. Jika ditolak: periode kembali ke Payroll dengan catatan Anda.',
+      notes: [
+        'Jika Anda juga yang menghitung periode itu, tombol Setujui tidak muncul. Persetujuan harus oleh orang lain.',
+        'Sistem menyimpan sidik jari angka yang Anda setujui di sheet PayrollApprovals.'
+      ]
+    },
+    {
       id: 'mgmt-akun-admin', guide: 'management', perm: ['user.manage.privileged'], title: 'Akun admin pertama',
       intro: 'Akun "admin" dibuat saat pemasangan dan memiliki role System Admin dan Manajemen.',
       steps: [
@@ -854,7 +1008,8 @@ window.MklHelp = {
     { q: 'Bolehkah saya masuk di ponsel dan komputer sekaligus?', a: 'Boleh. Jika Anda mengganti password, perangkat lain otomatis dikeluarkan.' },
     { q: 'Mengapa menu saya berbeda dengan rekan kerja?', a: 'Menu menyesuaikan role masing-masing. Jika merasa membutuhkan akses tambahan, tanyakan kepada atasan atau admin.' },
     { q: 'Siapa yang bisa melihat kontrak dan upah saya?', a: 'Hanya Anda dan HR. Atasan dan admin teknis tidak bisa melihat kontrak atau upah Anda.', perm: ['contract.read.own'] },
-    { q: 'Menu slip gaji belum ada. Kapan tersedia?', a: 'Penggajian dan slip gaji sedang dibuat (Tahap 4) dan akan muncul di menu setelah selesai diuji.' },
+    { q: 'Kapan slip gaji saya muncul?', a: 'Setelah gaji periode itu disetujui Direktur dan ditandai sudah dibayar. Anda mendapat notifikasi di lonceng.', perm: ['payslip.read.own'] },
+    { q: 'Siapa yang bisa melihat gaji saya?', a: 'Anda sendiri, Payroll (Manajer Operasional), dan Direktur. Atasan dan admin teknis tidak bisa melihatnya.', perm: ['payslip.read.own'] },
     { q: 'Mengapa saya tidak bisa memilih Cuti tahunan?', a: 'Cuti tahunan hanya untuk karyawan bulanan yang ditetapkan HR. Pekerja harian tetap bisa mengajukan sakit, izin, dan cuti khusus.', perm: ['leave.request.own'] },
     { q: 'Apakah sisa cuti hangus di akhir tahun?', a: 'Tidak. Sisa cuti dibawa ke tahun berikutnya dan ditambah jatah baru setiap 1 Januari.', perm: ['leave.request.own'] },
     { q: 'Apakah lokasi saya dilacak terus?', a: 'Tidak. Lokasi hanya dibaca saat Anda menekan Absen Masuk atau Absen Pulang, dan disimpan sebagai bukti absen.', perm: ['attendance.clock.own'] },
@@ -921,6 +1076,18 @@ window.MklHelp = {
     },
     {
       problem: 'Persetujuan: tombol Setujui tidak ada', cause: 'Pengajuan itu milik Anda sendiri.', check: 'Lihat nama di kartu pengajuan.', solution: 'Pengajuan Anda diputuskan Direktur atau pengelola HR lain.', contact: 'Direktur'
+    },
+    {
+      problem: 'Penggajian: "Ada perubahan absensi, profil gaji, atau tambahan/potongan sejak gaji dihitung"', cause: 'Data berubah setelah tombol Hitung ditekan.', check: '-', solution: 'Tekan Hitung Ulang, periksa lagi, lalu Ajukan ke Direktur.', contact: 'Admin jika tetap muncul'
+    },
+    {
+      problem: 'Penggajian: karyawan tidak ada di tabel', cause: 'Karyawan belum punya profil gaji, atau profilnya berlaku setelah akhir periode.', check: 'Baca kotak kuning di halaman periode. Buka Profil Gaji.', solution: 'Atur profil gaji dengan tanggal Berlaku mulai sebelum akhir periode, lalu Hitung Ulang.', contact: 'Manajer Operasional'
+    },
+    {
+      problem: 'Profil gaji: "Sudah ada periode gaji yang disetujui sesudah tanggal ini"', cause: 'Tanggal Berlaku mulai jatuh di periode yang sudah dikunci.', check: 'Lihat tanggal akhir periode terakhir yang disetujui.', solution: 'Pilih tanggal setelah periode itu. Kekurangan bayar periode lama dicatat sebagai Tambahan di periode berikutnya.', contact: 'Manajer Operasional'
+    },
+    {
+      problem: 'Slip gaji tidak muncul di Slip Gaji Saya', cause: 'Gaji periode itu belum ditandai dibayar, atau akun belum terhubung dengan data karyawan.', check: 'Tanyakan status gaji ke Manajer Operasional.', solution: 'Tunggu sampai gaji ditandai dibayar. Jika akun belum terhubung, minta admin menghubungkannya.', contact: 'Manajer Operasional'
     },
     {
       problem: 'Pesan "Terjadi kesalahan pada server" dengan kode', cause: 'Kesalahan tak terduga di sistem.', check: 'Catat Kode permintaan.', solution: 'Laporkan dengan screenshot dan kode tersebut.', contact: 'Admin'
