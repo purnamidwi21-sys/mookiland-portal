@@ -25,6 +25,7 @@ untuk kenyamanan; server memeriksa ulang setiap permintaan.
 
 ## Versi
 
+- 0.8.1 — Lengkapi Data Diri di Profil Saya (lahir, jenis kelamin, nomor KTP, foto KTP) dengan pemeriksaan HR di Persetujuan.
 - 0.8.0 — Tahap 4a: profil gaji (harian/bulanan, tarif berlaku mulai, aturan jam), rekening bank, periode gaji 27–26, hitung gaji dari absensi (rumus file gaji lama), tambahan/potongan manual, pengajuan ke Direktur, persetujuan, slip gaji PDF, daftar transfer, Slip Gaji Saya.
 - 0.7.0 — Tahap 3c-2: cuti tahunan (saldo, jatah otomatis, proporsional, sisa dibawa), sakit dengan surat dokter, izin, cuti khusus, lembur (rencana & laporan), koreksi absensi, antrean Persetujuan, Saldo Cuti.
 - 0.6.0 — Tahap 3c-1: shift, lokasi kerja, jadwal mingguan (draf/terbit), absen GPS dari ponsel, Jadwal Saya, Absensi Saya, rekap absensi, catat manual HR, impor absensi Raptor.

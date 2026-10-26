@@ -7,8 +7,8 @@
   'use strict';
   var h = MklUI.h;
   var T = window.MklTimeUI;
-  var APPROVE = ['leave.manage', 'overtime.manage', 'attendance.manage', 'request.approve.hr'];
-  var TYPE_VARIANT = { leave: 'info', overtime: 'warning', correction: 'neutral' };
+  var APPROVE = ['leave.manage', 'overtime.manage', 'attendance.manage', 'hr.sensitive.manage', 'request.approve.hr'];
+  var TYPE_VARIANT = { leave: 'info', overtime: 'warning', correction: 'neutral', identity: 'muted' };
 
   function range(a, b) { return a === b ? T.dayLabel(a, true) : MklUI.fmtDate(a) + ' – ' + MklUI.fmtDate(b); }
 
@@ -40,6 +40,29 @@
       } else r.push(['Absen hari itu', 'Belum ada catatan absen']);
       if (d.approvedMinutes) r.push(['Disetujui', d.approvedMinutes + ' menit']);
       return r;
+    }
+    if (d.kind === 'identity') {
+      var cmp = function (now, before) { return before && before !== now ? h('span', null, now || '-', h('br'), h('span', { class: 'muted small' }, 'Sebelumnya: ' + before)) : (now || '-'); };
+      var rows2 = [
+        ['Tempat lahir', cmp(d.proposed.birthPlace, d.current.birthPlace)],
+        ['Tanggal lahir', cmp(d.proposed.birthDate ? MklUI.fmtDate(d.proposed.birthDate) : '', d.current.birthDate ? MklUI.fmtDate(d.current.birthDate) : '')],
+        ['Jenis kelamin', cmp(d.proposed.genderLabel, d.current.genderLabel)],
+        ['Nomor KTP', cmp(d.proposed.idNumber, d.current.idNumber)]
+      ];
+      if (d.canSeePhoto) {
+        var pb = h('button', { class: 'btn btn-secondary btn-small', type: 'button' }, 'Lihat Foto KTP');
+        pb.addEventListener('click', function () {
+          MklUI.setBusy(pb, true, 'Membuka...');
+          MklApi.call('approvals.identityPhoto', { requestId: it.requestId }).then(function (r) {
+            MklUI.setBusy(pb, false);
+            if (!r.success) { MklUI.toast(r.message, 'error'); return; }
+            MklUI.downloadBase64(r.data.fileName, r.data.mimeType, r.data.base64);
+          });
+        });
+        rows2.push(['Foto KTP', pb]);
+      } else rows2.push(['Foto KTP', d.hasPhoto ? 'Ada (dibuka oleh HR)' : 'Tidak ada']);
+      if (it.status === 'menunggu') rows2.push(['Periksa', 'Cocokkan nomor KTP, tanggal lahir, dan jenis kelamin dengan foto KTP sebelum menyetujui.']);
+      return rows2;
     }
     return [
       ['Tanggal', T.dayLabel(d.workDate, true)], ['Jadwal', d.schedule || 'Tidak ada jadwal terbit'],
@@ -122,7 +145,7 @@
     menu: { label: 'Persetujuan', order: 9.8, section: 'Jadwal & Absensi' },
     render: function (root) {
       var otBtn = MklState.can('overtime.manage') ? h('button', { class: 'btn btn-secondary', type: 'button' }, 'Catat Lembur Karyawan') : null;
-      root.appendChild(MklUI.pageHeader('Persetujuan', 'Cuti, izin, sakit, lembur, dan koreksi absensi yang menunggu keputusan.', otBtn));
+      root.appendChild(MklUI.pageHeader('Persetujuan', 'Cuti, izin, sakit, lembur, koreksi absensi, dan data diri karyawan yang menunggu keputusan.', otBtn));
       var view = 'menunggu';
       var tabPending = h('button', { class: 'tab', type: 'button', role: 'tab', 'aria-selected': 'true' }, 'Menunggu');
       var tabHistory = h('button', { class: 'tab', type: 'button', role: 'tab', 'aria-selected': 'false' }, 'Riwayat');
@@ -184,6 +207,7 @@
         var d = it.detail;
         if (d.kind === 'leave') return d.leaveType.split(' (')[0] + ', ' + range(d.startDate, d.endDate) + ' (' + d.totalDays + ' hari)';
         if (d.kind === 'overtime') return MklUI.fmtDate(d.workDate) + ' ' + d.startTime + '–' + d.endTime + (d.approvedMinutes ? ' (' + d.approvedMinutes + ' m disetujui)' : '');
+        if (d.kind === 'identity') return 'KTP ' + String(d.proposed.idNumber).slice(-4).replace(/^/, '****');
         return MklUI.fmtDate(d.workDate);
       }
 

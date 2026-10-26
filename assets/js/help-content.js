@@ -13,8 +13,8 @@
  * perm : null = semua pengguna; selain itu cukup salah satu permission
  */
 window.MklHelp = {
-  version: '0.8.0',
-  updatedAt: '2026-10-25',
+  version: '0.8.1',
+  updatedAt: '2026-10-26',
 
   topics: [
     // ------------------------------------------------------------ semua pengguna
@@ -101,9 +101,26 @@ window.MklHelp = {
       ],
       result: 'Muncul pesan "Data kontak Anda disimpan" dan kotak Kontak menampilkan data baru.',
       notes: [
-        'Nama, tanggal lahir, nomor KTP, dan data kepegawaian hanya bisa diubah HR. Jika salah, hubungi HR dengan membawa dokumen pendukung.',
+        'Tanggal lahir, jenis kelamin, dan nomor KTP diisi lewat Lengkapi Data Diri (lihat topik berikutnya). Nama dan data kepegawaian hanya bisa diubah HR.',
         'Jika muncul pesan "Akun Anda belum terhubung dengan data karyawan", minta HR atau admin menghubungkan akun Anda.',
         'Setiap perubahan dicatat di sistem.'
+      ]
+    },
+    {
+      id: 'data-diri', guide: 'staff', perm: ['profile.update.own'], title: 'Melengkapi data diri dan foto KTP',
+      intro: 'Anda mengisi sendiri tempat dan tanggal lahir, jenis kelamin, nomor KTP, dan foto KTP. HR mencocokkannya dengan foto KTP sebelum disimpan.',
+      steps: [
+        'Siapkan KTP asli. Foto seluruh kartu di tempat terang sampai tulisan terbaca jelas.',
+        'Buka menu Profil Saya, lalu tekan Lengkapi Data Diri di kotak Data pribadi.',
+        'Isi Tempat lahir, Tanggal lahir, Jenis kelamin, dan Nomor KTP (NIK) 16 digit, sama persis dengan KTP.',
+        'Di Foto KTP, pilih foto KTP (JPG, PNG, atau PDF, maksimal 5 MB).',
+        'Tekan Kirim ke HR.'
+      ],
+      result: 'Muncul pesan "Data diri dikirim. HR akan mencocokkan dengan foto KTP Anda." Kotak Data pribadi menampilkan "sedang diperiksa HR". Setelah disetujui, Anda mendapat notifikasi dan datanya berubah.',
+      notes: [
+        'Jika ditolak, alasan dari HR tampil di Profil Saya. Perbaiki, lalu tekan Lengkapi Data Diri lagi.',
+        'Selama masih diperiksa, Anda bisa menekan Batalkan Pengiriman untuk mengirim ulang dengan data yang benar.',
+        'Foto KTP disimpan di folder privat perusahaan dan hanya dibuka oleh HR. Jangan kirim foto KTP lewat grup chat.'
       ]
     },
     {
@@ -642,6 +659,23 @@ window.MklHelp = {
       ]
     },
 
+    {
+      id: 'hr-data-diri', guide: 'hr', perm: ['hr.sensitive.manage'], title: 'Memeriksa data diri dari karyawan',
+      intro: 'Data diri yang dikirim karyawan (lahir, jenis kelamin, nomor KTP, foto KTP) baru tersimpan setelah Anda setujui.',
+      steps: [
+        'Buka menu Persetujuan. Pengajuan berlabel Data diri menampilkan data baru dan data sebelumnya.',
+        'Tekan Lihat Foto KTP. File terunduh ke perangkat Anda.',
+        'Cocokkan Nomor KTP, Tanggal lahir, Tempat lahir, dan Jenis kelamin dengan foto KTP.',
+        'Jika sesuai, tekan Setujui lalu Setujui. Jika tidak, tekan Tolak, tulis yang perlu diperbaiki (misalnya "Foto buram" atau "Nomor KTP beda 1 digit"), lalu tekan Tolak.',
+        'Hapus file foto KTP dari folder Unduhan perangkat Anda setelah selesai.'
+      ],
+      result: 'Jika disetujui, data tersimpan di data karyawan dan foto masuk ke dokumen KTP karyawan. Karyawan mendapat notifikasi.',
+      notes: [
+        'Data diri milik Manajer Operasional diperiksa oleh Direktur.',
+        'Nomor KTP yang sudah dipakai karyawan lain ditolak otomatis.',
+        'Setiap pembukaan foto KTP tercatat di Audit Log.'
+      ]
+    },
     {
       id: 'hr-persetujuan', guide: 'hr', perm: ['leave.manage', 'overtime.manage', 'attendance.manage'], title: 'Menyetujui atau menolak pengajuan',
       intro: 'Semua pengajuan cuti, izin, sakit, lembur, dan koreksi absensi masuk ke menu Persetujuan. Jumlah yang menunggu tampil di Beranda.',

@@ -1,7 +1,8 @@
 /*
  * Profil Saya dan Kepegawaian Saya.
  * Server selalu mengambil data milik akun yang sedang masuk; halaman ini
- * tidak bisa membuka data orang lain. Karyawan hanya bisa mengubah kontak.
+ * tidak bisa membuka data orang lain. Karyawan bisa mengubah kontak sendiri,
+ * dan mengajukan data diri (lahir, jenis kelamin, KTP + foto) yang diperiksa HR.
  */
 (function () {
   'use strict';
@@ -24,6 +25,87 @@
     });
   }
 
+  /** Kartu Data pribadi + tombol Lengkapi Data Diri. */
+  function identityCard(me) {
+    var idt = me.identity || { missing: [] };
+    var parts = [];
+    if (idt.pending) {
+      parts.push(MklUI.alertBox('info', 'Data diri yang Anda kirim pada ' + MklUI.fmtDateTime(idt.pending.submittedAt) + ' sedang diperiksa HR. Data di bawah akan berubah setelah disetujui.'));
+    } else if (idt.lastRejected) {
+      parts.push(MklUI.alertBox('warning', 'Data diri yang Anda kirim perlu diperbaiki' + (idt.lastRejected.note ? ': ' + idt.lastRejected.note : '.') + ' Tekan Lengkapi Data Diri untuk mengirim ulang.'));
+    } else if (idt.missing.length) {
+      parts.push(MklUI.alertBox('warning', 'Mohon lengkapi: ' + idt.missing.join(', ') + '. Tekan Lengkapi Data Diri di bawah.'));
+    }
+    parts.push(MklUI.infoList([
+      ['Nama lengkap', me.fullName],
+      ['Nama panggilan', me.nickname],
+      ['Jenis kelamin', me.genderLabel],
+      ['Tempat, tanggal lahir', [me.birthPlace, me.birthDate ? MklUI.fmtDate(me.birthDate) : ''].filter(Boolean).join(', ')],
+      ['Nomor KTP', me.idNumberMasked || 'Belum diisi'],
+      ['Foto KTP', idt.hasKtpPhoto ? 'Sudah ada' : 'Belum ada']
+    ]));
+    var actions = h('div', { class: 'form-actions' });
+    if (idt.pending) {
+      var cancel = h('button', { class: 'btn btn-secondary', type: 'button' }, 'Batalkan Pengiriman');
+      cancel.addEventListener('click', function () {
+        MklUI.confirmAction({
+          title: 'Batalkan pengiriman data diri', message: h('p', null, 'Data yang sudah dikirim tidak akan diperiksa. Anda bisa mengirim ulang setelahnya.'),
+          confirmLabel: 'Batalkan Pengiriman', danger: true,
+          onConfirm: function () {
+            return MklApi.call('me.request.cancel', { type: 'identity', requestId: idt.pending.requestId }).then(function (r) {
+              if (r.success) { MklUI.toast(r.message, 'success'); MklNav.go('/profil'); }
+              return r;
+            });
+          }
+        });
+      });
+      actions.appendChild(cancel);
+    } else if (MklState.can('profile.update.own')) {
+      var b = h('button', { class: idt.missing.length ? 'btn btn-primary' : 'btn btn-secondary', type: 'button' }, 'Lengkapi Data Diri');
+      b.addEventListener('click', function () { identityForm(me); });
+      actions.appendChild(b);
+    }
+    parts.push(actions);
+    parts.push(h('p', { class: 'muted small' }, 'Nama dan jabatan diubah oleh HR. Nomor KTP ditampilkan tersamar demi keamanan.'));
+    return MklUI.card('Data pribadi', parts);
+  }
+
+  function identityForm(me) {
+    var form = h('form', { class: 'stack', novalidate: true });
+    var place = MklUI.field({ label: 'Tempat lahir', name: 'birthPlace', maxLength: 60, value: me.birthPlace || '', hint: 'Sesuai KTP.' });
+    var date = MklUI.field({ label: 'Tanggal lahir', name: 'birthDate', type: 'date', required: true, value: me.birthDate || '' });
+    var gender = MklUI.selectField({ label: 'Jenis kelamin', name: 'gender', required: true, value: me.gender || '', options: [{ value: '', label: '— Pilih —' }, { value: 'L', label: 'Laki-laki' }, { value: 'P', label: 'Perempuan' }] });
+    var ktp = MklUI.field({ label: 'Nomor KTP (NIK)', name: 'idNumber', required: true, inputmode: 'numeric', maxLength: 20, autocomplete: 'off', hint: '16 digit angka, sesuai KTP.' });
+    var photo = MklUI.fileField({ label: 'Foto KTP', name: 'photo', required: true, accept: 'image/jpeg,image/png,application/pdf', hint: 'Foto KTP asli, seluruh kartu terlihat dan tulisan terbaca. JPG, PNG, atau PDF, maksimal 5 MB.' });
+    var alertSlot = h('div');
+    [h('p', { class: 'muted small' }, 'Data ini diperiksa HR dengan foto KTP Anda sebelum disimpan. Foto KTP disimpan di folder privat perusahaan dan hanya dibuka oleh HR.'),
+      place.wrap, date.wrap, gender.wrap, ktp.wrap, photo.wrap, alertSlot].forEach(function (x) { form.appendChild(x); });
+    var ctl = MklUI.modal({ title: 'Lengkapi Data Diri', content: form, actions: [
+      { label: 'Batal', onClick: function (c) { c.close(); } },
+      { label: 'Kirim ke HR', variant: 'primary', id: 'ok', onClick: submit }
+    ] });
+    form.addEventListener('submit', function (e) { e.preventDefault(); submit(ctl, ctl.buttons.ok); });
+    function submit(c, btn) {
+      MklUI.clearFieldErrors(form);
+      MklUI.clear(alertSlot);
+      var file = photo.input.files && photo.input.files[0];
+      if (!file) { MklUI.showFieldErrors(form, { details: { fields: { photo: 'Lampirkan foto KTP (JPG, PNG, atau PDF).' } } }); return; }
+      if (file.size > 5 * 1024 * 1024) { MklUI.showFieldErrors(form, { details: { fields: { photo: 'Ukuran file maksimal 5 MB.' } } }); return; }
+      MklUI.setBusy(btn, true, 'Mengirim...');
+      MklUI.readFileBase64(file).then(function (b64) {
+        var payload = { birthDate: date.input.value, gender: gender.input.value, idNumber: ktp.input.value.replace(/[\s.\-]/g, ''), photo: { fileName: file.name, base64: b64 } };
+        if (place.input.value.trim()) payload.birthPlace = place.input.value.trim();
+        return MklApi.call('me.identity.submit', payload);
+      }).then(function (res) {
+        MklUI.setBusy(btn, false);
+        if (!res.success) { if (!MklUI.showFieldErrors(form, res)) alertSlot.appendChild(MklUI.alertBox('error', res.message)); return; }
+        c.close();
+        MklUI.toast(res.message, 'success');
+        MklNav.go('/profil');
+      });
+    }
+  }
+
   // ================================================================== Profil Saya
 
   MklNav.register('/profil', {
@@ -39,16 +121,7 @@
         if (me.missingContact && me.missingContact.length) {
           container.appendChild(MklUI.alertBox('warning', 'Mohon lengkapi: ' + me.missingContact.join(', ') + '. Tekan Ubah Kontak di bawah.'));
         }
-        container.appendChild(MklUI.card('Data pribadi', [
-          MklUI.infoList([
-            ['Nama lengkap', me.fullName],
-            ['Nama panggilan', me.nickname],
-            ['Jenis kelamin', me.genderLabel],
-            ['Tempat, tanggal lahir', [me.birthPlace, me.birthDate ? MklUI.fmtDate(me.birthDate) : ''].filter(Boolean).join(', ')],
-            ['Nomor KTP', me.idNumberMasked || 'Belum diisi HR']
-          ]),
-          h('p', { class: 'muted small' }, 'Jika ada data pribadi yang salah, hubungi HR dengan membawa dokumen pendukung (misalnya KTP). Nomor KTP ditampilkan tersamar demi keamanan.')
-        ]));
+        container.appendChild(identityCard(me));
 
         var ec = me.emergencyContact;
         var editBtn = h('button', { class: 'btn btn-primary', type: 'button' }, 'Ubah Kontak');
