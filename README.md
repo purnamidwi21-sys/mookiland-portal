@@ -25,6 +25,7 @@ untuk kenyamanan; server memeriksa ulang setiap permintaan.
 
 ## Versi
 
+- 0.9.1 — Profil Gaji: ubah tanggal Berlaku mulai banyak karyawan sekaligus; tanggal berlaku tampil di tabel; tanggal terakhir diingat saat input.
 - 0.9.0 — Kasbon: Pengajuan Kasbon, persetujuan Direktur (jumlah, cicilan, mulai dipotong), menu Kasbon, cicilan otomatis di Penggajian dan slip.
 - 0.8.4 — Kolom angka aman dari gulir mouse/trackpad; tampilan Rupiah saat mengetik tarif/gaji/jumlah.
 - 0.8.3 — Penggajian: tabel karyawan tanpa profil gaji, peringatan sebagai daftar.

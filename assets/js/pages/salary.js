@@ -6,10 +6,13 @@
   'use strict';
   var h = MklUI.h;
 
+  var lastEffective = '';
+
   function hoursText(min) { return min ? (Math.round(min / 6) / 10) + ' jam' : '-'; }
 
   function profileForm(item, done) {
-    var p = item.profile || {};
+    var cur = item.profile || item.upcoming;
+    var p = cur || {};
     var form = h('form', { class: 'stack', novalidate: true });
     var payType = MklUI.selectField({ label: 'Jenis gaji', name: 'payType', required: true, value: p.payType || 'harian', options: [{ value: 'harian', label: 'Harian (dibayar per jam hadir)' }, { value: 'bulanan', label: 'Bulanan (gaji tetap)' }] });
     var daily = MklUI.field({ label: 'Tarif harian (Rp)', name: 'dailyRate', type: 'number', inputmode: 'numeric', value: p.dailyRate ? String(p.dailyRate) : '', hint: 'Tarif per jam = tarif harian ÷ 8.' });
@@ -17,11 +20,11 @@
     var monthly = MklUI.field({ label: 'Gaji bulanan (Rp)', name: 'monthlySalary', type: 'number', inputmode: 'numeric', value: p.monthlySalary ? String(p.monthlySalary) : '' });
     MklUI.moneyPreview(monthly);
     var cap = MklUI.selectField({ label: 'Jam dibayar per hari (maksimal)', name: 'paidHoursCap', value: String(p.paidHoursCap || 8), options: [{ value: '8', label: '8 jam (lembur dihitung setelah 8 jam)' }, { value: '9', label: '9 jam (lembur dihitung setelah 9 jam)' }] });
-    var rounding = MklUI.checkboxField({ label: 'Bulatkan jam masuk ke jam shift', name: 'clockinRounding', checked: item.profile ? p.clockinRounding : true, hint: 'Sesuai tabel pembulatan di file gaji (misalnya masuk 07:50 dihitung 08:00).' });
-    var ot = MklUI.checkboxField({ label: 'Dapat upah lembur', name: 'overtimeEligible', checked: item.profile ? p.overtimeEligible : true, hint: 'Lembur = lama hadir di atas batas jam, minimal 15 menit, 1× tarif per jam.' });
+    var rounding = MklUI.checkboxField({ label: 'Bulatkan jam masuk ke jam shift', name: 'clockinRounding', checked: cur ? p.clockinRounding : true, hint: 'Sesuai tabel pembulatan di file gaji (misalnya masuk 07:50 dihitung 08:00).' });
+    var ot = MklUI.checkboxField({ label: 'Dapat upah lembur', name: 'overtimeEligible', checked: cur ? p.overtimeEligible : true, hint: 'Lembur = lama hadir di atas batas jam, minimal 15 menit, 1× tarif per jam.' });
     var shortfall = MklUI.checkboxField({ label: 'Potong jam kurang (khusus bulanan)', name: 'shortfallDeduction', checked: !!p.shortfallDeduction, hint: 'Pada hari hadir, jam di bawah jam wajib dipotong gaji ÷ 173 per jam.' });
     var req = MklUI.field({ label: 'Jam wajib per hari (menit, termasuk istirahat)', name: 'requiredMinutes', type: 'number', inputmode: 'numeric', value: p.requiredMinutes ? String(p.requiredMinutes) : '540', hint: '540 menit = 9 jam.' });
-    var eff = MklUI.field({ label: 'Berlaku mulai', name: 'effectiveFrom', type: 'date', required: true, value: MklUI.todayYmd(), hint: 'Periode yang berakhir sebelum tanggal ini tetap memakai tarif lama.' });
+    var eff = MklUI.field({ label: 'Berlaku mulai', name: 'effectiveFrom', type: 'date', required: true, value: lastEffective || MklUI.todayYmd(), hint: 'Periode yang berakhir sebelum tanggal ini tetap memakai tarif lama.' });
     var reason = MklUI.field({ label: 'Alasan', name: 'reason', required: true, multiline: true, rows: 2, maxLength: 300, placeholder: 'Contoh: tarif awal, kenaikan tarif' });
     var alertSlot = h('div');
     [payType.wrap, daily.wrap, monthly.wrap, cap.wrap, rounding.wrap, ot.wrap, shortfall.wrap, req.wrap, eff.wrap, reason.wrap, alertSlot].forEach(function (x) { form.appendChild(x); });
@@ -33,7 +36,7 @@
       req.wrap.hidden = harian || !shortfall.input.checked;
     }
     payType.input.addEventListener('change', function () {
-      if (!item.profile) ot.input.checked = payType.input.value === 'harian';
+      if (!cur) ot.input.checked = payType.input.value === 'harian';
       sync();
     });
     shortfall.input.addEventListener('change', sync);
@@ -60,6 +63,7 @@
       MklUI.setBusy(btn, true, 'Menyimpan...');
       MklApi.call('hr.payroll.saveProfile', payload).then(function (res) {
         MklUI.setBusy(btn, false);
+        if (res.success) lastEffective = payload.effectiveFrom;
         if (!res.success) { if (!MklUI.showFieldErrors(form, res)) alertSlot.appendChild(MklUI.alertBox('error', res.message)); return; }
         c.close();
         MklUI.toast(res.message, 'success');
@@ -119,6 +123,38 @@
     });
   }
 
+  function bulkEffectiveModal(ids, done) {
+    var form = h('form', { class: 'stack', novalidate: true });
+    var eff = MklUI.field({ label: 'Berlaku mulai (baru)', name: 'effectiveFrom', type: 'date', required: true, value: lastEffective || '', hint: 'Tarif dan aturan tidak berubah; hanya tanggal berlakunya. Untuk menghitung gaji periode lama, pilih tanggal sebelum awal periode itu (misalnya 1 Agustus untuk gaji September).' });
+    var reason = MklUI.field({ label: 'Alasan', name: 'reason', required: true, multiline: true, rows: 2, maxLength: 300, value: 'Tanggal berlaku saat input awal' });
+    var alertSlot = h('div');
+    [h('p', null, ids.length + ' karyawan dipilih. Yang diubah adalah profil gaji terakhir masing-masing.'), eff.wrap, reason.wrap, alertSlot].forEach(function (x) { form.appendChild(x); });
+    var ctl = MklUI.modal({ title: 'Ubah tanggal berlaku', content: form, actions: [
+      { label: 'Batal', onClick: function (c) { c.close(); } },
+      { label: 'Simpan', variant: 'primary', id: 'ok', onClick: submit }
+    ] });
+    form.addEventListener('submit', function (e) { e.preventDefault(); submit(ctl, ctl.buttons.ok); });
+    function submit(c, btn) {
+      MklUI.clearFieldErrors(form);
+      MklUI.clear(alertSlot);
+      MklUI.setBusy(btn, true, 'Menyimpan...');
+      MklApi.call('hr.payroll.bulkEffective', { employeeIds: ids, effectiveFrom: eff.input.value, reason: reason.input.value.trim() }).then(function (res) {
+        MklUI.setBusy(btn, false);
+        if (!res.success) { if (!MklUI.showFieldErrors(form, res)) alertSlot.appendChild(MklUI.alertBox('error', res.message)); return; }
+        lastEffective = eff.input.value;
+        c.close();
+        MklUI.toast(res.message, res.data.skipped.length ? 'warning' : 'success');
+        if (res.data.skipped.length) {
+          MklUI.modal({ title: 'Tidak diubah (' + res.data.skipped.length + ')', content: MklUI.table([
+            { label: 'Karyawan', render: function (x) { return x.fullName + ' (' + x.employeeId + ')'; } },
+            { label: 'Alasan', render: function (x) { return x.reason; } }
+          ], res.data.skipped, ''), actions: [{ label: 'Tutup', onClick: function (c2) { c2.close(); } }] });
+        }
+        done();
+      });
+    }
+  }
+
   MklNav.register('/profil-gaji', {
     title: 'Profil Gaji',
     perm: 'payroll.prepare',
@@ -133,21 +169,46 @@
           MklUI.clear(area);
           if (!res.success) { area.appendChild(MklUI.errorState(res, load)); return; }
           var d = res.data;
-          var missing = d.items.filter(function (i) { return !i.profile; }).length;
+          var missing = d.items.filter(function (i) { return !i.profile && !i.upcoming; }).length;
           if (missing) area.appendChild(MklUI.alertBox('warning', missing + ' karyawan aktif belum punya profil gaji dan tidak akan dihitung gajinya.'));
+          var selected = {};
+          var withProfile = d.items.filter(function (i) { return i.profile || i.upcoming; });
+          var bulkBtn = h('button', { class: 'btn btn-secondary btn-small', type: 'button', disabled: true }, 'Ubah Tanggal Berlaku (0)');
+          var allBox = h('input', { type: 'checkbox', id: 'sal-all' });
+          var boxes = [];
+          function refresh() {
+            var n = Object.keys(selected).length;
+            bulkBtn.textContent = 'Ubah Tanggal Berlaku (' + n + ')';
+            bulkBtn.disabled = !n;
+            allBox.checked = n > 0 && n === withProfile.length;
+          }
+          allBox.addEventListener('change', function () {
+            boxes.forEach(function (b) { b.box.checked = allBox.checked; if (allBox.checked) selected[b.id] = true; else delete selected[b.id]; });
+            refresh();
+          });
+          bulkBtn.addEventListener('click', function () { bulkEffectiveModal(Object.keys(selected), load); });
           area.appendChild(MklUI.card(null, [
+            withProfile.length ? h('div', { class: 'btn-row bulk-bar' }, h('label', { class: 'checkbox-inline', for: 'sal-all' }, allBox, ' Pilih semua yang punya profil'), bulkBtn) : null,
             h('div', { class: 'recap-table' }, MklUI.table([
+              { label: 'Pilih', className: 'col-check', render: function (i) {
+                if (!i.profile && !i.upcoming) return '';
+                var bx = h('input', { type: 'checkbox', 'aria-label': 'Pilih ' + i.fullName });
+                bx.addEventListener('change', function () { if (bx.checked) selected[i.employeeId] = true; else delete selected[i.employeeId]; refresh(); });
+                boxes.push({ id: i.employeeId, box: bx });
+                return bx;
+              } },
               { label: 'Nama', render: function (i) { return h('span', null, h('strong', null, i.fullName), h('br'), h('span', { class: 'muted small' }, i.employeeId + (i.positionName ? ' · ' + i.positionName : ''))); } },
-              { label: 'Jenis', render: function (i) { return i.profile ? i.profile.payTypeLabel : MklUI.badge('Belum diatur', 'warning'); } },
+              { label: 'Jenis', render: function (i) { return i.profile ? i.profile.payTypeLabel : (i.upcoming ? i.upcoming.payTypeLabel : MklUI.badge('Belum diatur', 'warning')); } },
               { label: 'Tarif / gaji', render: function (i) {
-                if (!i.profile) return '';
-                var p = i.profile;
+                if (!i.profile && !i.upcoming) return '';
+                var p = i.profile || i.upcoming;
                 return h('span', null, p.payType === 'harian' ? MklUI.fmtMoney(p.dailyRate) + ' / hari' : MklUI.fmtMoney(p.monthlySalary) + ' / bulan',
-                  i.upcoming ? h('span', { class: 'muted small' }, h('br'), 'Mulai ' + MklUI.fmtDate(i.upcoming.effectiveFrom) + ': ' + (i.upcoming.payType === 'harian' ? MklUI.fmtMoney(i.upcoming.dailyRate) : MklUI.fmtMoney(i.upcoming.monthlySalary))) : null);
+                  h('span', { class: 'muted small' }, h('br'), (i.profile ? 'berlaku sejak ' : 'mulai berlaku ') + MklUI.fmtDate(p.effectiveFrom)),
+                  i.profile && i.upcoming ? h('span', { class: 'muted small' }, h('br'), 'Mulai ' + MklUI.fmtDate(i.upcoming.effectiveFrom) + ': ' + (i.upcoming.payType === 'harian' ? MklUI.fmtMoney(i.upcoming.dailyRate) : MklUI.fmtMoney(i.upcoming.monthlySalary))) : null);
               } },
               { label: 'Aturan', render: function (i) {
-                if (!i.profile) return '';
-                var p = i.profile, parts = ['maks ' + p.paidHoursCap + ' jam'];
+                if (!i.profile && !i.upcoming) return '';
+                var p = i.profile || i.upcoming, parts = ['maks ' + p.paidHoursCap + ' jam'];
                 parts.push(p.clockinRounding ? 'jam masuk dibulatkan' : 'jam masuk asli');
                 parts.push(p.overtimeEligible ? 'dapat lembur' : 'tanpa lembur');
                 if (p.shortfallDeduction) parts.push('potong jam kurang dari ' + hoursText(p.requiredMinutes));
@@ -155,7 +216,7 @@
               } },
               { label: 'Rekening', render: function (i) { return i.bank ? h('span', { class: 'small' }, i.bank.bankName + ' ' + i.bank.accountMasked) : MklUI.badge('Belum ada', 'muted'); } },
               { label: 'Aksi', className: 'col-action', render: function (i) {
-                var a = h('button', { class: 'btn btn-secondary btn-small', type: 'button' }, i.profile ? 'Ubah Gaji' : 'Atur Gaji');
+                var a = h('button', { class: 'btn btn-secondary btn-small', type: 'button' }, i.profile || i.upcoming ? 'Ubah Gaji' : 'Atur Gaji');
                 a.addEventListener('click', function () { profileForm(i, load); });
                 var row = h('div', { class: 'btn-row' }, a);
                 if (d.canSeeBank) {
@@ -163,7 +224,7 @@
                   b.addEventListener('click', function () { bankForm(i, load); });
                   row.appendChild(b);
                 }
-                if (i.profile) {
+                if (i.profile || i.upcoming) {
                   var r = h('button', { class: 'btn btn-ghost btn-small', type: 'button' }, 'Riwayat');
                   r.addEventListener('click', function () { historyModal(i); });
                   row.appendChild(r);

@@ -512,3 +512,6 @@ fieldset[hidden] { display: none; }
 .warning-list { margin: 0; padding-left: 20px; }
 .warning-list li + li { margin-top: 4px; }
 .money-preview { margin: 4px 0 0; font-weight: 600; font-variant-numeric: tabular-nums; }
+.bulk-bar { align-items: center; margin-bottom: 10px; }
+.checkbox-inline { display: inline-flex; align-items: center; gap: 6px; font-size: 0.9375rem; }
+.col-check { width: 44px; }

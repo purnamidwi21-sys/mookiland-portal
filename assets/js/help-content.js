@@ -13,7 +13,7 @@
  * perm : null = semua pengguna; selain itu cukup salah satu permission
  */
 window.MklHelp = {
-  version: '0.9.0',
+  version: '0.9.1',
   updatedAt: '2026-10-28',
 
   topics: [
@@ -772,6 +772,7 @@ window.MklHelp = {
       result: 'Muncul pesan "Profil gaji ... disimpan, berlaku mulai ...: Rp... per hari". Cocokkan angkanya. Kolom Tarif / gaji dan Aturan di tabel terisi.',
       notes: [
         'Kenaikan tarif tidak menimpa tarif lama. Isi tanggal Berlaku mulai, maka periode yang berakhir sebelum tanggal itu tetap memakai tarif lama. Tekan Riwayat untuk melihat semua perubahan.',
+        'Untuk mengubah tanggal Berlaku mulai banyak karyawan sekaligus (misalnya setelah input awal), centang karyawannya atau Pilih semua yang punya profil, tekan Ubah Tanggal Berlaku, isi tanggal dan alasan, lalu Simpan. Tarifnya tidak berubah. Setelah itu tekan Hitung Ulang di periode gaji.',
         'Tanggal Berlaku mulai tidak boleh jatuh di periode yang sudah disetujui Direktur.',
         'Setiap perubahan tercatat di Audit Log payroll.'
       ]
