@@ -10,9 +10,15 @@
 
   function hoursText(min) { return min ? (Math.round(min / 6) / 10) + ' jam' : '-'; }
   var DEF_DIV = { harian: 8, bulanan: 173 };
+  function num(n) { return String(Math.round(n * 100) / 100).replace('.', ','); }
+  /** Rupiah dengan 2 desimal bila ada (Rp38.491,15). */
+  function money2(n) {
+    var c = Math.round(n * 100), frac = c % 100;
+    return MklUI.fmtMoney(Math.floor(c / 100)) + (frac ? ',' + (frac < 10 ? '0' : '') + frac : '');
+  }
   function hourlyText(p) {
-    var base = p.payType === 'harian' ? p.dailyRate : p.monthlySalary;
-    return 'per jam ' + MklUI.fmtMoney(Math.round(base / (p.hourlyDivisor || DEF_DIV[p.payType]))) + ' (÷' + (p.hourlyDivisor || DEF_DIV[p.payType]) + ')';
+    var base = p.payType === 'harian' ? p.dailyRate : p.monthlySalary, d = p.hourlyDivisor || DEF_DIV[p.payType];
+    return 'per jam ' + money2(base / d) + ' (÷' + num(d) + ')';
   }
 
   function profileForm(item, done) {
@@ -30,7 +36,8 @@
     var shortfall = MklUI.checkboxField({ label: 'Potong jam kurang (khusus bulanan)', name: 'shortfallDeduction', checked: !!p.shortfallDeduction, hint: 'Pada hari hadir, jam di bawah jam wajib dipotong gaji ÷ 173 per jam.' });
     var div = MklUI.field({ label: 'Tarif per jam = gaji ÷', name: 'hourlyDivisor', type: 'number', inputmode: 'numeric', required: true,
       value: String(p.hourlyDivisor || DEF_DIV[p.payType || 'harian']),
-      hint: 'Dipakai untuk upah per jam dan lembur. File gaji lama: harian ÷8 (ada yang ÷7), bulanan ÷173 atau ÷182.' });
+      hint: 'Dipakai untuk upah per jam dan lembur. Bulanan = jam kerja per hari × hari kerja per minggu × 4,33, misalnya 7 × 6 × 4,33 = 181,86 (file gaji lama: 182) atau 8 × 5 × 4,33 = 173,2 (file gaji lama: 173). Harian: biasanya 8. Boleh pakai 2 angka di belakang koma.' });
+    div.input.setAttribute('step', '0.01');
     var divPreview = h('div', { class: 'money-preview' });
     div.wrap.appendChild(divPreview);
     var req = MklUI.field({ label: 'Jam wajib per hari (menit, termasuk istirahat)', name: 'requiredMinutes', type: 'number', inputmode: 'numeric', value: p.requiredMinutes ? String(p.requiredMinutes) : '540', hint: '540 menit = 9 jam.' });
@@ -47,7 +54,7 @@
       shortfall.wrap.hidden = harian;
       req.wrap.hidden = harian || !shortfall.input.checked;
       var base = Number((harian ? daily : monthly).input.value || 0), d = Number(div.input.value || 0);
-      divPreview.textContent = base > 0 && d > 0 ? 'Tarif per jam: ' + MklUI.fmtMoney(Math.round(base / d)) : '';
+      divPreview.textContent = base > 0 && d > 0 ? 'Tarif per jam: ' + money2(base / d) : '';
     }
     payType.input.addEventListener('change', function () {
       if (!cur) ot.input.checked = payType.input.value === 'harian';
@@ -70,7 +77,7 @@
       var payload = {
         employeeId: item.employeeId, payType: payType.input.value, paidHoursCap: Number(cap.input.value), clockinRounding: rounding.input.checked,
         overtimeEligible: ot.input.checked, effectiveFrom: eff.input.value, reason: reason.input.value.trim(),
-        hourlyDivisor: Number(div.input.value || 0)
+        hourlyDivisor: Number(String(div.input.value || 0).replace(',', '.'))
       };
       if (harian) payload.dailyRate = Number(daily.input.value || 0);
       else {

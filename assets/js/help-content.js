@@ -13,7 +13,7 @@
  * perm : null = semua pengguna; selain itu cukup salah satu permission
  */
 window.MklHelp = {
-  version: '0.9.4',
+  version: '0.9.5',
   updatedAt: '2026-10-28',
 
   topics: [
@@ -763,7 +763,8 @@ window.MklHelp = {
         'Tekan Atur Gaji (atau Ubah Gaji) pada baris karyawan.',
         'Pilih Jenis gaji: Harian (dibayar per jam hadir) atau Bulanan (gaji tetap).',
         'Untuk harian, isi Tarif harian (Rp). Untuk bulanan, isi Gaji bulanan (Rp).',
-        'Isi Tarif per jam = gaji ÷: 8 untuk harian (atau 7 bila di file lama tarif per jamnya tarif harian ÷ 7), 173 atau 182 untuk bulanan, sesuai kolom Hourly Rate di sheet Summary file gaji lama. Di bawahnya tampil Tarif per jam dalam Rupiah.',
+        'Isi Tarif per jam = gaji ÷. Harian: biasanya 8. Bulanan: jam kerja per hari × hari kerja per minggu × 4,33. Contoh: kerja 8 jam termasuk istirahat (7 jam kerja), libur 1 hari = 7 × 6 × 4,33 = 181,86 (file gaji lama membulatkannya menjadi 182); kerja 9 jam termasuk istirahat (8 jam kerja), libur 2 hari = 8 × 5 × 4,33 = 173,2 (file gaji lama: 173). Boleh 2 angka di belakang koma. Di bawahnya tampil Tarif per jam dalam Rupiah.',
+        'Karyawan yang kerja 9 jam: pilih Jam dibayar per hari 9 jam, supaya lembur baru dihitung setelah 9 jam.',
         'Pilih Jam dibayar per hari (maksimal): 8 jam, atau 9 jam untuk karyawan yang memang dibayar 9 jam.',
         'Centang Bulatkan jam masuk ke jam shift bila jam masuk karyawan ini dibulatkan seperti di file gaji lama. Hapus centang untuk memakai jam masuk asli.',
         'Centang Dapat upah lembur bila karyawan ini dibayar lembur.',

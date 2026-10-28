@@ -14,6 +14,10 @@
   function statusBadge(p) { return MklUI.badge(p.statusLabel, STATUS_VARIANT[p.status] || 'muted'); }
   function hours(min) { return min ? (Math.round(min / 6) / 10).toString().replace('.', ',') + ' j' : '-'; }
   function stat(label, value, variant) { return T.stat(label, value, variant); }
+  function money2(n) {
+    var c = Math.round(n * 100), frac = c % 100;
+    return MklUI.fmtMoney(Math.floor(c / 100)) + (frac ? ',' + (frac < 10 ? '0' : '') + frac : '');
+  }
   /** Menit berpecahan -> "8:37:04" (jam:menit:detik), sama seperti file gaji lama. */
   function dur(min) {
     if (!min) return '-';
@@ -142,7 +146,7 @@
         body.appendChild(MklUI.infoList([
           ['Periode', d.period.label + ' (' + T.rangeLabel(d.period.startDate, d.period.endDate) + ')'],
           ['Profil gaji', p.payType ? p.payTypeLabel + ', ' + (p.payType === 'harian' ? MklUI.fmtMoney(p.dailyRate) + '/hari' : MklUI.fmtMoney(p.monthlySalary) + '/bulan') + ', maks ' + p.paidHoursCap + ' jam' + (p.clockinRounding ? ', jam masuk dibulatkan' : '') + (p.overtimeEligible ? ', dapat lembur' : ', tanpa lembur') : '-'],
-          ['Tarif per jam', d.stats.hourlyRate ? MklUI.fmtMoney(Math.round(d.stats.hourlyRate)) + ' (gaji ÷ ' + d.stats.hourlyDivisor + ')' : 'Hitung Ulang untuk menampilkan'],
+          ['Tarif per jam', d.stats.hourlyRate ? money2(d.stats.hourlyRate) + ' (gaji ÷ ' + String(Math.round(d.stats.hourlyDivisor * 100) / 100).replace('.', ',') + ')' : 'Hitung Ulang untuk menampilkan'],
           ['Hari hadir', String(d.stats.present || 0)],
           ['Lembur disetujui di Persetujuan', T.fmtMinutes(d.stats.approvedOvertimeMinutes || 0) + ' (sebagai pembanding; upah lembur dihitung dari jam absen)']
         ]));
