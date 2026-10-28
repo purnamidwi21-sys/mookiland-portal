@@ -94,6 +94,7 @@
     var kind = MklUI.selectField({ label: 'Jenis', name: 'kind', required: true, value: 'tambah', options: [{ value: 'tambah', label: 'Tambahan (bonus, insentif, uang makan, dll.)' }, { value: 'potong', label: 'Potongan (kasbon, kerusakan, dll.)' }] });
     var desc = MklUI.field({ label: 'Keterangan di slip', name: 'description', required: true, maxLength: 100, placeholder: 'Contoh: Bonus target, Kasbon Oktober' });
     var amount = MklUI.field({ label: 'Jumlah (Rp)', name: 'amount', type: 'number', inputmode: 'numeric', required: true });
+    MklUI.moneyPreview(amount);
     var reason = MklUI.field({ label: 'Alasan', name: 'reason', required: true, multiline: true, rows: 2, maxLength: 300, hint: 'Dicatat di audit log payroll.' });
     var alertSlot = h('div');
     [h('p', null, h('strong', null, item.fullName)), kind.wrap, desc.wrap, amount.wrap, reason.wrap, alertSlot].forEach(function (x) { form.appendChild(x); });
@@ -131,7 +132,7 @@
           ['Hari hadir', String(d.stats.present || 0)],
           ['Lembur disetujui di Persetujuan', T.fmtMinutes(d.stats.approvedOvertimeMinutes || 0) + ' (sebagai pembanding; upah lembur dihitung dari jam absen)']
         ]));
-        if (d.warnings.length) body.appendChild(MklUI.alertBox('warning', d.warnings.join(' ')));
+        if (d.warnings.length) body.appendChild(h('div', { class: 'alert alert-warning' }, h('ul', { class: 'warning-list' }, d.warnings.map(function (w) { return h('li', null, w); }))));
         var lineRows = d.lines.map(function (l) { return Object.assign({ state: l.removed ? 'removed' : '' }, l); })
           .concat((d.pendingAdjustments || []).map(function (j) { return Object.assign({ manual: true, state: 'pending' }, j); }));
         function removeButton(l) {
@@ -343,7 +344,22 @@
         if (p.status === 'draf' && p.decisionNote) area.appendChild(MklUI.alertBox('warning', 'Ditolak Direktur: ' + p.decisionNote + ' Perbaiki, lalu Hitung Ulang dan ajukan lagi.'));
         if (d.stale) area.appendChild(MklUI.alertBox('warning', 'Ada perubahan absensi, profil gaji, atau tambahan/potongan setelah gaji dihitung. Tekan Hitung Ulang sebelum mengajukan.'));
         else if (p.status === 'draf' && p.calcVersion) area.appendChild(MklUI.alertBox('info', 'Ada tambahan/potongan yang belum masuk ke total. Tekan Hitung Ulang.'));
-        if (d.periodWarnings.length) area.appendChild(MklUI.alertBox('warning', d.periodWarnings.join(' ')));
+        var missing = d.missingProfiles || [];
+        if (missing.length) {
+          var go = MklState.can('payroll.prepare') ? h('a', { class: 'btn btn-secondary btn-small', href: '#/profil-gaji' }, 'Buka Profil Gaji') : null;
+          area.appendChild(MklUI.card('Belum punya profil gaji (' + missing.length + ' karyawan)', [
+            h('p', { class: 'muted small' }, 'Karyawan berikut tidak ikut dihitung. Atur profil gajinya dengan tanggal Berlaku mulai paling lambat ' + MklUI.fmtDate(p.endDate) + ', lalu tekan Hitung Ulang.'),
+            h('div', { class: 'recap-table' }, MklUI.table([
+              { label: 'Employee ID', render: function (m) { return m.employeeId; } },
+              { label: 'Nama', render: function (m) { return m.fullName; } },
+              { label: 'Jabatan', render: function (m) { return m.positionName; } }
+            ], missing, '')),
+            go ? h('div', { class: 'form-actions' }, go) : null
+          ], 'card-warning'));
+        }
+        if (d.periodWarnings.length) {
+          area.appendChild(MklUI.card('Perlu dicek', h('ul', { class: 'warning-list' }, d.periodWarnings.map(function (w) { return h('li', null, w); })), 'card-warning'));
+        }
 
         if (!p.calcVersion) {
           area.appendChild(MklUI.card(null, MklUI.emptyState(f.canCalculate

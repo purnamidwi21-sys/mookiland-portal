@@ -13,7 +13,7 @@
  * perm : null = semua pengguna; selain itu cukup salah satu permission
  */
 window.MklHelp = {
-  version: '0.8.2',
+  version: '0.8.4',
   updatedAt: '2026-10-28',
 
   topics: [
@@ -753,7 +753,7 @@ window.MklHelp = {
         'Khusus bulanan: centang Potong jam kurang bila jam kurang dari jam wajib dipotong, lalu isi Jam wajib per hari (menit, termasuk istirahat), misalnya 540 untuk 9 jam.',
         'Isi Berlaku mulai dan Alasan, lalu tekan Simpan.'
       ],
-      result: 'Muncul pesan "Profil gaji ... disimpan, berlaku mulai ...". Kolom Tarif / gaji dan Aturan di tabel terisi.',
+      result: 'Muncul pesan "Profil gaji ... disimpan, berlaku mulai ...: Rp... per hari". Cocokkan angkanya. Kolom Tarif / gaji dan Aturan di tabel terisi.',
       notes: [
         'Kenaikan tarif tidak menimpa tarif lama. Isi tanggal Berlaku mulai, maka periode yang berakhir sebelum tanggal itu tetap memakai tarif lama. Tekan Riwayat untuk melihat semua perubahan.',
         'Tanggal Berlaku mulai tidak boleh jatuh di periode yang sudah disetujui Direktur.',

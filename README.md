@@ -25,6 +25,8 @@ untuk kenyamanan; server memeriksa ulang setiap permintaan.
 
 ## Versi
 
+- 0.8.4 — Kolom angka aman dari gulir mouse/trackpad; tampilan Rupiah saat mengetik tarif/gaji/jumlah.
+- 0.8.3 — Penggajian: tabel karyawan tanpa profil gaji, peringatan sebagai daftar.
 - 0.8.2 — Hapus data karyawan ganda/contoh (HR), pesan Hubungkan ke Karyawan lebih jelas.
 - 0.8.1 — Lengkapi Data Diri di Profil Saya (lahir, jenis kelamin, nomor KTP, foto KTP) dengan pemeriksaan HR di Persetujuan.
 - 0.8.0 — Tahap 4a: profil gaji (harian/bulanan, tarif berlaku mulai, aturan jam), rekening bank, periode gaji 27–26, hitung gaji dari absensi (rumus file gaji lama), tambahan/potongan manual, pengajuan ke Direktur, persetujuan, slip gaji PDF, daftar transfer, Slip Gaji Saya.

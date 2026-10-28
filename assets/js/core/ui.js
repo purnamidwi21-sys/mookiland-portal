@@ -175,6 +175,10 @@
       attrs.type = opts.type || 'text';
       attrs.value = opts.value || null;
       input = h('input', attrs);
+      if (attrs.type === 'number') {
+        // Mencegah angka berubah tanpa sengaja saat menggulir halaman (roda mouse/trackpad).
+        input.addEventListener('wheel', function (e) { if (doc.activeElement === input) { e.preventDefault(); input.blur(); } }, { passive: false });
+      }
     }
     var wrap = h('div', { class: 'field' },
       h('label', { for: id }, opts.label, opts.required ? h('span', { class: 'req', 'aria-hidden': 'true' }, ' *') : null),
@@ -425,6 +429,17 @@
     });
   }
 
+  /** Menampilkan nilai rupiah di bawah kolom angka saat diketik, agar salah ketik mudah terlihat. */
+  function moneyPreview(f) {
+    var p = h('p', { class: 'money-preview' });
+    function upd() { var v = String(f.input.value || '').replace(/\D/g, ''); p.textContent = v ? '= ' + fmtMoney(Number(v)) : ''; }
+    f.input.addEventListener('input', upd);
+    var err = f.wrap.querySelector('.field-error');
+    f.wrap.insertBefore(p, err);
+    upd();
+    return f;
+  }
+
   /** Rupiah tanpa desimal: 1500000 -> "Rp1.500.000". */
   function fmtMoney(n) {
     if (n === null || n === undefined || n === '') return '-';
@@ -487,7 +502,7 @@
     field: field, passwordField: passwordField, selectField: selectField, checkboxField: checkboxField, fileField: fileField,
     clearFieldErrors: clearFieldErrors, showFieldErrors: showFieldErrors,
     modal: modal, confirmAction: confirmAction,
-    table: table, pagination: pagination, copyButton: copyButton, tempPasswordModal: tempPasswordModal,
+    table: table, pagination: pagination, copyButton: copyButton, tempPasswordModal: tempPasswordModal, moneyPreview: moneyPreview,
     pageHeader: pageHeader, card: card, infoList: infoList
   });
 })(window);
