@@ -13,7 +13,7 @@
  * perm : null = semua pengguna; selain itu cukup salah satu permission
  */
 window.MklHelp = {
-  version: '0.9.12',
+  version: '0.9.13',
   updatedAt: '2026-10-28',
 
   topics: [
@@ -801,7 +801,7 @@ window.MklHelp = {
       id: 'payroll-aturan', guide: 'payroll', perm: ['payroll.prepare'], title: 'Cara gaji dihitung',
       intro: 'Perhitungan mengikuti rumus file gaji Mookiland yang lama. Rincian per hari bisa dilihat di tombol Rincian pada setiap karyawan.',
       steps: [
-        'Jam masuk dibulatkan (jika dicentang di profil): sebelum 07:00 → 07:00; sampai 08:30 → 08:00; sampai 10:30 → jam asli; sampai 11:20 → 11:00; sampai 13:05 → 13:00; setelah itu → 13:00.',
+        'Jam masuk dibulatkan (jika dicentang di profil): sampai 07:00 → 07:00; 07:01 sampai 08:30 → 08:00; sampai 10:30 → jam asli; sampai 11:20 → 11:00; sampai 13:05 → 13:00; setelah itu → 13:00. Batas dihitung per menit, detik diabaikan: datang 07:00:53 tetap 07:00.',
         'Lama hadir = jam pulang − jam masuk (setelah dibulatkan), termasuk istirahat. Jika Raptor mencatat istirahat dan istirahatnya lebih pendek dari 50 menit, sisa sampai 60 menit ditambahkan.',
         'Tarif per jam = tarif harian atau gaji bulanan ÷ angka di profil gaji (bawaan: harian 8, bulanan 173).',
         'Harian: jam dibayar = jam penuh lama hadir, paling banyak 8 (atau 9). Jika kurang dari 8 jam, dibayar sesuai lama hadir sampai detik.',
