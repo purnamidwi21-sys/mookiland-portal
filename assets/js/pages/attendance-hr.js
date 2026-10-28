@@ -15,6 +15,83 @@
 
   // ================================================================== Rekap Absensi
 
+  /** Riwayat impor Raptor (dengan Hapus Data). Dipakai di Rekap Absensi dan halaman Impor. */
+  function importHistory(container, onChanged, opts) {
+    opts = opts || {};
+    MklApi.call('hr.attendance.imports', {}).then(function (res) {
+      if (!res.success) return;
+      MklUI.clear(container);
+      if (!res.data.items.length && opts.emptyText) container.appendChild(MklUI.card(opts.title || 'Riwayat impor', h('p', { class: 'muted' }, opts.emptyText)));
+      if (res.data.items.length) {
+        container.appendChild(MklUI.card(opts.title || 'Riwayat impor', MklUI.table([
+          { label: 'Waktu', render: function (r) { return MklUI.fmtDateTime(r.importedAt); } },
+          { label: 'Periode', render: function (r) { return T.rangeLabel(r.periodStart, r.periodEnd); } },
+          { label: 'Hari di file', render: function (r) { return String(r.rowsTotal); } },
+          { label: 'Tersimpan', render: function (r) { return String(r.rowsOk); } },
+          { label: 'Dilewati', render: function (r) { return String(r.rowsSkipped); } },
+          { label: 'Oleh', render: function (r) { return r.importedBy; } },
+          { label: 'Status', render: function (r) { return r.deleted ? h('span', null, MklUI.badge('Dihapus', 'muted'), h('br'), h('span', { class: 'muted small' }, MklUI.fmtDateTime(r.deletedAt))) : MklUI.badge('Tersimpan', 'success'); } },
+          { label: 'Aksi', className: 'col-action', render: function (r) {
+            if (r.deleted) return '';
+            var b = h('button', { class: 'btn btn-ghost btn-small', type: 'button' }, 'Hapus Data');
+            b.addEventListener('click', function () { deleteImportModal(r, b, onChanged); });
+            return b;
+          } }
+        ], res.data.items, '')));
+        container.appendChild(h('p', { class: 'muted small' }, 'Salah unggah atau ingin mengunggah ulang? Tekan Hapus Data pada impor itu, lalu unggah file yang benar.'));
+      }
+      if (opts.mappings && res.data.mappings.length) {
+        container.appendChild(MklUI.card('Pasangan nomor Raptor', [
+          MklUI.table([
+            { label: 'Nomor Raptor', render: function (m) { return h('code', null, m.empNo); } },
+            { label: 'Karyawan', render: function (m) { return m.ignored ? MklUI.badge('Diabaikan', 'muted') : m.fullName + ' (' + m.employeeId + ')'; } }
+          ], res.data.mappings, ''),
+          h('p', { class: 'muted small' }, 'Untuk mengubah pasangan, unggah file Raptor lalu pilih karyawan yang benar di langkah 2.')
+        ]));
+      }
+    });
+  }
+
+  // Hapus absensi dari satu impor supaya file bisa diunggah ulang.
+  function deleteImportModal(r, trigger, done) {
+    MklUI.setBusy(trigger, true, 'Memeriksa...');
+    MklApi.call('hr.attendance.importDelete', { importId: r.importId, dryRun: true }).then(function (res) {
+      MklUI.setBusy(trigger, false);
+      if (!res.success) { MklUI.toast(res.message, 'error'); return; }
+      var s = res.data;
+      var form = h('form', { class: 'stack', novalidate: true });
+      var inc = MklUI.checkboxField({ label: 'Hapus juga ' + s.correctedDays + ' hari yang sudah dikoreksi HR', name: 'includeCorrected', checked: false,
+        hint: 'Biasanya tidak perlu. Koreksi HR (misalnya jam pulang yang diperbaiki) akan hilang dan harus diulang setelah unggah ulang.' });
+      var reason = MklUI.field({ label: 'Alasan', name: 'reason', required: true, multiline: true, rows: 2, maxLength: 300, placeholder: 'Contoh: salah file, unggah ulang dengan file yang benar' });
+      var alertSlot = h('div');
+      var count = h('strong');
+      function upd() { count.textContent = (inc.input.checked ? s.raptorDays + s.correctedDays : s.raptorDays) + ' hari absensi dari Raptor'; }
+      inc.input.addEventListener('change', upd); upd();
+      [h('p', null, 'Rentang ' + T.rangeLabel(s.from, s.to) + ': ', count, ' akan dihapus. Absen dari aplikasi (GPS) dan catatan HR yang bukan dari Raptor tidak dihapus.'),
+        s.correctedDays ? inc.wrap : null, reason.wrap,
+        h('p', { class: 'muted small' }, 'Setelah dihapus, unggah ulang file Raptor, lalu tekan Hitung Ulang di periode gaji. Penghapusan tercatat di audit log.'), alertSlot
+      ].forEach(function (x) { if (x) form.appendChild(x); });
+      var ctl = MklUI.modal({ title: 'Hapus data impor Raptor', content: form, actions: [
+        { label: 'Batal', onClick: function (c) { c.close(); } },
+        { label: 'Hapus Data Absensi', variant: 'danger', id: 'ok', onClick: submit }
+      ] });
+      form.addEventListener('submit', function (e) { e.preventDefault(); submit(ctl, ctl.buttons.ok); });
+      function submit(c, btn) {
+        MklUI.clearFieldErrors(form);
+        MklUI.clear(alertSlot);
+        MklUI.setBusy(btn, true, 'Menghapus...');
+        MklApi.call('hr.attendance.importDelete', { importId: r.importId, includeCorrected: inc.input.checked, reason: reason.input.value.trim() }).then(function (x) {
+          MklUI.setBusy(btn, false);
+          if (!x.success) { if (!MklUI.showFieldErrors(form, x)) alertSlot.appendChild(MklUI.alertBox('error', x.message)); return; }
+          c.close();
+          MklUI.toast(x.message, 'success');
+          done();
+        });
+      }
+    });
+  }
+
+
   MklNav.register('/absensi', {
     title: 'Rekap Absensi',
     perm: ['attendance.read.all', 'attendance.read.team'],
@@ -34,6 +111,12 @@
       root.appendChild(area);
       root.appendChild(detail);
       var range = null;
+      var histArea = h('div');
+      if (MklState.can('attendance.import')) {
+        root.appendChild(histArea);
+        var refreshHist = function () { importHistory(histArea, function () { refreshHist(); if (range) load(); }, { title: 'Riwayat impor Raptor', emptyText: 'Belum ada file Raptor yang diimpor. Tekan Impor dari Raptor di kanan atas.' }); };
+        refreshHist();
+      }
 
       filter.addEventListener('submit', function (e) { e.preventDefault(); load(); });
 
@@ -197,75 +280,7 @@
         ]));
         var hist = h('div');
         area.appendChild(hist);
-        MklApi.call('hr.attendance.imports', {}).then(function (res) {
-          if (!res.success) return;
-          if (res.data.items.length) {
-            hist.appendChild(MklUI.card('Riwayat impor', MklUI.table([
-              { label: 'Waktu', render: function (r) { return MklUI.fmtDateTime(r.importedAt); } },
-              { label: 'Periode', render: function (r) { return T.rangeLabel(r.periodStart, r.periodEnd); } },
-              { label: 'Hari di file', render: function (r) { return String(r.rowsTotal); } },
-              { label: 'Tersimpan', render: function (r) { return String(r.rowsOk); } },
-              { label: 'Dilewati', render: function (r) { return String(r.rowsSkipped); } },
-              { label: 'Oleh', render: function (r) { return r.importedBy; } },
-              { label: 'Status', render: function (r) { return r.deleted ? h('span', null, MklUI.badge('Dihapus', 'muted'), h('br'), h('span', { class: 'muted small' }, MklUI.fmtDateTime(r.deletedAt))) : MklUI.badge('Tersimpan', 'success'); } },
-              { label: 'Aksi', className: 'col-action', render: function (r) {
-                if (r.deleted) return '';
-                var b = h('button', { class: 'btn btn-ghost btn-small', type: 'button' }, 'Hapus Data');
-                b.addEventListener('click', function () { deleteImportModal(r, b); });
-                return b;
-              } }
-            ], res.data.items, '')));
-            hist.appendChild(h('p', { class: 'muted small' }, 'Salah unggah atau ingin mengunggah ulang? Tekan Hapus Data pada impor itu, lalu unggah file yang benar.'));
-          }
-          if (res.data.mappings.length) {
-            hist.appendChild(MklUI.card('Pasangan nomor Raptor', [
-              MklUI.table([
-                { label: 'Nomor Raptor', render: function (m) { return h('code', null, m.empNo); } },
-                { label: 'Karyawan', render: function (m) { return m.ignored ? MklUI.badge('Diabaikan', 'muted') : m.fullName + ' (' + m.employeeId + ')'; } }
-              ], res.data.mappings, ''),
-              h('p', { class: 'muted small' }, 'Untuk mengubah pasangan, unggah file Raptor lalu pilih karyawan yang benar di langkah 2.')
-            ]));
-          }
-        });
-      }
-
-      // Hapus absensi dari satu impor supaya file bisa diunggah ulang.
-      function deleteImportModal(r, trigger) {
-        MklUI.setBusy(trigger, true, 'Memeriksa...');
-        MklApi.call('hr.attendance.importDelete', { importId: r.importId, dryRun: true }).then(function (res) {
-          MklUI.setBusy(trigger, false);
-          if (!res.success) { MklUI.toast(res.message, 'error'); return; }
-          var s = res.data;
-          var form = h('form', { class: 'stack', novalidate: true });
-          var inc = MklUI.checkboxField({ label: 'Hapus juga ' + s.correctedDays + ' hari yang sudah dikoreksi HR', name: 'includeCorrected', checked: false,
-            hint: 'Biasanya tidak perlu. Koreksi HR (misalnya jam pulang yang diperbaiki) akan hilang dan harus diulang setelah unggah ulang.' });
-          var reason = MklUI.field({ label: 'Alasan', name: 'reason', required: true, multiline: true, rows: 2, maxLength: 300, placeholder: 'Contoh: salah file, unggah ulang dengan file yang benar' });
-          var alertSlot = h('div');
-          var count = h('strong');
-          function upd() { count.textContent = (inc.input.checked ? s.raptorDays + s.correctedDays : s.raptorDays) + ' hari absensi dari Raptor'; }
-          inc.input.addEventListener('change', upd); upd();
-          [h('p', null, 'Rentang ' + T.rangeLabel(s.from, s.to) + ': ', count, ' akan dihapus. Absen dari aplikasi (GPS) dan catatan HR yang bukan dari Raptor tidak dihapus.'),
-            s.correctedDays ? inc.wrap : null, reason.wrap,
-            h('p', { class: 'muted small' }, 'Setelah dihapus, unggah ulang file Raptor, lalu tekan Hitung Ulang di periode gaji. Penghapusan tercatat di audit log.'), alertSlot
-          ].forEach(function (x) { if (x) form.appendChild(x); });
-          var ctl = MklUI.modal({ title: 'Hapus data impor Raptor', content: form, actions: [
-            { label: 'Batal', onClick: function (c) { c.close(); } },
-            { label: 'Hapus Data Absensi', variant: 'danger', id: 'ok', onClick: submit }
-          ] });
-          form.addEventListener('submit', function (e) { e.preventDefault(); submit(ctl, ctl.buttons.ok); });
-          function submit(c, btn) {
-            MklUI.clearFieldErrors(form);
-            MklUI.clear(alertSlot);
-            MklUI.setBusy(btn, true, 'Menghapus...');
-            MklApi.call('hr.attendance.importDelete', { importId: r.importId, includeCorrected: inc.input.checked, reason: reason.input.value.trim() }).then(function (x) {
-              MklUI.setBusy(btn, false);
-              if (!x.success) { if (!MklUI.showFieldErrors(form, x)) alertSlot.appendChild(MklUI.alertBox('error', x.message)); return; }
-              c.close();
-              MklUI.toast(x.message, 'success');
-              showPick();
-            });
-          }
-        });
+        importHistory(hist, showPick, { mappings: true });
       }
 
       // ------------------------------------------------------------ langkah 2
