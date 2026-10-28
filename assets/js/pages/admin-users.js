@@ -369,7 +369,12 @@
         MklApi.call('admin.users.unlinkedEmployees', {}).then(function (res) {
           MklUI.clear(body);
           if (!res.success) { body.appendChild(MklUI.alertBox('error', res.message)); return; }
-          if (!res.data.items.length) { body.appendChild(MklUI.alertBox('info', 'Semua karyawan aktif sudah terhubung dengan akun. Data karyawan ditambahkan oleh HR.')); return; }
+          if (!res.data.items.length) {
+            body.appendChild(MklUI.alertBox('info', res.data.totalActive === 0
+              ? 'Belum ada data karyawan aktif. HR perlu mengimpor atau menambah data karyawan dulu di menu Karyawan.'
+              : 'Semua karyawan aktif sudah terhubung dengan akun. Jika data karyawan ini ganda, HR bisa menghapus data gandanya di halaman karyawan.'));
+            return;
+          }
           ctl.close();
           var form = h('form', { class: 'stack', novalidate: true });
           var emp = MklUI.selectField({ label: 'Karyawan', name: 'employeeId', required: true, value: '', options: [{ value: '', label: 'Pilih karyawan' }].concat(res.data.items.map(function (e) {

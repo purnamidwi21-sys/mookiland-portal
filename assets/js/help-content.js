@@ -13,8 +13,8 @@
  * perm : null = semua pengguna; selain itu cukup salah satu permission
  */
 window.MklHelp = {
-  version: '0.8.1',
-  updatedAt: '2026-10-26',
+  version: '0.8.2',
+  updatedAt: '2026-10-28',
 
   topics: [
     // ------------------------------------------------------------ semua pengguna
@@ -386,6 +386,23 @@ window.MklHelp = {
         'Tekan Ubah Data untuk melengkapi data umum, atau Ubah Data Identitas untuk nomor KTP/NPWP.'
       ],
       result: 'Setelah semua dilengkapi, kolom Kelengkapan menampilkan "Lengkap".'
+    },
+    {
+      id: 'hr-hapus-ganda', guide: 'hr', perm: ['employee.manage'], title: 'Menghapus data karyawan ganda atau data contoh',
+      intro: 'Data ganda (misalnya karena impor dua kali) atau data contoh yang belum pernah dipakai bisa dihapus permanen, termasuk akun Staff-nya.',
+      steps: [
+        'Buka menu Karyawan, lalu bandingkan baris yang ganda. Tentukan mana yang dipakai dan catat Employee ID-nya.',
+        'Tekan Kelola pada data yang akan dihapus (bukan yang dipakai).',
+        'Gulir ke bawah, di kotak Hapus data karyawan tekan Hapus Data Karyawan.',
+        'Isi Alasan, misalnya "Data ganda dari impor; yang dipakai MKL-0003", lalu tekan Hapus Permanen.'
+      ],
+      result: 'Muncul pesan "Data ... dihapus." dan baris itu hilang dari daftar Karyawan. Jika data itu punya akun Staff, akunnya ikut dihapus dan tidak bisa masuk lagi.',
+      notes: [
+        'Sistem menolak penghapusan jika data itu sudah punya absensi, cuti, lembur, kontrak, BPJS, dokumen, profil gaji, rekening, atau menjadi atasan langsung karyawan lain. Pesannya menyebut apa saja yang masih ada.',
+        'Jika akunnya memegang role sensitif (misalnya Manajer Operasional), minta Direktur memutus hubungan akun dulu di menu Pengguna.',
+        'Karyawan yang pernah bekerja jangan dihapus; gunakan Ubah Status (misalnya Mengundurkan diri).',
+        'Penghapusan tercatat di Audit Log.'
+      ]
     },
     {
       id: 'hr-tambah', guide: 'hr', perm: ['employee.manage'], title: 'Menambah satu karyawan',

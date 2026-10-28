@@ -442,6 +442,32 @@
           { label: 'Menjadi', render: function (x) { return x.to; } },
           { label: 'Alasan', render: function (x) { return x.reason; } }
         ], v.history || [], 'Belum ada riwayat.')));
+
+        if (v.can.deleteRecord) container.appendChild(deleteCard(v));
+      }
+
+      function deleteCard(v) {
+        var b = h('button', { class: 'btn btn-danger btn-small', type: 'button' }, 'Hapus Data Karyawan');
+        b.addEventListener('click', function () {
+          MklUI.confirmAction({
+            title: 'Hapus data ' + v.fullName,
+            message: h('div', { class: 'stack' },
+              h('p', null, 'Data ', h('strong', null, v.fullName + ' (' + v.employeeId + ')'), ' akan dihapus permanen' + (v.account ? ', termasuk akun ' + v.account.username + '.' : '.')),
+              h('p', { class: 'muted small' }, 'Sistem menolak jika data ini sudah punya absensi, cuti, lembur, kontrak, BPJS, dokumen, profil gaji, atau rekening. Employee ID ' + v.employeeId + ' tidak dipakai lagi.')),
+            confirmLabel: 'Hapus Permanen', danger: true, reasonLabel: 'Alasan', reasonRequired: true,
+            reasonHint: 'Contoh: Data ganda dari impor; data yang benar ' + 'MKL-xxxx.',
+            onConfirm: function (reason) {
+              return MklApi.call('hr.employees.deleteRecord', { employeeId: v.employeeId, reason: reason }).then(function (r) {
+                if (r.success) { MklUI.toast(r.message, 'success'); MklNav.go('/karyawan'); }
+                return r;
+              });
+            }
+          });
+        });
+        return MklUI.card('Hapus data karyawan', [
+          h('p', null, 'Hanya untuk data ganda atau data contoh yang belum pernah dipakai. Jika karyawan ini memang pernah bekerja, gunakan Ubah Status (misalnya Mengundurkan diri).'),
+          h('div', { class: 'form-actions' }, b)
+        ]);
       }
 
       function sensitiveCard(v) {
