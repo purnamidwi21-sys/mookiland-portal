@@ -14,6 +14,12 @@
   function statusBadge(p) { return MklUI.badge(p.statusLabel, STATUS_VARIANT[p.status] || 'muted'); }
   function hours(min) { return min ? (Math.round(min / 6) / 10).toString().replace('.', ',') + ' j' : '-'; }
   function stat(label, value, variant) { return T.stat(label, value, variant); }
+  /** Menit berpecahan -> "8:37:04" (jam:menit:detik), sama seperti file gaji lama. */
+  function dur(min) {
+    if (!min) return '-';
+    var t = Math.round(min * 60), two = function (n) { return (n < 10 ? '0' : '') + n; };
+    return Math.floor(t / 3600) + ':' + two(Math.floor(t / 60) % 60) + ':' + two(t % 60);
+  }
 
   /** Perkiraan tanggal periode di layar (server yang menentukan). */
   function periodPreview(ym) {
@@ -126,9 +132,17 @@
         MklUI.clear(body);
         if (!res.success) { body.appendChild(MklUI.alertBox('error', res.message)); return; }
         var d = res.data, p = d.profile || {};
+        var final = d.period.status === 'disetujui' || d.period.status === 'dibayar';
+        var bRin = h('button', { class: 'btn btn-secondary btn-small', type: 'button' }, 'Unduh Rincian (PDF)');
+        bRin.addEventListener('click', function () { download('hr.payroll.detailDownload', { periodId: periodId, employeeId: item.employeeId }, bRin); });
+        var bSlip = h('button', { class: 'btn btn-secondary btn-small', type: 'button' }, d.payslipIssued ? 'Unduh Slip Gaji' : 'Unduh Slip (DRAF)');
+        bSlip.addEventListener('click', function () { download('hr.payroll.slipDownload', { periodId: periodId, employeeId: item.employeeId }, bSlip); });
+        body.appendChild(h('div', { class: 'btn-row' }, bRin, MklState.canAny(['payroll.prepare', 'payslip.read.all']) ? bSlip : null));
+        if (!final) body.appendChild(h('p', { class: 'muted small' }, 'Periode belum disetujui Direktur: rincian dan slip bertanda DRAF dan bisa berubah. Jangan kirim slip DRAF ke karyawan.'));
         body.appendChild(MklUI.infoList([
           ['Periode', d.period.label + ' (' + T.rangeLabel(d.period.startDate, d.period.endDate) + ')'],
           ['Profil gaji', p.payType ? p.payTypeLabel + ', ' + (p.payType === 'harian' ? MklUI.fmtMoney(p.dailyRate) + '/hari' : MklUI.fmtMoney(p.monthlySalary) + '/bulan') + ', maks ' + p.paidHoursCap + ' jam' + (p.clockinRounding ? ', jam masuk dibulatkan' : '') + (p.overtimeEligible ? ', dapat lembur' : ', tanpa lembur') : '-'],
+          ['Tarif per jam', d.stats.hourlyRate ? MklUI.fmtMoney(Math.round(d.stats.hourlyRate)) + ' (gaji ÷ ' + d.stats.hourlyDivisor + ')' : 'Hitung Ulang untuk menampilkan'],
           ['Hari hadir', String(d.stats.present || 0)],
           ['Lembur disetujui di Persetujuan', T.fmtMinutes(d.stats.approvedOvertimeMinutes || 0) + ' (sebagai pembanding; upah lembur dihitung dari jam absen)']
         ]));
@@ -175,13 +189,14 @@
           { label: 'Tanggal', render: function (x) { return T.dayLabel(x.date); } },
           { label: 'Masuk', render: function (x) { return x.adjustedIn && x.adjustedIn !== x.clockIn ? h('span', null, x.clockIn, h('br'), h('span', { class: 'muted small' }, 'dihitung ' + x.adjustedIn)) : x.clockIn; } },
           { label: 'Pulang', render: function (x) { return x.clockOut || '–'; } },
-          { label: 'Istirahat', render: function (x) { return x.breakMinutes ? x.breakMinutes + ' m' : '-'; } },
-          { label: 'Lama hadir', render: function (x) { return x.spanMinutes ? T.fmtMinutes(x.spanMinutes) : '-'; } },
-          { label: 'Dibayar', render: function (x) { return x.pay ? h('span', null, T.fmtMinutes(x.paidMinutes), h('br'), h('span', { class: 'muted small' }, MklUI.fmtMoney(x.pay))) : '-'; } },
-          { label: 'Lembur', render: function (x) { return x.overtimeMinutes ? h('span', null, T.fmtMinutes(x.overtimeMinutes), h('br'), h('span', { class: 'muted small' }, MklUI.fmtMoney(x.overtimePay))) : '-'; } },
-          { label: 'Jam kurang', render: function (x) { return x.shortMinutes ? h('span', null, T.fmtMinutes(x.shortMinutes), h('br'), h('span', { class: 'muted small' }, '− ' + MklUI.fmtMoney(x.shortDeduction))) : '-'; } },
+          { label: 'Istirahat', render: function (x) { return x.breakMinutes ? dur(x.breakMinutes) : '-'; } },
+          { label: 'Lama hadir', render: function (x) { return x.spanMinutes ? dur(x.spanMinutes) : '-'; } },
+          { label: 'Dibayar', render: function (x) { return x.pay ? h('span', null, dur(x.paidMinutes), h('br'), h('span', { class: 'muted small' }, MklUI.fmtMoney(x.pay))) : '-'; } },
+          { label: 'Lembur', render: function (x) { return x.overtimeMinutes ? h('span', null, dur(x.overtimeMinutes), h('br'), h('span', { class: 'muted small' }, MklUI.fmtMoney(x.overtimePay))) : '-'; } },
+          { label: 'Jam kurang', render: function (x) { return x.shortMinutes ? h('span', null, dur(x.shortMinutes), h('br'), h('span', { class: 'muted small' }, '− ' + MklUI.fmtMoney(x.shortDeduction))) : '-'; } },
           { label: 'Catatan', render: function (x) { return x.note ? h('span', { class: 'small' }, x.note) : ''; } }
         ], d.days, 'Tidak ada absensi pada periode ini.')));
+        body.appendChild(h('p', { class: 'muted small' }, 'Durasi ditulis jam:menit:detik.'));
       });
     }
     load();

@@ -13,7 +13,7 @@
  * perm : null = semua pengguna; selain itu cukup salah satu permission
  */
 window.MklHelp = {
-  version: '0.9.3',
+  version: '0.9.4',
   updatedAt: '2026-10-28',
 
   topics: [
@@ -763,6 +763,7 @@ window.MklHelp = {
         'Tekan Atur Gaji (atau Ubah Gaji) pada baris karyawan.',
         'Pilih Jenis gaji: Harian (dibayar per jam hadir) atau Bulanan (gaji tetap).',
         'Untuk harian, isi Tarif harian (Rp). Untuk bulanan, isi Gaji bulanan (Rp).',
+        'Isi Tarif per jam = gaji ÷: 8 untuk harian (atau 7 bila di file lama tarif per jamnya tarif harian ÷ 7), 173 atau 182 untuk bulanan, sesuai kolom Hourly Rate di sheet Summary file gaji lama. Di bawahnya tampil Tarif per jam dalam Rupiah.',
         'Pilih Jam dibayar per hari (maksimal): 8 jam, atau 9 jam untuk karyawan yang memang dibayar 9 jam.',
         'Centang Bulatkan jam masuk ke jam shift bila jam masuk karyawan ini dibulatkan seperti di file gaji lama. Hapus centang untuk memakai jam masuk asli.',
         'Centang Dapat upah lembur bila karyawan ini dibayar lembur.',
@@ -797,8 +798,10 @@ window.MklHelp = {
       steps: [
         'Jam masuk dibulatkan (jika dicentang di profil): sebelum 07:00 → 07:00; sampai 08:30 → 08:00; sampai 10:30 → jam asli; sampai 11:20 → 11:00; sampai 13:05 → 13:00; setelah itu → 13:00.',
         'Lama hadir = jam pulang − jam masuk (setelah dibulatkan), termasuk istirahat. Jika Raptor mencatat istirahat dan istirahatnya lebih pendek dari 50 menit, sisa sampai 60 menit ditambahkan.',
-        'Harian: tarif per jam = tarif harian ÷ 8. Jam dibayar = jam penuh lama hadir, paling banyak 8 (atau 9). Jika kurang dari 8 jam, dibayar sesuai menit hadir.',
-        'Lembur = lama hadir di atas 8 (atau 9) jam, minimal 15 menit, dibayar 1× tarif per jam.',
+        'Tarif per jam = tarif harian atau gaji bulanan ÷ angka di profil gaji (bawaan: harian 8, bulanan 173).',
+        'Harian: jam dibayar = jam penuh lama hadir, paling banyak 8 (atau 9). Jika kurang dari 8 jam, dibayar sesuai lama hadir sampai detik.',
+        'Jam masuk, pulang, dan lama hadir dihitung sampai detik dari data Raptor, sama seperti file gaji lama.',
+        'Lembur = lama hadir di atas 8 (atau 9) jam, minimal 15 menit, dibayar 1× tarif per jam (sampai detik).',
         'Bulanan: gaji tetap. Jika Potong jam kurang aktif, jam di bawah jam wajib pada hari hadir dipotong gaji ÷ 173 per jam.',
         'Hari tanpa jam pulang tidak dibayar dan muncul sebagai peringatan. Perbaiki absensinya dulu (Rekap Absensi > Rincian, atau impor Raptor), lalu Hitung Ulang.'
       ],
@@ -833,7 +836,7 @@ window.MklHelp = {
       intro: 'Bonus, insentif, kasbon, atau potongan lain dicatat manual per karyawan, dengan alasan.',
       steps: [
         'Di halaman periode, tekan Rincian pada baris karyawan.',
-        'Periksa Komponen gaji dan Rincian per hari (jam masuk asli dan yang dihitung, pulang, lama hadir, dibayar, lembur).',
+        'Periksa Komponen gaji, Tarif per jam, dan Rincian per hari (jam masuk asli dan yang dihitung, pulang, lama hadir, dibayar, lembur; durasi jam:menit:detik).',
         'Untuk menambah, tekan Tambah / Potong Manual.',
         'Pilih Jenis (Tambahan atau Potongan), isi Keterangan di slip, Jumlah (Rp), dan Alasan, lalu tekan Simpan.',
         'Tutup jendela Rincian, lalu tekan Hitung Ulang.'
@@ -841,7 +844,10 @@ window.MklHelp = {
       result: 'Kolom Tambahan atau Potongan karyawan itu berubah, dan Keterangan di slip tampil di slip gaji.',
       notes: [
         'Untuk menghapus tambahan/potongan yang salah, tekan Hapus di baris komponen bertanda manual, isi alasan, lalu Hitung Ulang.',
-        'Tambahan/potongan tidak bisa diubah setelah periode diajukan, kecuali Direktur menolaknya.'
+        'Tambahan/potongan tidak bisa diubah setelah periode diajukan, kecuali Direktur menolaknya.',
+        'Tekan Unduh Rincian (PDF) untuk menyimpan rincian gaji dan absensi per hari karyawan itu, seperti lembar "Salary & Absence Breakdown" di file lama.',
+        'Tekan Unduh Slip (DRAF) untuk melihat slip sebelum disetujui Direktur. Slip DRAF tidak bernomor dan bukan slip resmi, jadi jangan dikirim ke karyawan. Setelah disetujui, tombolnya menjadi Unduh Slip Gaji dan mengunduh slip resmi.',
+        'Rincian dan slip berisi data gaji. Simpan di tempat yang aman dan jangan diteruskan lewat grup chat.'
       ]
     },
     {

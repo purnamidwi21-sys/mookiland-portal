@@ -9,13 +9,18 @@
   var lastEffective = '';
 
   function hoursText(min) { return min ? (Math.round(min / 6) / 10) + ' jam' : '-'; }
+  var DEF_DIV = { harian: 8, bulanan: 173 };
+  function hourlyText(p) {
+    var base = p.payType === 'harian' ? p.dailyRate : p.monthlySalary;
+    return 'per jam ' + MklUI.fmtMoney(Math.round(base / (p.hourlyDivisor || DEF_DIV[p.payType]))) + ' (÷' + (p.hourlyDivisor || DEF_DIV[p.payType]) + ')';
+  }
 
   function profileForm(item, done) {
     var cur = item.profile || item.upcoming;
     var p = cur || {};
     var form = h('form', { class: 'stack', novalidate: true });
     var payType = MklUI.selectField({ label: 'Jenis gaji', name: 'payType', required: true, value: p.payType || 'harian', options: [{ value: 'harian', label: 'Harian (dibayar per jam hadir)' }, { value: 'bulanan', label: 'Bulanan (gaji tetap)' }] });
-    var daily = MklUI.field({ label: 'Tarif harian (Rp)', name: 'dailyRate', type: 'number', inputmode: 'numeric', value: p.dailyRate ? String(p.dailyRate) : '', hint: 'Tarif per jam = tarif harian ÷ 8.' });
+    var daily = MklUI.field({ label: 'Tarif harian (Rp)', name: 'dailyRate', type: 'number', inputmode: 'numeric', value: p.dailyRate ? String(p.dailyRate) : '' });
     MklUI.moneyPreview(daily);
     var monthly = MklUI.field({ label: 'Gaji bulanan (Rp)', name: 'monthlySalary', type: 'number', inputmode: 'numeric', value: p.monthlySalary ? String(p.monthlySalary) : '' });
     MklUI.moneyPreview(monthly);
@@ -23,24 +28,34 @@
     var rounding = MklUI.checkboxField({ label: 'Bulatkan jam masuk ke jam shift', name: 'clockinRounding', checked: cur ? p.clockinRounding : true, hint: 'Sesuai tabel pembulatan di file gaji (misalnya masuk 07:50 dihitung 08:00).' });
     var ot = MklUI.checkboxField({ label: 'Dapat upah lembur', name: 'overtimeEligible', checked: cur ? p.overtimeEligible : true, hint: 'Lembur = lama hadir di atas batas jam, minimal 15 menit, 1× tarif per jam.' });
     var shortfall = MklUI.checkboxField({ label: 'Potong jam kurang (khusus bulanan)', name: 'shortfallDeduction', checked: !!p.shortfallDeduction, hint: 'Pada hari hadir, jam di bawah jam wajib dipotong gaji ÷ 173 per jam.' });
+    var div = MklUI.field({ label: 'Tarif per jam = gaji ÷', name: 'hourlyDivisor', type: 'number', inputmode: 'numeric', required: true,
+      value: String(p.hourlyDivisor || DEF_DIV[p.payType || 'harian']),
+      hint: 'Dipakai untuk upah per jam dan lembur. File gaji lama: harian ÷8 (ada yang ÷7), bulanan ÷173 atau ÷182.' });
+    var divPreview = h('div', { class: 'money-preview' });
+    div.wrap.appendChild(divPreview);
     var req = MklUI.field({ label: 'Jam wajib per hari (menit, termasuk istirahat)', name: 'requiredMinutes', type: 'number', inputmode: 'numeric', value: p.requiredMinutes ? String(p.requiredMinutes) : '540', hint: '540 menit = 9 jam.' });
     var latestEff = item.upcoming ? item.upcoming.effectiveFrom : (item.profile ? item.profile.effectiveFrom : '');
     var eff = MklUI.field({ label: 'Berlaku mulai', name: 'effectiveFrom', type: 'date', required: true, value: latestEff || lastEffective || MklUI.todayYmd(),
       hint: latestEff ? 'Profil sekarang berlaku sejak ' + MklUI.fmtDate(latestEff) + '. Biarkan tanggal ini untuk memperbaiki angka; isi tanggal sesudahnya untuk kenaikan tarif.' : 'Periode yang berakhir sebelum tanggal ini tidak memakai profil ini. Untuk menghitung gaji periode lama, pilih tanggal sebelum awal periode itu.' });
     var reason = MklUI.field({ label: 'Alasan', name: 'reason', required: true, multiline: true, rows: 2, maxLength: 300, placeholder: 'Contoh: tarif awal, kenaikan tarif' });
     var alertSlot = h('div');
-    [payType.wrap, daily.wrap, monthly.wrap, cap.wrap, rounding.wrap, ot.wrap, shortfall.wrap, req.wrap, eff.wrap, reason.wrap, alertSlot].forEach(function (x) { form.appendChild(x); });
+    [payType.wrap, daily.wrap, monthly.wrap, div.wrap, cap.wrap, rounding.wrap, ot.wrap, shortfall.wrap, req.wrap, eff.wrap, reason.wrap, alertSlot].forEach(function (x) { form.appendChild(x); });
     function sync() {
       var harian = payType.input.value === 'harian';
       daily.wrap.hidden = !harian;
       monthly.wrap.hidden = harian;
       shortfall.wrap.hidden = harian;
       req.wrap.hidden = harian || !shortfall.input.checked;
+      var base = Number((harian ? daily : monthly).input.value || 0), d = Number(div.input.value || 0);
+      divPreview.textContent = base > 0 && d > 0 ? 'Tarif per jam: ' + MklUI.fmtMoney(Math.round(base / d)) : '';
     }
     payType.input.addEventListener('change', function () {
       if (!cur) ot.input.checked = payType.input.value === 'harian';
+      var other = payType.input.value === 'harian' ? 'bulanan' : 'harian';
+      if (!div.input.value || Number(div.input.value) === DEF_DIV[other] || (other === 'bulanan' && Number(div.input.value) > 24) || (other === 'harian' && Number(div.input.value) <= 24)) div.input.value = String(DEF_DIV[payType.input.value]);
       sync();
     });
+    [daily.input, monthly.input, div.input].forEach(function (x) { x.addEventListener('input', sync); });
     shortfall.input.addEventListener('change', sync);
     sync();
     var ctl = MklUI.modal({
@@ -54,7 +69,8 @@
       var harian = payType.input.value === 'harian';
       var payload = {
         employeeId: item.employeeId, payType: payType.input.value, paidHoursCap: Number(cap.input.value), clockinRounding: rounding.input.checked,
-        overtimeEligible: ot.input.checked, effectiveFrom: eff.input.value, reason: reason.input.value.trim()
+        overtimeEligible: ot.input.checked, effectiveFrom: eff.input.value, reason: reason.input.value.trim(),
+        hourlyDivisor: Number(div.input.value || 0)
       };
       if (harian) payload.dailyRate = Number(daily.input.value || 0);
       else {
@@ -118,6 +134,7 @@
         { label: 'Berlaku mulai', render: function (p) { return MklUI.fmtDate(p.effectiveFrom); } },
         { label: 'Jenis', render: function (p) { return p.payTypeLabel; } },
         { label: 'Tarif / gaji', render: function (p) { return p.payType === 'harian' ? MklUI.fmtMoney(p.dailyRate) + '/hari' : MklUI.fmtMoney(p.monthlySalary) + '/bulan'; } },
+        { label: 'Tarif per jam', render: function (p) { return hourlyText(p).replace('per jam ', ''); } },
         { label: 'Maks jam', render: function (p) { return p.paidHoursCap + ' jam'; } },
         { label: 'Alasan', render: function (p) { return p.reason; } },
         { label: 'Disimpan', render: function (p) { return MklUI.fmtDateTime(p.savedAt) + (p.savedBy ? ' oleh ' + p.savedBy : ''); } }
@@ -210,7 +227,7 @@
               } },
               { label: 'Aturan', render: function (i) {
                 if (!i.profile && !i.upcoming) return '';
-                var p = i.profile || i.upcoming, parts = ['maks ' + p.paidHoursCap + ' jam'];
+                var p = i.profile || i.upcoming, parts = [hourlyText(p), 'maks ' + p.paidHoursCap + ' jam'];
                 parts.push(p.clockinRounding ? 'jam masuk dibulatkan' : 'jam masuk asli');
                 parts.push(p.overtimeEligible ? 'dapat lembur' : 'tanpa lembur');
                 if (p.shortfallDeduction) parts.push('potong jam kurang dari ' + hoursText(p.requiredMinutes));

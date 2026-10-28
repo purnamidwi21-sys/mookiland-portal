@@ -502,7 +502,11 @@ fieldset[hidden] { display: none; }
 .text-danger { color: var(--danger-text); }
 .stat-info { background: var(--info-bg); border-color: transparent; }
 .stat-info .stat-label, .stat-info .stat-value { color: var(--info-text); }
-.stats-money .stat-value { font-size: 1.2rem; font-variant-numeric: tabular-nums; }
+.stat { min-width: 0; }
+.stat-value { overflow-wrap: anywhere; }
+.stats-money { grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); }
+.stats-money .stat-value { font-size: 1.15rem; font-variant-numeric: tabular-nums; white-space: nowrap; overflow-wrap: normal; }
+@media (max-width: 480px) { .stats-money { grid-template-columns: repeat(2, minmax(0, 1fr)); } .stats-money .stat-value { font-size: 1rem; white-space: normal; overflow-wrap: anywhere; } }
 .money-table td, .money-table th { font-variant-numeric: tabular-nums; }
 @media (min-width: 641px) { .money-table td:not(:first-child) { white-space: nowrap; } }
 @media (min-width: 900px) {
