@@ -328,6 +328,23 @@
         }
         if (f.canTransfer) button('Unduh Daftar Transfer', 'secondary', function (b) { download('hr.payroll.transferList', { periodId: p.periodId }, b); });
         if (f.canMarkPaid) button('Tandai Sudah Dibayar', 'primary', function () { markPaidModal(p, load); });
+        if (f.canDelete) {
+          button('Hapus Periode', 'ghost', function () {
+            MklUI.confirmAction({
+              title: 'Hapus periode gaji ' + p.label,
+              message: h('div', null,
+                h('p', null, 'Periode ' + T.rangeLabel(p.startDate, p.endDate) + ' beserta hasil hitungannya akan dihapus, termasuk tambahan/potongan yang dicatat untuk periode ini (jika ada).'),
+                h('p', null, 'Absensi, profil gaji, dan kasbon tidak berubah. Periode ini bisa dibuat lagi lewat Buat Periode.')),
+              confirmLabel: 'Hapus Periode', danger: true, reasonLabel: 'Alasan', reasonRequired: true,
+              onConfirm: function (reason) {
+                return MklApi.call('hr.payroll.deletePeriod', { periodId: p.periodId, reason: reason }).then(function (r) {
+                  if (r.success) { MklUI.toast(r.message, 'success'); location.hash = '#/penggajian'; }
+                  return r;
+                });
+              }
+            });
+          });
+        }
 
         area.appendChild(h('p', null, h('a', { href: '#/penggajian' }, '← Semua periode')));
         area.appendChild(MklUI.pageHeader('Gaji ' + p.label, T.rangeLabel(p.startDate, p.endDate)));

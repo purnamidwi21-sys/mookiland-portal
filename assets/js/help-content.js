@@ -13,7 +13,7 @@
  * perm : null = semua pengguna; selain itu cukup salah satu permission
  */
 window.MklHelp = {
-  version: '0.9.1',
+  version: '0.9.3',
   updatedAt: '2026-10-28',
 
   topics: [
@@ -771,7 +771,9 @@ window.MklHelp = {
       ],
       result: 'Muncul pesan "Profil gaji ... disimpan, berlaku mulai ...: Rp... per hari". Cocokkan angkanya. Kolom Tarif / gaji dan Aturan di tabel terisi.',
       notes: [
-        'Kenaikan tarif tidak menimpa tarif lama. Isi tanggal Berlaku mulai, maka periode yang berakhir sebelum tanggal itu tetap memakai tarif lama. Tekan Riwayat untuk melihat semua perubahan.',
+        'Saat Ubah Gaji, tanggal Berlaku mulai otomatis terisi tanggal profil yang sekarang. Biarkan tanggal itu untuk memperbaiki angka yang salah ketik.',
+        'Kenaikan tarif tidak menimpa tarif lama. Isi tanggal Berlaku mulai yang lebih baru, maka periode yang berakhir sebelum tanggal itu tetap memakai tarif lama. Tekan Riwayat untuk melihat semua perubahan.',
+        'Di Ubah Gaji, tanggal tidak bisa diisi lebih awal dari tanggal profil yang sekarang. Untuk memajukan tanggal berlaku, pakai Ubah Tanggal Berlaku (di bawah).',
         'Untuk mengubah tanggal Berlaku mulai banyak karyawan sekaligus (misalnya setelah input awal), centang karyawannya atau Pilih semua yang punya profil, tekan Ubah Tanggal Berlaku, isi tanggal dan alasan, lalu Simpan. Tarifnya tidak berubah. Setelah itu tekan Hitung Ulang di periode gaji.',
         'Tanggal Berlaku mulai tidak boleh jatuh di periode yang sudah disetujui Direktur.',
         'Setiap perubahan tercatat di Audit Log payroll.'
@@ -822,7 +824,8 @@ window.MklHelp = {
       result: 'Status periode menjadi Sudah dihitung dan Ringkasan menampilkan Total bersih.',
       notes: [
         'Jika absensi, profil gaji, atau tambahan/potongan berubah setelah dihitung, muncul peringatan. Tekan Hitung Ulang.',
-        'Hitung Ulang aman dilakukan berkali-kali sebelum diajukan. Hasil lama disimpan sebagai versi sebelumnya.'
+        'Hitung Ulang aman dilakukan berkali-kali sebelum diajukan. Hasil lama disimpan sebagai versi sebelumnya.',
+        'Salah memilih bulan? Buka periode itu, tekan Hapus Periode, isi alasan, lalu tekan Hapus Periode lagi. Hanya bisa sebelum diajukan ke Direktur. Hasil hitungan dan tambahan/potongan periode itu ikut terhapus; absensi, profil gaji, dan kasbon tidak berubah. Penghapusan tercatat di Audit Log.'
       ]
     },
     {
