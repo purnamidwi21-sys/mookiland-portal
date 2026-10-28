@@ -13,7 +13,7 @@
  * perm : null = semua pengguna; selain itu cukup salah satu permission
  */
 window.MklHelp = {
-  version: '0.8.4',
+  version: '0.9.0',
   updatedAt: '2026-10-28',
 
   topics: [
@@ -256,6 +256,22 @@ window.MklHelp = {
       ],
       result: 'Tanggal itu bertanda Koreksi menunggu. Setelah disetujui, jam di Absensi Saya berubah dan sumbernya tertulis Koreksi disetujui.',
       notes: ['Koreksi hanya untuk hari ini atau tanggal yang sudah lewat, paling lama 31 hari ke belakang.']
+    },
+    {
+      id: 'ajukan-kasbon', guide: 'staff', perm: ['loan.request.own'], title: 'Mengajukan kasbon',
+      intro: 'Kasbon diajukan dari portal dan diputuskan Direktur. Cicilannya dipotong otomatis dari gaji.',
+      steps: [
+        'Buka menu Pengajuan Saya, lalu tekan Ajukan Kasbon.',
+        'Isi Jumlah kasbon (Rp). Di bawahnya tampil angka dalam Rupiah; periksa sebelum mengirim.',
+        'Pilih Usulan cicilan (berapa kali gajian), lalu isi Keperluan.',
+        'Tekan Kirim Pengajuan.'
+      ],
+      result: 'Muncul pesan "Pengajuan kasbon ... dikirim ke Direktur." Setelah diputuskan, Anda mendapat notifikasi berisi jumlah, cicilan, dan mulai dipotong.',
+      notes: [
+        'Direktur menentukan jumlah yang disetujui, jumlah cicilan, dan bulan mulai dipotong.',
+        'Kasbon baru hanya bisa diajukan setelah kasbon sebelumnya lunas. Sisa kasbon tampil di Pengajuan Saya.',
+        'Potongan kasbon tercantum di slip gaji.'
+      ]
     },
     {
       id: 'pengajuan-saya', guide: 'staff', perm: ['leave.request.own', 'overtime.request.own', 'attendance.correction.request.own'], title: 'Melihat dan membatalkan pengajuan',
@@ -862,6 +878,22 @@ window.MklHelp = {
       notes: ['Setiap unduhan slip tercatat di Audit Log.']
     },
 
+    {
+      id: 'payroll-kasbon', guide: 'payroll', perm: ['loan.manage'], title: 'Menyerahkan dan memantau kasbon',
+      intro: 'Kasbon yang disetujui Direktur muncul di menu Kasbon. Cicilan baru dipotong setelah uangnya ditandai diserahkan.',
+      steps: [
+        'Setelah mendapat notifikasi "Kasbon ... disetujui", serahkan uangnya ke karyawan.',
+        'Buka menu Kasbon, lalu tekan Tandai Sudah Diserahkan pada kasbon itu. Isi tanggal, lalu tekan Simpan.',
+        'Saat menghitung gaji, cicilan masuk otomatis sebagai Cicilan kasbon di Rincian dan slip gaji.',
+        'Jika karyawan membayar tunai, tekan Catat Pelunasan Tunai, isi jumlah dan keterangan, lalu Hitung Ulang periode gaji yang belum disetujui.'
+      ],
+      result: 'Kolom Sudah dipotong dan Sisa berubah setelah gaji periode itu disetujui Direktur. Kasbon berstatus Lunas setelah sisanya Rp0.',
+      notes: [
+        'Kasbon yang disetujui tetapi belum ditandai diserahkan tidak dipotong. Halaman periode gaji menampilkan peringatannya.',
+        'Kasbon yang uangnya belum diserahkan bisa dibatalkan dengan tombol Batalkan.',
+        'Tekan Riwayat untuk melihat penyerahan, potongan gaji, dan pembayaran tunai.'
+      ]
+    },
     // ------------------------------------------------------------ System Admin
     {
       id: 'admin-tambah', guide: 'sysadmin', perm: ['user.manage', 'user.manage.privileged'], title: 'Menambah pengguna',
@@ -1040,6 +1072,17 @@ window.MklHelp = {
         'Jika Anda juga yang menghitung periode itu, tombol Setujui tidak muncul. Persetujuan harus oleh orang lain.',
         'Sistem menyimpan sidik jari angka yang Anda setujui di sheet PayrollApprovals.'
       ]
+    },
+    {
+      id: 'mgmt-kasbon', guide: 'management', perm: ['loan.approve'], title: 'Menyetujui kasbon',
+      intro: 'Semua pengajuan kasbon diputuskan Direktur di menu Persetujuan.',
+      steps: [
+        'Buka menu Persetujuan. Pengajuan berlabel Kasbon menampilkan jumlah, usulan cicilan, keperluan, gaji karyawan, dan riwayat kasbon sebelumnya.',
+        'Tekan Setujui. Isi Jumlah disetujui, pilih Jumlah cicilan, dan Mulai dipotong dari gaji bulan. Di bawahnya tampil potongan per gajian.',
+        'Tekan Setujui. Atau tekan Tolak dan tulis alasannya.'
+      ],
+      result: 'Karyawan dan Manajer Operasional mendapat notifikasi. Kasbon muncul di menu Kasbon dengan status "Disetujui, belum diserahkan".',
+      notes: ['Gaji bulan X dihitung dari tanggal 27 bulan sebelumnya sampai 26 bulan X. Bulan yang gajinya sudah disetujui tidak bisa dipilih.']
     },
     {
       id: 'mgmt-akun-admin', guide: 'management', perm: ['user.manage.privileged'], title: 'Akun admin pertama',

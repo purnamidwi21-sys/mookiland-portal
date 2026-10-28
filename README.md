@@ -20,11 +20,12 @@ untuk kenyamanan; server memeriksa ulang setiap permintaan.
 | `assets/js/core/nav.js` | Navigasi halaman |
 | `assets/js/core/lookups.js` | Pilihan baku (status, jenis hubungan kerja) dan daftar jabatan |
 | `assets/js/help-content.js` | Isi Pusat Bantuan |
-| `assets/js/pages/*.js` | Halaman: Masuk, Lupa Password, Ganti Password, Beranda, Pengumuman, Notifikasi, Profil Saya, Kepegawaian Saya, Kontrak Saya, BPJS Saya, Dokumen Saya, Absen, Jadwal Saya, Absensi Saya, Susun Jadwal, Rekap Absensi, Impor Absensi Raptor, Shift & Lokasi, Pengajuan Saya, Persetujuan, Saldo Cuti, Profil Gaji, Penggajian, Slip Gaji Saya, Karyawan (termasuk kontrak, BPJS, dokumen), Impor Karyawan, Jabatan, Kontrak, BPJS, Template Kontrak, Kelola Pengumuman, Pengguna, Role & Permission, Log Aktivitas, Pusat Bantuan |
+| `assets/js/pages/*.js` | Halaman: Masuk, Lupa Password, Ganti Password, Beranda, Pengumuman, Notifikasi, Profil Saya, Kepegawaian Saya, Kontrak Saya, BPJS Saya, Dokumen Saya, Absen, Jadwal Saya, Absensi Saya, Susun Jadwal, Rekap Absensi, Impor Absensi Raptor, Shift & Lokasi, Pengajuan Saya, Persetujuan, Saldo Cuti, Profil Gaji, Penggajian, Kasbon, Slip Gaji Saya, Karyawan (termasuk kontrak, BPJS, dokumen), Impor Karyawan, Jabatan, Kontrak, BPJS, Template Kontrak, Kelola Pengumuman, Pengguna, Role & Permission, Log Aktivitas, Pusat Bantuan |
 | `assets/js/app.js` | Tata letak, menu, alur masuk/keluar |
 
 ## Versi
 
+- 0.9.0 — Kasbon: Pengajuan Kasbon, persetujuan Direktur (jumlah, cicilan, mulai dipotong), menu Kasbon, cicilan otomatis di Penggajian dan slip.
 - 0.8.4 — Kolom angka aman dari gulir mouse/trackpad; tampilan Rupiah saat mengetik tarif/gaji/jumlah.
 - 0.8.3 — Penggajian: tabel karyawan tanpa profil gaji, peringatan sebagai daftar.
 - 0.8.2 — Hapus data karyawan ganda/contoh (HR), pesan Hubungkan ke Karyawan lebih jelas.

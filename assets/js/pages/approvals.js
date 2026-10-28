@@ -7,8 +7,8 @@
   'use strict';
   var h = MklUI.h;
   var T = window.MklTimeUI;
-  var APPROVE = ['leave.manage', 'overtime.manage', 'attendance.manage', 'hr.sensitive.manage', 'request.approve.hr'];
-  var TYPE_VARIANT = { leave: 'info', overtime: 'warning', correction: 'neutral', identity: 'muted' };
+  var APPROVE = ['leave.manage', 'overtime.manage', 'attendance.manage', 'hr.sensitive.manage', 'loan.approve', 'request.approve.hr'];
+  var TYPE_VARIANT = { leave: 'info', overtime: 'warning', correction: 'neutral', identity: 'muted', loan: 'warning' };
 
   function range(a, b) { return a === b ? T.dayLabel(a, true) : MklUI.fmtDate(a) + ' – ' + MklUI.fmtDate(b); }
 
@@ -40,6 +40,13 @@
       } else r.push(['Absen hari itu', 'Belum ada catatan absen']);
       if (d.approvedMinutes) r.push(['Disetujui', d.approvedMinutes + ' menit']);
       return r;
+    }
+    if (d.kind === 'loan') {
+      var lr = [['Jumlah diajukan', MklUI.fmtMoney(d.requestedAmount)], ['Usulan cicilan', d.requestedInstallments + ' kali gajian'], ['Keperluan', d.reason]];
+      if (d.salary) lr.push(['Gaji', d.salary]);
+      lr.push(['Kasbon sebelumnya', d.previousPaid ? d.previousPaid + ' kali, semua lunas' : 'Belum pernah']);
+      if (it.status !== 'menunggu' && d.amount) lr.push(['Disetujui', MklUI.fmtMoney(d.amount) + ', ' + d.installments + '× ' + MklUI.fmtMoney(d.installmentAmount) + ', mulai gaji ' + d.startMonthLabel + ' (' + d.statusLabel + ')']);
+      return lr;
     }
     if (d.kind === 'identity') {
       var cmp = function (now, before) { return before && before !== now ? h('span', null, now || '-', h('br'), h('span', { class: 'muted small' }, 'Sebelumnya: ' + before)) : (now || '-'); };
@@ -75,13 +82,30 @@
   function decideModal(it, decision, done) {
     var form = h('form', { class: 'stack', novalidate: true });
     var minutes = null;
+    var loanF = null;
+    if (decision === 'setuju' && it.detail.kind === 'loan') {
+      var dd = it.detail;
+      var la = MklUI.moneyPreview(MklUI.field({ label: 'Jumlah disetujui (Rp)', name: 'loanAmount', type: 'number', inputmode: 'numeric', required: true, value: String(dd.requestedAmount) }));
+      var opts = [];
+      for (var i = 1; i <= 12; i++) opts.push({ value: String(i), label: i === 1 ? '1 kali (sekaligus)' : i + ' kali gajian' });
+      var li = MklUI.selectField({ label: 'Jumlah cicilan', name: 'loanInstallments', value: String(dd.requestedInstallments), options: opts });
+      var lm = MklUI.field({ label: 'Mulai dipotong dari gaji bulan', name: 'loanStartMonth', type: 'month', required: true, value: dd.suggestedStartMonth, hint: 'Gaji bulan X = periode 27 bulan sebelumnya s.d. 26 bulan X.' });
+      var calc = h('p', { class: 'money-preview' });
+      var upd = function () {
+        var amt = Number(String(la.input.value).replace(/\D/g, '')) || 0, n = Number(li.input.value) || 1;
+        calc.textContent = amt ? 'Dipotong ' + n + '× ' + MklUI.fmtMoney(Math.ceil(amt / n)) + ' per gajian' + (n > 1 && Math.ceil(amt / n) * n !== amt ? ' (cicilan terakhir menyesuaikan)' : '') : '';
+      };
+      la.input.addEventListener('input', upd); li.input.addEventListener('change', upd); upd();
+      [la.wrap, li.wrap, calc, lm.wrap].forEach(function (x) { form.appendChild(x); });
+      loanF = { a: la, i: li, m: lm };
+    }
     if (decision === 'setuju' && it.detail.kind === 'overtime') {
       minutes = MklUI.field({ label: 'Menit lembur disetujui', name: 'approvedMinutes', type: 'number', inputmode: 'numeric', value: String(it.detail.minutes), hint: 'Boleh lebih sedikit dari yang diajukan (' + it.detail.minutes + ' menit).' });
       form.appendChild(minutes.wrap);
     }
     var note = MklUI.field({ label: decision === 'tolak' ? 'Alasan penolakan' : 'Catatan (opsional)', name: 'note', required: decision === 'tolak', multiline: true, rows: 2, maxLength: 300, hint: 'Catatan ini dikirim ke karyawan.' });
     var alertSlot = h('div');
-    form.appendChild(h('p', null, h('strong', null, it.employee.fullName), ' · ' + it.typeLabel));
+    form.insertBefore(h('p', null, h('strong', null, it.employee.fullName), ' · ' + it.typeLabel), form.firstChild);
     form.appendChild(note.wrap);
     form.appendChild(alertSlot);
     var ctl = MklUI.modal({
@@ -95,6 +119,7 @@
       MklUI.clear(alertSlot);
       var p = { approvalId: it.approvalId, decision: decision, note: note.input.value.trim() };
       if (minutes && minutes.input.value) p.approvedMinutes = Number(minutes.input.value);
+      if (loanF) { p.loanAmount = Number(loanF.a.input.value || 0); p.loanInstallments = Number(loanF.i.input.value); p.loanStartMonth = loanF.m.input.value; }
       MklUI.setBusy(btn, true, 'Menyimpan...');
       MklApi.call('approvals.decide', p).then(function (res) {
         MklUI.setBusy(btn, false);
@@ -145,7 +170,7 @@
     menu: { label: 'Persetujuan', order: 9.8, section: 'Jadwal & Absensi' },
     render: function (root) {
       var otBtn = MklState.can('overtime.manage') ? h('button', { class: 'btn btn-secondary', type: 'button' }, 'Catat Lembur Karyawan') : null;
-      root.appendChild(MklUI.pageHeader('Persetujuan', 'Cuti, izin, sakit, lembur, koreksi absensi, dan data diri karyawan yang menunggu keputusan.', otBtn));
+      root.appendChild(MklUI.pageHeader('Persetujuan', 'Cuti, izin, sakit, lembur, koreksi absensi, data diri, dan kasbon yang menunggu keputusan.', otBtn));
       var view = 'menunggu';
       var tabPending = h('button', { class: 'tab', type: 'button', role: 'tab', 'aria-selected': 'true' }, 'Menunggu');
       var tabHistory = h('button', { class: 'tab', type: 'button', role: 'tab', 'aria-selected': 'false' }, 'Riwayat');
@@ -207,6 +232,7 @@
         var d = it.detail;
         if (d.kind === 'leave') return d.leaveType.split(' (')[0] + ', ' + range(d.startDate, d.endDate) + ' (' + d.totalDays + ' hari)';
         if (d.kind === 'overtime') return MklUI.fmtDate(d.workDate) + ' ' + d.startTime + '–' + d.endTime + (d.approvedMinutes ? ' (' + d.approvedMinutes + ' m disetujui)' : '');
+        if (d.kind === 'loan') return MklUI.fmtMoney(d.amount || d.requestedAmount) + (d.installments ? ', ' + d.installments + '× cicilan' : '');
         if (d.kind === 'identity') return 'KTP ' + String(d.proposed.idNumber).slice(-4).replace(/^/, '****');
         return MklUI.fmtDate(d.workDate);
       }

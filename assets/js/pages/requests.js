@@ -8,7 +8,7 @@
   var h = MklUI.h;
   var T = window.MklTimeUI;
 
-  var STATUS_VARIANT = { menunggu: 'warning', disetujui: 'success', ditolak: 'danger', dibatalkan: 'muted' };
+  var STATUS_VARIANT = { menunggu: 'warning', disetujui: 'success', ditolak: 'danger', dibatalkan: 'muted', aktif: 'info', lunas: 'success' };
   function statusBadge(s, label) { return MklUI.badge(label || s, STATUS_VARIANT[s] || 'muted'); }
 
   function minutesBetween(a, b) {
@@ -143,16 +143,31 @@
     }, opts.onDone));
   }
 
+  // ------------------------------------------------------------------ kasbon
+  function loanForm(onDone) {
+    var form = h('form', { class: 'stack', novalidate: true });
+    var amount = MklUI.moneyPreview(MklUI.field({ label: 'Jumlah kasbon (Rp)', name: 'amount', type: 'number', inputmode: 'numeric', required: true }));
+    var opts = [];
+    for (var i = 1; i <= 12; i++) opts.push({ value: String(i), label: i === 1 ? '1 kali (dipotong sekaligus)' : i + ' kali gajian' });
+    var inst = MklUI.selectField({ label: 'Usulan cicilan', name: 'installments', value: '1', options: opts, hint: 'Direktur yang menentukan jumlah, cicilan, dan mulai dipotong.' });
+    var reason = MklUI.field({ label: 'Keperluan', name: 'reason', required: true, multiline: true, rows: 2, maxLength: 300, placeholder: 'Contoh: biaya sekolah anak' });
+    [amount.wrap, inst.wrap, reason.wrap].forEach(function (x) { form.appendChild(x); });
+    var alertSlot = h('div');
+    openModal('Ajukan kasbon', form, alertSlot, submitter(form, alertSlot, 'me.loan.submit', function () {
+      return { amount: Number(amount.input.value || 0), installments: Number(inst.input.value), reason: reason.input.value.trim() };
+    }, onDone));
+  }
+
   window.MklRequests = { correctionForm: correctionForm, statusBadge: statusBadge, period: period };
 
   // ================================================================== halaman
 
   MklNav.register('/pengajuan', {
     title: 'Pengajuan Saya',
-    perm: ['leave.request.own', 'overtime.request.own', 'attendance.correction.request.own'],
+    perm: ['leave.request.own', 'overtime.request.own', 'attendance.correction.request.own', 'loan.request.own'],
     menu: { label: 'Pengajuan Saya', order: 4.5 },
     render: function (root) {
-      root.appendChild(MklUI.pageHeader('Pengajuan Saya', 'Cuti, izin, sakit, lembur, dan koreksi absensi. Semua disetujui Manajer Operasional.'));
+      root.appendChild(MklUI.pageHeader('Pengajuan Saya', 'Cuti, izin, sakit, lembur, koreksi absensi, dan kasbon.'));
       var top = h('div');
       var listArea = h('div');
       root.appendChild(top);
@@ -164,7 +179,8 @@
       function loadSummary() {
         MklUI.clear(top);
         var calls = [];
-        if (MklState.can('leave.request.own')) calls.push(MklApi.call('me.leave.summary', {}));
+        if (MklState.can('leave.request.own')) calls.push(MklApi.call('me.leave.summary', {})); else calls.push(Promise.resolve(null));
+        if (MklState.can('loan.request.own')) calls.push(MklApi.call('me.loan.summary', {}));
         Promise.all(calls).then(function (res) {
           MklUI.clear(top);
           var s = res[0];
@@ -187,6 +203,12 @@
             b3.addEventListener('click', function () { correctionForm({ onDone: loadAll }); });
             buttons.appendChild(b3);
           }
+          var ln = res[1] && res[1].success ? res[1].data : null;
+          if (ln && ln.linked) {
+            var b4 = h('button', { class: 'btn btn-secondary', type: 'button', disabled: ln.canRequest ? null : true }, 'Ajukan Kasbon');
+            b4.addEventListener('click', function () { loanForm(loadAll); });
+            buttons.appendChild(b4);
+          }
           var content = [];
           if (summary && summary.eligible && summary.balance) {
             var b = summary.balance;
@@ -197,6 +219,12 @@
             if (b.adjusted) content.push(h('p', { class: 'muted small' }, 'Termasuk penyesuaian HR ' + (b.adjusted > 0 ? '+' : '') + b.adjusted + ' hari.'));
           } else if (summary) {
             content.push(h('p', { class: 'muted' }, 'Anda tidak mendapat cuti tahunan. Anda tetap bisa mengajukan sakit, izin, dan cuti khusus.'));
+          }
+          if (ln && ln.current) {
+            var c = ln.current;
+            content.push(MklUI.alertBox(c.status === 'menunggu' ? 'info' : 'warning', c.status === 'menunggu'
+              ? 'Kasbon ' + MklUI.fmtMoney(c.requestedAmount) + ' menunggu persetujuan Direktur.'
+              : 'Kasbon ' + MklUI.fmtMoney(c.amount) + ' (' + c.statusLabel.toLowerCase() + '): ' + c.installments + '× ' + MklUI.fmtMoney(c.installmentAmount) + ', mulai gaji ' + c.startMonthLabel + '. Sudah dipotong ' + c.paidCount + ' kali, sisa ' + MklUI.fmtMoney(c.balance) + '. Kasbon baru bisa diajukan setelah lunas.'));
           }
           content.push(buttons);
           top.appendChild(MklUI.card(null, content));

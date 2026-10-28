@@ -69,7 +69,7 @@
         }));
       }
 
-      if (MklState.canAny(['leave.manage', 'overtime.manage', 'attendance.manage', 'hr.sensitive.manage', 'request.approve.hr'])) {
+      if (MklState.canAny(['leave.manage', 'overtime.manage', 'attendance.manage', 'hr.sensitive.manage', 'loan.approve', 'request.approve.hr'])) {
         var apBody = h('div');
         var apCard = MklUI.card('Persetujuan', apBody);
         root.appendChild(apCard);
