@@ -13,7 +13,7 @@
  * perm : null = semua pengguna; selain itu cukup salah satu permission
  */
 window.MklHelp = {
-  version: '0.9.18',
+  version: '0.9.19',
   updatedAt: '2026-10-28',
 
   topics: [
@@ -801,7 +801,7 @@ window.MklHelp = {
       id: 'payroll-aturan', guide: 'payroll', perm: ['payroll.prepare'], title: 'Cara gaji dihitung',
       intro: 'Perhitungan mengikuti rumus file gaji Mookiland yang lama. Rincian per hari bisa dilihat di tombol Rincian pada setiap karyawan.',
       steps: [
-        'Jam masuk dibulatkan ke jam shift resmi jabatan (jika dicentang di profil). Pagi: PA Cleaner 07:00; Game Operator, Cashier, Barista, Staff Maintenance, Operasional Manajer 08:00. Middle 11:00: Game Operator, PA Cleaner, Barista, Operasional Manajer. Sore 13:00: semua.',
+        'Jam masuk dibulatkan ke jam shift resmi jabatan (jika dicentang di profil). Pagi: PA Cleaner 07:00; Game Operator, Cashier, Barista, Staff Maintenance, Operasional Manajer, Staff Admin 08:00. Middle 11:00: Game Operator, PA Cleaner, Barista, Operasional Manajer. Sore 13:00: semua.',
         'Karyawan dengan jam masuk sendiri (misalnya 10:00): isi Jam masuk resmi khusus karyawan ini di Profil Gaji > Ubah Gaji. Isian ini menggantikan jam jabatannya.',
         'Datang sebelum shift dihitung mulai jam shift (untuk shift kedua dan seterusnya: paling awal 30 menit sebelumnya). Terlambat sampai 15 menit tetap dihitung mulai jam shift. Terlambat lebih dari 15 menit dihitung dari jam datang asli. Batas dihitung per menit: datang 07:00:53 dihitung 07:00.',
         'Jabatan yang tidak punya jam shift di pengaturan memakai tabel umum: sampai 07:00 → 07:00; sampai 08:30 → 08:00; sampai 10:30 → jam asli; sampai 11:20 → 11:00; setelah itu → 13:00.',
@@ -813,6 +813,7 @@ window.MklHelp = {
         'Harian: jam dibayar = jam penuh lama hadir, paling banyak 8 (atau 9). Jika kurang dari 8 jam, dibayar sesuai lama hadir sampai detik.',
         'Jam masuk, pulang, dan lama hadir dihitung sampai detik dari data Raptor, sama seperti file gaji lama.',
         'Lembur = lama hadir di atas 8 (atau 9) jam, minimal 15 menit, dibayar 1× tarif per jam (sampai detik).',
+        'Bulanan yang mulai kerja atau berhenti (Ubah Status, Tanggal berlaku) di tengah periode: gaji dihitung prorata seperti harian, yaitu jam hadir × (gaji ÷ pembagi), paling banyak 8 jam per hari. Contoh gaji Rp4.800.000 ÷ 182: gaji harian Rp210.989, lembur Rp26.374 per jam.',
         'Bulanan: gaji tetap. Jika Potong jam kurang aktif, jam di bawah jam wajib pada hari hadir dipotong gaji ÷ 173 per jam.',
         'Hari tanpa jam pulang tidak dibayar dan muncul sebagai peringatan. Perbaiki absensinya dulu (Rekap Absensi > Rincian, atau impor Raptor), lalu Hitung Ulang.'
       ],
