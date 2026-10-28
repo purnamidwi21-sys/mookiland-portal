@@ -13,7 +13,7 @@
  * perm : null = semua pengguna; selain itu cukup salah satu permission
  */
 window.MklHelp = {
-  version: '0.9.6',
+  version: '0.9.8',
   updatedAt: '2026-10-28',
 
   topics: [
@@ -688,6 +688,10 @@ window.MklHelp = {
         'Sesi tanpa jam pulang atau lebih dari 16 jam dianggap lupa absen pulang dan ditandai perlu dicek. [Perlu konfirmasi HR]',
         'Absen dari aplikasi (GPS) dan catatan HR tidak pernah ditimpa. Selisih jam masuk ≥ 15 menit antara aplikasi dan Raptor ditampilkan untuk dicek.',
         'Mengimpor file yang sama dua kali tidak menggandakan data.',
+        'Salah unggah atau ingin mengulang? Di Riwayat impor, tekan Hapus Data pada impor itu. Jendela konfirmasi menampilkan jumlah hari yang akan dihapus. Isi Alasan, lalu tekan Hapus Data Absensi. Setelah itu unggah file yang benar dan tekan Hitung Ulang di periode gaji.',
+        'Hapus Data hanya menghapus absensi dari Raptor pada rentang tanggal impor itu. Absen aplikasi (GPS) dan catatan HR tidak dihapus. Hari Raptor yang sudah dikoreksi HR tetap disimpan, kecuali Anda mencentang Hapus juga hari yang sudah dikoreksi HR.',
+        'Hapus Data ditolak bila rentangnya mengenai gaji yang sedang diajukan atau sudah disetujui Direktur.',
+        'Sesi terakhir yang berlanjut sampai keesokan hari (misalnya absen lagi malam hari) diberi catatan. Periksa dan koreksi bila salah absen.',
         'File Raptor tidak disimpan di server.'
       ]
     },
