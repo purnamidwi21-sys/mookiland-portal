@@ -31,7 +31,12 @@
     var monthly = MklUI.field({ label: 'Gaji bulanan (Rp)', name: 'monthlySalary', type: 'number', inputmode: 'numeric', value: p.monthlySalary ? String(p.monthlySalary) : '' });
     MklUI.moneyPreview(monthly);
     var cap = MklUI.selectField({ label: 'Jam dibayar per hari (maksimal)', name: 'paidHoursCap', value: String(p.paidHoursCap || 8), options: [{ value: '8', label: '8 jam (lembur dihitung setelah 8 jam)' }, { value: '9', label: '9 jam (lembur dihitung setelah 9 jam)' }] });
-    var rounding = MklUI.checkboxField({ label: 'Bulatkan jam masuk ke jam shift', name: 'clockinRounding', checked: cur ? p.clockinRounding : true, hint: 'Sesuai tabel pembulatan di file gaji (misalnya masuk 07:50 dihitung 08:00).' });
+    var rounding = MklUI.checkboxField({ label: 'Bulatkan jam masuk ke jam shift', name: 'clockinRounding', checked: cur ? p.clockinRounding : true,
+      hint: item.shiftStarts && item.shiftStarts.length ? 'Shift ' + (item.positionName || '') + ': ' + item.shiftStarts.join(', ') + '. Datang sebelum shift atau terlambat sampai ' + (item.lateTolerance || 15) + ' menit dihitung mulai jam shift; terlambat lebih dari itu dihitung jam datang asli. Hapus centang untuk selalu memakai jam datang asli.' : 'Jabatan ini belum punya jam shift di pengaturan, jadi memakai tabel pembulatan umum. Hapus centang untuk selalu memakai jam datang asli.' });
+    var posTxt = item.shiftStarts && item.shiftStarts.length ? item.shiftStarts.join(', ') : '';
+    var starts = MklUI.field({ label: 'Jam masuk resmi khusus karyawan ini (opsional)', name: 'shiftStarts', value: p.shiftStarts ? p.shiftStarts.split(',').join(', ') : '', maxLength: 60,
+      placeholder: posTxt ? 'Kosongkan = ikut jabatan (' + posTxt + ')' : 'Contoh: 10:00',
+      hint: 'Isi bila jam masuk karyawan ini berbeda dari jabatannya, misalnya 10:00. Beberapa jam dipisah koma: 08:00, 11:00, 13:00.' });
     var ot = MklUI.checkboxField({ label: 'Dapat upah lembur', name: 'overtimeEligible', checked: cur ? p.overtimeEligible : true, hint: 'Lembur = lama hadir di atas batas jam, minimal 15 menit, 1× tarif per jam.' });
     var shortfall = MklUI.checkboxField({ label: 'Potong jam kurang (khusus bulanan)', name: 'shortfallDeduction', checked: !!p.shortfallDeduction, hint: 'Pada hari hadir, jam di bawah jam wajib dipotong gaji ÷ 173 per jam.' });
     var div = MklUI.field({ label: 'Tarif per jam = gaji ÷', name: 'hourlyDivisor', type: 'number', inputmode: 'numeric', required: true,
@@ -46,8 +51,9 @@
       hint: latestEff ? 'Sekarang: berlaku sejak ' + MklUI.fmtDate(latestEff) + '. Salah angka → biarkan tanggalnya. Tarif ini sebenarnya sudah berlaku lebih awal → isi tanggal yang lebih awal. Kenaikan tarif → isi tanggal mulai tarif baru (sebelum tanggal itu tetap tarif lama).' : 'Periode yang berakhir sebelum tanggal ini tidak memakai profil ini. Untuk menghitung gaji periode lama, pilih tanggal sebelum awal periode itu.' });
     var reason = MklUI.field({ label: 'Alasan', name: 'reason', required: true, multiline: true, rows: 2, maxLength: 300, placeholder: 'Contoh: tarif awal, kenaikan tarif' });
     var alertSlot = h('div');
-    [payType.wrap, daily.wrap, monthly.wrap, div.wrap, cap.wrap, rounding.wrap, ot.wrap, shortfall.wrap, req.wrap, eff.wrap, reason.wrap, alertSlot].forEach(function (x) { form.appendChild(x); });
+    [payType.wrap, daily.wrap, monthly.wrap, div.wrap, cap.wrap, rounding.wrap, starts.wrap, ot.wrap, shortfall.wrap, req.wrap, eff.wrap, reason.wrap, alertSlot].forEach(function (x) { form.appendChild(x); });
     function sync() {
+      starts.wrap.hidden = !rounding.input.checked;
       var harian = payType.input.value === 'harian';
       daily.wrap.hidden = !harian;
       monthly.wrap.hidden = harian;
@@ -64,6 +70,7 @@
     });
     [daily.input, monthly.input, div.input].forEach(function (x) { x.addEventListener('input', sync); });
     shortfall.input.addEventListener('change', sync);
+    rounding.input.addEventListener('change', sync);
     sync();
     var ctl = MklUI.modal({
       title: 'Profil gaji: ' + item.fullName, content: form,
@@ -77,7 +84,8 @@
       var payload = {
         employeeId: item.employeeId, payType: payType.input.value, paidHoursCap: Number(cap.input.value), clockinRounding: rounding.input.checked,
         overtimeEligible: ot.input.checked, effectiveFrom: eff.input.value, reason: reason.input.value.trim(),
-        hourlyDivisor: Number(String(div.input.value || 0).replace(',', '.'))
+        hourlyDivisor: Number(String(div.input.value || 0).replace(',', '.')),
+        shiftStarts: starts.input.value.replace(/\./g, ':').trim()
       };
       if (harian) payload.dailyRate = Number(daily.input.value || 0);
       else {
@@ -235,7 +243,7 @@
               { label: 'Aturan', render: function (i) {
                 if (!i.profile && !i.upcoming) return '';
                 var p = i.profile || i.upcoming, parts = [hourlyText(p), 'maks ' + p.paidHoursCap + ' jam'];
-                parts.push(p.clockinRounding ? 'jam masuk dibulatkan' : 'jam masuk asli');
+                parts.push(!p.clockinRounding ? 'jam masuk asli' : (p.shiftStarts ? 'masuk dibulatkan ke shift ' + p.shiftStarts.split(',').join(' / ') + ' (khusus)' : (i.shiftStarts && i.shiftStarts.length ? 'masuk dibulatkan ke shift ' + i.shiftStarts.join(' / ') : 'masuk dibulatkan (tabel umum)')));
                 parts.push(p.overtimeEligible ? 'dapat lembur' : 'tanpa lembur');
                 if (p.shortfallDeduction) parts.push('potong jam kurang dari ' + hoursText(p.requiredMinutes));
                 return h('span', { class: 'small' }, parts.join(' · '));

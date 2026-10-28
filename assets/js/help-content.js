@@ -13,7 +13,7 @@
  * perm : null = semua pengguna; selain itu cukup salah satu permission
  */
 window.MklHelp = {
-  version: '0.9.13',
+  version: '0.9.15',
   updatedAt: '2026-10-28',
 
   topics: [
@@ -801,7 +801,11 @@ window.MklHelp = {
       id: 'payroll-aturan', guide: 'payroll', perm: ['payroll.prepare'], title: 'Cara gaji dihitung',
       intro: 'Perhitungan mengikuti rumus file gaji Mookiland yang lama. Rincian per hari bisa dilihat di tombol Rincian pada setiap karyawan.',
       steps: [
-        'Jam masuk dibulatkan (jika dicentang di profil): sampai 07:00 → 07:00; 07:01 sampai 08:30 → 08:00; sampai 10:30 → jam asli; sampai 11:20 → 11:00; sampai 13:05 → 13:00; setelah itu → 13:00. Batas dihitung per menit, detik diabaikan: datang 07:00:53 tetap 07:00.',
+        'Jam masuk dibulatkan ke jam shift resmi jabatan (jika dicentang di profil). Pagi: PA Cleaner 07:00; Game Operator, Cashier, Barista, Staff Maintenance, Operasional Manajer 08:00. Middle 11:00: Game Operator, PA Cleaner, Barista, Operasional Manajer. Sore 13:00: semua.',
+        'Karyawan dengan jam masuk sendiri (misalnya 10:00): isi Jam masuk resmi khusus karyawan ini di Profil Gaji > Ubah Gaji. Isian ini menggantikan jam jabatannya.',
+        'Datang sebelum shift dihitung mulai jam shift (untuk shift kedua dan seterusnya: paling awal 30 menit sebelumnya). Terlambat sampai 15 menit tetap dihitung mulai jam shift. Terlambat lebih dari 15 menit dihitung dari jam datang asli. Batas dihitung per menit: datang 07:00:53 dihitung 07:00.',
+        'Jabatan yang tidak punya jam shift di pengaturan memakai tabel umum: sampai 07:00 → 07:00; sampai 08:30 → 08:00; sampai 10:30 → jam asli; sampai 11:20 → 11:00; setelah itu → 13:00.',
+        'Shift khusus (karyawan diminta datang di luar jam resmi): buka Rincian, tekan Koreksi pada tanggal itu, centang Shift khusus, lalu Simpan. Jam masuk hari itu dipakai apa adanya.',
         'Lama hadir = jam pulang − jam masuk (setelah dibulatkan), termasuk istirahat. Jika Raptor mencatat istirahat dan istirahatnya lebih pendek dari 50 menit, sisa sampai 60 menit ditambahkan.',
         'Tarif per jam = tarif harian atau gaji bulanan ÷ angka di profil gaji (bawaan: harian 8, bulanan 173).',
         'Harian: jam dibayar = jam penuh lama hadir, paling banyak 8 (atau 9). Jika kurang dari 8 jam, dibayar sesuai lama hadir sampai detik.',

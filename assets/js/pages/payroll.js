@@ -138,11 +138,13 @@
     var cout = MklUI.field({ label: 'Jam pulang', name: 'clockOut', type: 'time', value: day ? day.clockOut : '', hint: day ? 'Tercatat: ' + (day.clockOut || 'belum ada') : '' });
     [cin, cout].forEach(function (f) { f.input.step = '1'; });
     var nextDay = MklUI.checkboxField({ label: 'Pulang keesokan hari', name: 'clockOutNextDay', checked: false, hint: 'Untuk shift yang selesai lewat tengah malam.' });
+    var wasSpecial = !!(day && /Shift khusus/.test(day.note || ''));
+    var special = MklUI.checkboxField({ label: 'Shift khusus (jam masuk tidak dibulatkan)', name: 'specialShift', checked: wasSpecial, hint: 'Centang bila karyawan diminta datang di luar jam shift resmi. Upah dihitung dari jam masuk asli.' });
     var brk = MklUI.field({ label: 'Istirahat (menit)', name: 'breakMinutes', type: 'number', inputmode: 'decimal', value: day && day.breakMinutes ? String(Math.round(day.breakMinutes * 100) / 100) : '0',
       hint: 'Jeda antara absen keluar dan masuk lagi saat istirahat. Isi 0 bila tidak absen saat istirahat. Istirahat kurang dari 50 menit: sisanya sampai 60 menit dihitung jam kerja.' });
     var reason = MklUI.field({ label: 'Alasan', name: 'reason', required: true, multiline: true, rows: 2, maxLength: 300, placeholder: 'Contoh: lupa absen pulang, dicek CCTV / konfirmasi supervisor' });
     var alertSlot = h('div');
-    [h('p', null, h('strong', null, item.fullName), day ? ' · ' + T.dayLabel(day.date, true) : ''), day ? null : date.wrap, cin.wrap, cout.wrap, nextDay.wrap, brk.wrap, reason.wrap,
+    [h('p', null, h('strong', null, item.fullName), day ? ' · ' + T.dayLabel(day.date, true) : ''), day ? null : date.wrap, cin.wrap, cout.wrap, nextDay.wrap, special.wrap, brk.wrap, reason.wrap,
       h('p', { class: 'muted small' }, 'Perubahan tercatat di audit log dan tidak tertimpa saat impor Raptor berikutnya.'), alertSlot].forEach(function (x) { if (x) form.appendChild(x); });
     var ctl = MklUI.modal({
       title: day ? 'Koreksi absen' : 'Catat absen', content: form,
@@ -158,7 +160,8 @@
       if (cout.input.value && (!day || norm(cout.input.value) !== day.clockOut || nextDay.input.checked)) p.clockOut = norm(cout.input.value);
       var b = Number(String(brk.input.value || '0').replace(',', '.'));
       if (!day || Math.abs(b - (day.breakMinutes || 0)) > 0.001) p.breakMinutes = b;
-      if (day && !p.clockIn && !p.clockOut && p.breakMinutes === undefined) { alertSlot.appendChild(MklUI.alertBox('error', 'Tidak ada yang diubah.')); return; }
+      if (special.input.checked !== wasSpecial || (!day && special.input.checked)) p.specialShift = special.input.checked;
+      if (day && !p.clockIn && !p.clockOut && p.breakMinutes === undefined && p.specialShift === undefined) { alertSlot.appendChild(MklUI.alertBox('error', 'Tidak ada yang diubah.')); return; }
       MklUI.setBusy(btn, true, 'Menyimpan...');
       MklApi.call('hr.attendance.setManual', p).then(function (res) {
         MklUI.setBusy(btn, false);
