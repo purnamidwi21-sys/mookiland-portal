@@ -401,10 +401,11 @@
           button('Ajukan ke Direktur', d.stale ? 'secondary' : 'primary', function () {
             MklUI.confirmAction({
               title: 'Ajukan gaji ' + p.label,
-              message: h('p', null, d.items.length + ' karyawan, total bersih ' + MklUI.fmtMoney(d.totals.net) + '. Setelah diajukan, angka tidak bisa diubah kecuali Direktur menolak.'),
+              message: h('div', null, h('p', null, d.items.length + ' karyawan, total bersih ' + MklUI.fmtMoney(d.totals.net) + '. Setelah diajukan, angka tidak bisa diubah kecuali Direktur menolak.'),
+                d.submitEmails && d.submitEmails.length ? h('p', { class: 'muted small' }, 'Email pemberitahuan (tanpa rincian per karyawan) otomatis dikirim ke ' + d.submitEmails.join(', ') + '.') : null),
               confirmLabel: 'Ajukan',
               onConfirm: function () {
-                return MklApi.call('hr.payroll.submit', { periodId: p.periodId }).then(function (r) { if (r.success) { MklUI.toast(r.message, 'success'); load(); } return r; });
+                return MklApi.call('hr.payroll.submit', { periodId: p.periodId }).then(function (r) { if (r.success) { MklUI.toast(r.message, r.data && r.data.emailTo && r.data.emailTo.length && !r.data.emailSent ? 'warning' : 'success'); load(); } return r; });
               }
             });
           });
@@ -413,6 +414,7 @@
           button('Setujui', 'primary', function () { decideModal(p, 'setuju', load); });
           button('Tolak', 'danger', function () { decideModal(p, 'tolak', load); });
         }
+        if (p.calcVersion) button('Unduh Ringkasan (PDF)', 'secondary', function (b) { download('hr.payroll.summaryDownload', { periodId: p.periodId }, b); });
         if (f.canTransfer) button('Unduh Daftar Transfer', 'secondary', function (b) { download('hr.payroll.transferList', { periodId: p.periodId }, b); });
         if (f.canMarkPaid) button('Tandai Sudah Dibayar', 'primary', function () { markPaidModal(p, load); });
         if (f.canDelete) {

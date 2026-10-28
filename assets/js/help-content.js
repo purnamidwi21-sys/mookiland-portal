@@ -13,7 +13,7 @@
  * perm : null = semua pengguna; selain itu cukup salah satu permission
  */
 window.MklHelp = {
-  version: '0.9.10',
+  version: '0.9.11',
   updatedAt: '2026-10-28',
 
   topics: [
@@ -864,8 +864,13 @@ window.MklHelp = {
         'Tekan Ajukan ke Direktur.',
         'Periksa jumlah karyawan dan total bersih di jendela konfirmasi, lalu tekan Ajukan.'
       ],
-      result: 'Status menjadi Menunggu persetujuan Direktur. Direktur mendapat notifikasi.',
-      notes: ['Jika Direktur menolak, status kembali Draf dan alasan penolakan tampil di halaman periode. Perbaiki, Hitung Ulang, lalu ajukan lagi.']
+      result: 'Status menjadi Menunggu persetujuan Direktur. Direktur mendapat notifikasi di portal, dan email pemberitahuan dikirim ke alamat di pengaturan (payroll_submit_emails).',
+      notes: [
+        'Jika Direktur menolak, status kembali Draf dan alasan penolakan tampil di halaman periode. Perbaiki, Hitung Ulang, lalu ajukan lagi.',
+        'Email berisi periode, jumlah karyawan, total bersih, dan tautan ke portal. Rincian gaji per karyawan tidak dikirim lewat email.',
+        'Jika pesan menyebut email GAGAL dikirim, pengajuan tetap tersimpan. Beri tahu Direktur secara langsung.',
+        'Tekan Unduh Ringkasan (PDF) di halaman periode untuk menyimpan ringkasan dan tabel per karyawan. Sebelum disetujui, file bertanda DRAF.'
+      ]
     },
     {
       id: 'payroll-bayar', guide: 'payroll', perm: ['payroll.mark_paid'], title: 'Daftar transfer dan menandai sudah dibayar',
