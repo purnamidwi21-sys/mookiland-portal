@@ -13,7 +13,7 @@
  * perm : null = semua pengguna; selain itu cukup salah satu permission
  */
 window.MklHelp = {
-  version: '0.9.15',
+  version: '0.9.18',
   updatedAt: '2026-10-28',
 
   topics: [
@@ -805,6 +805,8 @@ window.MklHelp = {
         'Karyawan dengan jam masuk sendiri (misalnya 10:00): isi Jam masuk resmi khusus karyawan ini di Profil Gaji > Ubah Gaji. Isian ini menggantikan jam jabatannya.',
         'Datang sebelum shift dihitung mulai jam shift (untuk shift kedua dan seterusnya: paling awal 30 menit sebelumnya). Terlambat sampai 15 menit tetap dihitung mulai jam shift. Terlambat lebih dari 15 menit dihitung dari jam datang asli. Batas dihitung per menit: datang 07:00:53 dihitung 07:00.',
         'Jabatan yang tidak punya jam shift di pengaturan memakai tabel umum: sampai 07:00 → 07:00; sampai 08:30 → 08:00; sampai 10:30 → jam asli; sampai 11:20 → 11:00; setelah itu → 13:00.',
+        'Istirahat: lama hadir dihitung TERMASUK istirahat (8 jam hadir = 1 hari penuh). Istirahat yang tidak tercatat (0) dianggap istirahat biasa. Istirahat tercatat 1–49 menit: sisanya sampai 60 menit dihitung jam kerja. Bila karyawan benar-benar tidak istirahat, buka Rincian > Koreksi, centang Tidak istirahat: 60 menit ditambahkan sebagai jam kerja (bisa menjadi lembur).',
+        'Karyawan yang tidak perlu absen saat istirahat: centang Istirahat otomatis 1 jam di Profil Gaji. Istirahat yang tercatat tidak dihitung; lama hadir dianggap sudah termasuk istirahat 1 jam.',
         'Shift khusus (karyawan diminta datang di luar jam resmi): buka Rincian, tekan Koreksi pada tanggal itu, centang Shift khusus, lalu Simpan. Jam masuk hari itu dipakai apa adanya.',
         'Lama hadir = jam pulang − jam masuk (setelah dibulatkan), termasuk istirahat. Jika Raptor mencatat istirahat dan istirahatnya lebih pendek dari 50 menit, sisa sampai 60 menit ditambahkan.',
         'Tarif per jam = tarif harian atau gaji bulanan ÷ angka di profil gaji (bawaan: harian 8, bulanan 173).',

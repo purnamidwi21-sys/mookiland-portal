@@ -141,10 +141,14 @@
     var wasSpecial = !!(day && /Shift khusus/.test(day.note || ''));
     var special = MklUI.checkboxField({ label: 'Shift khusus (jam masuk tidak dibulatkan)', name: 'specialShift', checked: wasSpecial, hint: 'Centang bila karyawan diminta datang di luar jam shift resmi. Upah dihitung dari jam masuk asli.' });
     var brk = MklUI.field({ label: 'Istirahat (menit)', name: 'breakMinutes', type: 'number', inputmode: 'decimal', value: day && day.breakMinutes ? String(Math.round(day.breakMinutes * 100) / 100) : '0',
-      hint: 'Jeda antara absen keluar dan masuk lagi saat istirahat. Isi 0 bila tidak absen saat istirahat. Istirahat kurang dari 50 menit: sisanya sampai 60 menit dihitung jam kerja.' });
+      hint: 'Jeda antara absen keluar dan masuk lagi saat istirahat. 0 = istirahat tidak tercatat (dianggap istirahat biasa, termasuk dalam 8 jam). Istirahat 1–49 menit: sisanya sampai 60 menit dihitung jam kerja. Bila benar-benar tidak istirahat, centang Tidak istirahat.' });
+    var wasNoBreak = !!(day && /Tidak istirahat/.test(day.note || ''));
+    var noBreak = MklUI.checkboxField({ label: 'Tidak istirahat (bekerja terus)', name: 'noBreak', checked: wasNoBreak, hint: 'Centang bila karyawan benar-benar tidak istirahat. 60 menit istirahat ditambahkan sebagai jam kerja (bisa jadi lembur).' });
+    noBreak.input.addEventListener('change', function () { brk.wrap.hidden = noBreak.input.checked; });
+    brk.wrap.hidden = wasNoBreak;
     var reason = MklUI.field({ label: 'Alasan', name: 'reason', required: true, multiline: true, rows: 2, maxLength: 300, placeholder: 'Contoh: lupa absen pulang, dicek CCTV / konfirmasi supervisor' });
     var alertSlot = h('div');
-    [h('p', null, h('strong', null, item.fullName), day ? ' · ' + T.dayLabel(day.date, true) : ''), day ? null : date.wrap, cin.wrap, cout.wrap, nextDay.wrap, special.wrap, brk.wrap, reason.wrap,
+    [h('p', null, h('strong', null, item.fullName), day ? ' · ' + T.dayLabel(day.date, true) : ''), day ? null : date.wrap, cin.wrap, cout.wrap, nextDay.wrap, special.wrap, noBreak.wrap, brk.wrap, reason.wrap,
       h('p', { class: 'muted small' }, 'Perubahan tercatat di audit log dan tidak tertimpa saat impor Raptor berikutnya.'), alertSlot].forEach(function (x) { if (x) form.appendChild(x); });
     var ctl = MklUI.modal({
       title: day ? 'Koreksi absen' : 'Catat absen', content: form,
@@ -159,9 +163,10 @@
       if (cin.input.value && (!day || norm(cin.input.value) !== day.clockIn)) p.clockIn = norm(cin.input.value);
       if (cout.input.value && (!day || norm(cout.input.value) !== day.clockOut || nextDay.input.checked)) p.clockOut = norm(cout.input.value);
       var b = Number(String(brk.input.value || '0').replace(',', '.'));
-      if (!day || Math.abs(b - (day.breakMinutes || 0)) > 0.001) p.breakMinutes = b;
+      if (!noBreak.input.checked && (!day || Math.abs(b - (day.breakMinutes || 0)) > 0.001)) p.breakMinutes = b;
+      if (noBreak.input.checked !== wasNoBreak || (!day && noBreak.input.checked)) p.noBreak = noBreak.input.checked;
       if (special.input.checked !== wasSpecial || (!day && special.input.checked)) p.specialShift = special.input.checked;
-      if (day && !p.clockIn && !p.clockOut && p.breakMinutes === undefined && p.specialShift === undefined) { alertSlot.appendChild(MklUI.alertBox('error', 'Tidak ada yang diubah.')); return; }
+      if (day && !p.clockIn && !p.clockOut && p.breakMinutes === undefined && p.specialShift === undefined && p.noBreak === undefined) { alertSlot.appendChild(MklUI.alertBox('error', 'Tidak ada yang diubah.')); return; }
       MklUI.setBusy(btn, true, 'Menyimpan...');
       MklApi.call('hr.attendance.setManual', p).then(function (res) {
         MklUI.setBusy(btn, false);
@@ -196,6 +201,7 @@
           ['Periode', d.period.label + ' (' + T.rangeLabel(d.period.startDate, d.period.endDate) + ')'],
           ['Profil gaji', p.payType ? p.payTypeLabel + ', ' + (p.payType === 'harian' ? MklUI.fmtMoney(p.dailyRate) + '/hari' : MklUI.fmtMoney(p.monthlySalary) + '/bulan') + ', maks ' + p.paidHoursCap + ' jam' + (p.clockinRounding ? ', jam masuk dibulatkan' : '') + (p.overtimeEligible ? ', dapat lembur' : ', tanpa lembur') : '-'],
           ['Tarif per jam', d.stats.hourlyRate ? money2(d.stats.hourlyRate) + ' (gaji ÷ ' + String(Math.round(d.stats.hourlyDivisor * 100) / 100).replace('.', ',') + ')' : 'Hitung Ulang untuk menampilkan'],
+          ['Aturan jam masuk', d.stats.shiftRule || 'Tekan Hitung Ulang (versi 0.9.16) untuk menampilkan'],
           ['Hari hadir', String(d.stats.present || 0)],
           ['Lembur disetujui di Persetujuan', T.fmtMinutes(d.stats.approvedOvertimeMinutes || 0) + ' (sebagai pembanding; upah lembur dihitung dari jam absen)']
         ]));
