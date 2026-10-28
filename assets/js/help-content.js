@@ -13,7 +13,7 @@
  * perm : null = semua pengguna; selain itu cukup salah satu permission
  */
 window.MklHelp = {
-  version: '0.9.5',
+  version: '0.9.6',
   updatedAt: '2026-10-28',
 
   topics: [
@@ -846,6 +846,7 @@ window.MklHelp = {
       notes: [
         'Untuk menghapus tambahan/potongan yang salah, tekan Hapus di baris komponen bertanda manual, isi alasan, lalu Hitung Ulang.',
         'Tambahan/potongan tidak bisa diubah setelah periode diajukan, kecuali Direktur menolaknya.',
+        'Ada kesalahan fingerprint (misalnya lupa absen pulang)? Tekan Koreksi di baris tanggal itu, ubah Jam masuk, Jam pulang, atau Istirahat (menit), isi Alasan, lalu Simpan. Untuk tanggal yang tidak ada absennya, tekan Catat Absen Hari Lain. Setelah itu tekan Hitung Ulang Sekarang. Baris yang dikoreksi bertanda Dikoreksi HR dan tidak tertimpa saat impor Raptor berikutnya. Koreksi hanya bisa sebelum periode diajukan ke Direktur.',
         'Tekan Unduh Rincian (PDF) untuk menyimpan rincian gaji dan absensi per hari karyawan itu, seperti lembar "Salary & Absence Breakdown" di file lama.',
         'Tekan Unduh Slip (DRAF) untuk melihat slip sebelum disetujui Direktur. Slip DRAF tidak bernomor dan bukan slip resmi, jadi jangan dikirim ke karyawan. Setelah disetujui, tombolnya menjadi Unduh Slip Gaji dan mengunduh slip resmi.',
         'Rincian dan slip berisi data gaji. Simpan di tempat yang aman dan jangan diteruskan lewat grup chat.'

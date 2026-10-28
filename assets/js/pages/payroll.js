@@ -127,15 +127,60 @@
     }
   }
 
+  /** Koreksi absen fingerprint dari jendela Rincian (attendance.manage). day = null untuk mencatat hari yang belum ada. */
+  function correctModal(d, item, day, done) {
+    var form = h('form', { class: 'stack', novalidate: true });
+    var date = MklUI.field({ label: 'Tanggal', name: 'workDate', type: 'date', required: true, value: day ? day.date : '' });
+    date.input.min = d.period.startDate; date.input.max = d.period.endDate < MklUI.todayYmd() ? d.period.endDate : MklUI.todayYmd();
+    if (day) date.input.readOnly = true;
+    var cin = MklUI.field({ label: 'Jam masuk', name: 'clockIn', type: 'time', value: day ? day.clockIn : '', hint: day ? 'Tercatat: ' + day.clockIn : 'Contoh 09:55.' });
+    var cout = MklUI.field({ label: 'Jam pulang', name: 'clockOut', type: 'time', value: day ? day.clockOut : '', hint: day ? 'Tercatat: ' + (day.clockOut || 'belum ada') : '' });
+    [cin, cout].forEach(function (f) { f.input.step = '1'; });
+    var nextDay = MklUI.checkboxField({ label: 'Pulang keesokan hari', name: 'clockOutNextDay', checked: false, hint: 'Untuk shift yang selesai lewat tengah malam.' });
+    var brk = MklUI.field({ label: 'Istirahat (menit)', name: 'breakMinutes', type: 'number', inputmode: 'decimal', value: day && day.breakMinutes ? String(Math.round(day.breakMinutes * 100) / 100) : '0',
+      hint: 'Jeda antara absen keluar dan masuk lagi saat istirahat. Isi 0 bila tidak absen saat istirahat. Istirahat kurang dari 50 menit: sisanya sampai 60 menit dihitung jam kerja.' });
+    var reason = MklUI.field({ label: 'Alasan', name: 'reason', required: true, multiline: true, rows: 2, maxLength: 300, placeholder: 'Contoh: lupa absen pulang, dicek CCTV / konfirmasi supervisor' });
+    var alertSlot = h('div');
+    [h('p', null, h('strong', null, item.fullName), day ? ' · ' + T.dayLabel(day.date, true) : ''), day ? null : date.wrap, cin.wrap, cout.wrap, nextDay.wrap, brk.wrap, reason.wrap,
+      h('p', { class: 'muted small' }, 'Perubahan tercatat di audit log dan tidak tertimpa saat impor Raptor berikutnya.'), alertSlot].forEach(function (x) { if (x) form.appendChild(x); });
+    var ctl = MklUI.modal({
+      title: day ? 'Koreksi absen' : 'Catat absen', content: form,
+      actions: [{ label: 'Batal', onClick: function (c) { c.close(); } }, { label: 'Simpan', variant: 'primary', id: 'ok', onClick: submit }]
+    });
+    form.addEventListener('submit', function (e) { e.preventDefault(); submit(ctl, ctl.buttons.ok); });
+    function norm(t) { return t && t.length === 5 ? t + ':00' : t; }
+    function submit(c, btn) {
+      MklUI.clearFieldErrors(form);
+      MklUI.clear(alertSlot);
+      var p = { employeeId: item.employeeId, workDate: date.input.value, reason: reason.input.value.trim(), clockOutNextDay: nextDay.input.checked };
+      if (cin.input.value && (!day || norm(cin.input.value) !== day.clockIn)) p.clockIn = norm(cin.input.value);
+      if (cout.input.value && (!day || norm(cout.input.value) !== day.clockOut || nextDay.input.checked)) p.clockOut = norm(cout.input.value);
+      var b = Number(String(brk.input.value || '0').replace(',', '.'));
+      if (!day || Math.abs(b - (day.breakMinutes || 0)) > 0.001) p.breakMinutes = b;
+      if (day && !p.clockIn && !p.clockOut && p.breakMinutes === undefined) { alertSlot.appendChild(MklUI.alertBox('error', 'Tidak ada yang diubah.')); return; }
+      MklUI.setBusy(btn, true, 'Menyimpan...');
+      MklApi.call('hr.attendance.setManual', p).then(function (res) {
+        MklUI.setBusy(btn, false);
+        if (!res.success) { if (!MklUI.showFieldErrors(form, res)) alertSlot.appendChild(MklUI.alertBox('error', res.message)); return; }
+        c.close();
+        MklUI.toast(res.message + ' Tekan Hitung Ulang agar gaji diperbarui.', 'success');
+        done();
+      });
+    }
+  }
+
   function detailModal(periodId, item, onChanged) {
     var body = h('div', { class: 'stack' }, MklUI.loadingState('Memuat...'));
         var ctl = MklUI.modal({ title: 'Rincian gaji: ' + item.fullName, content: body, wide: true, actions: [{ label: 'Tutup', onClick: function (c) { c.close(); } }] });
     ctl.dialog.classList.add('modal-payroll');
+    var corrected = false;
+    function afterCorrect() { corrected = true; onChanged(); load(); }
     function load() {
       MklApi.call('hr.payroll.detail', { periodId: periodId, employeeId: item.employeeId }).then(function (res) {
         MklUI.clear(body);
         if (!res.success) { body.appendChild(MklUI.alertBox('error', res.message)); return; }
         var d = res.data, p = d.profile || {};
+        d.corrected = corrected;
         var final = d.period.status === 'disetujui' || d.period.status === 'dibayar';
         var bRin = h('button', { class: 'btn btn-secondary btn-small', type: 'button' }, 'Unduh Rincian (PDF)');
         bRin.addEventListener('click', function () { download('hr.payroll.detailDownload', { periodId: periodId, employeeId: item.employeeId }, bRin); });
@@ -189,6 +234,24 @@
           body.appendChild(h('div', { class: 'btn-row' }, add));
         }
         body.appendChild(h('h3', null, 'Rincian per hari'));
+        if (d.corrected) {
+          var recalc = d.canCalculate ? h('button', { class: 'btn btn-primary btn-small', type: 'button' }, 'Hitung Ulang Sekarang') : null;
+          if (recalc) recalc.addEventListener('click', function () {
+            MklUI.setBusy(recalc, true, 'Menghitung...');
+            MklApi.call('hr.payroll.calculate', { periodId: periodId }).then(function (r) {
+              MklUI.setBusy(recalc, false);
+              if (!r.success) { MklUI.toast(r.message, 'error'); return; }
+              MklUI.toast(r.message, 'success');
+              corrected = false; onChanged(); load();
+            });
+          });
+          body.appendChild(h('div', { class: 'alert alert-warning' }, h('p', null, 'Absensi sudah dikoreksi, tetapi angka di jendela ini belum berubah. Tekan Hitung Ulang agar gaji diperbarui.'), recalc ? h('div', { class: 'btn-row' }, recalc) : null));
+        }
+        if (d.canCorrect) {
+          var addDay = h('button', { class: 'btn btn-secondary btn-small', type: 'button' }, 'Catat Absen Hari Lain');
+          addDay.addEventListener('click', function () { correctModal(d, item, null, afterCorrect); });
+          body.appendChild(h('div', { class: 'btn-row' }, addDay));
+        }
         body.appendChild(h('div', { class: 'recap-table' }, MklUI.table([
           { label: 'Tanggal', render: function (x) { return T.dayLabel(x.date); } },
           { label: 'Masuk', render: function (x) { return x.adjustedIn && x.adjustedIn !== x.clockIn ? h('span', null, x.clockIn, h('br'), h('span', { class: 'muted small' }, 'dihitung ' + x.adjustedIn)) : x.clockIn; } },
@@ -198,8 +261,13 @@
           { label: 'Dibayar', render: function (x) { return x.pay ? h('span', null, dur(x.paidMinutes), h('br'), h('span', { class: 'muted small' }, MklUI.fmtMoney(x.pay))) : '-'; } },
           { label: 'Lembur', render: function (x) { return x.overtimeMinutes ? h('span', null, dur(x.overtimeMinutes), h('br'), h('span', { class: 'muted small' }, MklUI.fmtMoney(x.overtimePay))) : '-'; } },
           { label: 'Jam kurang', render: function (x) { return x.shortMinutes ? h('span', null, dur(x.shortMinutes), h('br'), h('span', { class: 'muted small' }, '− ' + MklUI.fmtMoney(x.shortDeduction))) : '-'; } },
-          { label: 'Catatan', render: function (x) { return x.note ? h('span', { class: 'small' }, x.note) : ''; } }
-        ], d.days, 'Tidak ada absensi pada periode ini.')));
+          { label: 'Catatan', render: function (x) { return x.note ? h('span', { class: 'small' }, x.note) : ''; } },
+          d.canCorrect ? { label: 'Aksi', className: 'col-action', render: function (x) {
+            var b = h('button', { class: 'btn btn-secondary btn-small', type: 'button' }, 'Koreksi');
+            b.addEventListener('click', function () { correctModal(d, item, x, afterCorrect); });
+            return b;
+          } } : null
+        ].filter(Boolean), d.days, 'Tidak ada absensi pada periode ini.')));
         body.appendChild(h('p', { class: 'muted small' }, 'Durasi ditulis jam:menit:detik.'));
       });
     }
