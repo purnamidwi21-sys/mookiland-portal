@@ -13,7 +13,7 @@
  * perm : null = semua pengguna; selain itu cukup salah satu permission
  */
 window.MklHelp = {
-  version: '0.9.9',
+  version: '0.9.10',
   updatedAt: '2026-10-28',
 
   topics: [
@@ -779,7 +779,7 @@ window.MklHelp = {
       notes: [
         'Saat Ubah Gaji, tanggal Berlaku mulai otomatis terisi tanggal profil yang sekarang. Biarkan tanggal itu untuk memperbaiki angka yang salah ketik.',
         'Kenaikan tarif tidak menimpa tarif lama. Isi tanggal Berlaku mulai yang lebih baru, maka periode yang berakhir sebelum tanggal itu tetap memakai tarif lama. Tekan Riwayat untuk melihat semua perubahan.',
-        'Di Ubah Gaji, tanggal tidak bisa diisi lebih awal dari tanggal profil yang sekarang. Untuk memajukan tanggal berlaku, pakai Ubah Tanggal Berlaku (di bawah).',
+        'Tarif ini ternyata sudah berlaku lebih awal (misalnya tarif awal sejak April)? Di Ubah Gaji, isi Berlaku mulai dengan tanggal yang lebih awal lalu Simpan. Profil lama diganti, tidak ditumpuk. Hal ini ditolak bila karyawan punya tarif lain yang lebih lama di antara kedua tanggal itu, atau bila tanggalnya mengenai gaji yang sudah disetujui.',
         'Untuk mengubah tanggal Berlaku mulai banyak karyawan sekaligus (misalnya setelah input awal), centang karyawannya atau Pilih semua yang punya profil, tekan Ubah Tanggal Berlaku, isi tanggal dan alasan, lalu Simpan. Tarifnya tidak berubah. Setelah itu tekan Hitung Ulang di periode gaji.',
         'Tanggal Berlaku mulai tidak boleh jatuh di periode yang sudah disetujui Direktur.',
         'Setiap perubahan tercatat di Audit Log payroll.'
