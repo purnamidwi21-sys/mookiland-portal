@@ -121,7 +121,8 @@
         MklUI.setBusy(btn, false);
         if (!res.success) { if (!MklUI.showFieldErrors(form, res)) alertSlot.appendChild(MklUI.alertBox('error', res.message)); return; }
         c.close();
-        MklUI.toast(res.message, 'success');
+        var em = res.data && res.data.email;
+        MklUI.toast(res.message, em && ((em.failed && em.failed.length) || (em.noEmail && em.noEmail.length)) ? 'warning' : 'success');
         done();
       });
     }
@@ -279,7 +280,7 @@
 
   function markPaidModal(period, done) {
     var form = h('form', { class: 'stack', novalidate: true });
-    var date = MklUI.field({ label: 'Tanggal dibayar', name: 'paidDate', type: 'date', required: true, value: MklUI.todayYmd(), hint: 'Tandai setelah transfer benar-benar dilakukan. Karyawan lalu bisa melihat slip gajinya.' });
+    var date = MklUI.field({ label: 'Tanggal dibayar', name: 'paidDate', type: 'date', required: true, value: MklUI.todayYmd(), hint: 'Tandai setelah transfer benar-benar dilakukan. Karyawan lalu bisa melihat slip gajinya, dan PDF slip dikirim ke email masing-masing karyawan.' });
     var alertSlot = h('div');
     [date.wrap, alertSlot].forEach(function (x) { form.appendChild(x); });
     var ctl = MklUI.modal({
@@ -290,7 +291,7 @@
     function submit(c, btn) {
       MklUI.clearFieldErrors(form);
       MklUI.clear(alertSlot);
-      MklUI.setBusy(btn, true, 'Menyimpan...');
+      MklUI.setBusy(btn, true, 'Menyimpan & mengirim email...');
       MklApi.call('hr.payroll.markPaid', { periodId: period.periodId, paidDate: date.input.value }).then(function (res) {
         MklUI.setBusy(btn, false);
         if (!res.success) { if (!MklUI.showFieldErrors(form, res)) alertSlot.appendChild(MklUI.alertBox('error', res.message)); return; }
@@ -340,25 +341,59 @@
     });
   }
 
+  function sendSlipEmail(payload, btn, done) {
+    MklUI.setBusy(btn, true, 'Mengirim...');
+    MklApi.call('hr.payroll.payslipEmail', payload).then(function (r) {
+      MklUI.setBusy(btn, false);
+      if (!r.success) { MklUI.toast(r.message, 'error'); return; }
+      var bad = r.data && ((r.data.failed && r.data.failed.length) || (r.data.noEmail && r.data.noEmail.length));
+      MklUI.toast(r.message, bad ? 'warning' : 'success');
+      done();
+    });
+  }
+
   function payslipCard(periodId) {
     var body = h('div', null, MklUI.loadingState('Memuat...'));
     var canDownload = MklState.canAny(['payroll.prepare', 'payslip.read.all']);
-    MklApi.call('hr.payroll.payslips', { periodId: periodId }).then(function (res) {
-      MklUI.clear(body);
-      if (!res.success) { body.appendChild(MklUI.alertBox('error', res.message)); return; }
-      body.appendChild(MklUI.table([
-        { label: 'Nomor slip', render: function (s) { return s.payslipNo; } },
-        { label: 'Nama', render: function (s) { return s.fullName; } },
-        { label: 'Pembayaran', render: function (s) { return s.paymentStatus === 'dibayar' ? MklUI.badge('Dibayar ' + MklUI.fmtDate(s.paidAt), 'success') : MklUI.badge('Belum dibayar', 'muted'); } },
-        { label: 'Dibuka karyawan', render: function (s) { return s.viewed ? 'Sudah' : 'Belum'; } },
-        { label: 'Aksi', className: 'col-action', render: function (s) {
-          if (!canDownload) return '';
-          var b = h('button', { class: 'btn btn-secondary btn-small', type: 'button' }, 'Unduh PDF');
-          b.addEventListener('click', function () { download('hr.payroll.payslipDownload', { payslipId: s.payslipId }, b); });
-          return b;
-        } }
-      ], res.data.items, 'Belum ada slip gaji.'));
-    });
+    function load() {
+      MklApi.call('hr.payroll.payslips', { periodId: periodId }).then(function (res) {
+        MklUI.clear(body);
+        if (!res.success) { body.appendChild(MklUI.alertBox('error', res.message)); return; }
+        var d = res.data, canEmail = d.canEmail && d.emailEnabled;
+        var pending = d.items.filter(function (s) { return s.paymentStatus === 'dibayar' && !s.emailedAt; });
+        if (canEmail && pending.length) {
+          var all = h('button', { class: 'btn btn-secondary btn-small', type: 'button' }, 'Kirim Slip yang Belum Terkirim (' + pending.length + ')');
+          all.addEventListener('click', function () { sendSlipEmail({ periodId: periodId }, all, load); });
+          body.appendChild(h('div', { class: 'btn-row' }, all));
+        }
+        body.appendChild(MklUI.table([
+          { label: 'Nomor slip', render: function (s) { return s.payslipNo; } },
+          { label: 'Nama', render: function (s) { return s.fullName; } },
+          { label: 'Pembayaran', render: function (s) { return s.paymentStatus === 'dibayar' ? MklUI.badge('Dibayar ' + MklUI.fmtDate(s.paidAt), 'success') : MklUI.badge('Belum dibayar', 'muted'); } },
+          { label: 'Email', render: function (s) {
+            if (!s.emailMasked) return MklUI.badge('Belum ada email', 'warning');
+            return h('span', { class: 'small' }, s.emailMasked, h('br'), s.emailedAt ? h('span', { class: 'muted' }, 'terkirim ' + MklUI.fmtDateTime(s.emailedAt)) : h('span', { class: 'muted' }, s.paymentStatus === 'dibayar' ? 'belum terkirim' : 'dikirim saat ditandai dibayar'));
+          } },
+          { label: 'Dibuka karyawan', render: function (s) { return s.viewed ? 'Sudah' : 'Belum'; } },
+          { label: 'Aksi', className: 'col-action', render: function (s) {
+            var row = h('div', { class: 'btn-row' });
+            if (canDownload) {
+              var b = h('button', { class: 'btn btn-secondary btn-small', type: 'button' }, 'Unduh PDF');
+              b.addEventListener('click', function () { download('hr.payroll.payslipDownload', { payslipId: s.payslipId }, b); });
+              row.appendChild(b);
+            }
+            if (canEmail && s.paymentStatus === 'dibayar' && s.emailMasked) {
+              var e = h('button', { class: 'btn btn-ghost btn-small', type: 'button' }, s.emailedAt ? 'Kirim Ulang' : 'Kirim Email');
+              e.addEventListener('click', function () { sendSlipEmail({ periodId: periodId, payslipId: s.payslipId }, e, load); });
+              row.appendChild(e);
+            }
+            return row.childNodes.length ? row : '';
+          } }
+        ], d.items, 'Belum ada slip gaji.'));
+        if (canEmail && d.items.some(function (s) { return !s.emailMasked; })) body.appendChild(h('p', { class: 'muted small' }, 'Karyawan tanpa email: isi Email perusahaan atau Email pribadi di menu Karyawan (atau karyawan mengisinya di Profil Saya), lalu tekan Kirim Email.'));
+      });
+    }
+    load();
     return MklUI.card('Slip gaji', body);
   }
 

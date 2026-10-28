@@ -4,7 +4,7 @@
 (function () {
   'use strict';
   var h = MklUI.h;
-  var VERSION = '0.9.11';
+  var VERSION = '0.9.12';
 
   function appRoot() {
     return document.getElementById('app');

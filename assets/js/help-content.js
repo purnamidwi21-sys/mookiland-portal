@@ -13,7 +13,7 @@
  * perm : null = semua pengguna; selain itu cukup salah satu permission
  */
 window.MklHelp = {
-  version: '0.9.11',
+  version: '0.9.12',
   updatedAt: '2026-10-28',
 
   topics: [
@@ -881,8 +881,11 @@ window.MklHelp = {
         'Buka file di Excel dan lakukan transfer lewat internet banking.',
         'Setelah semua transfer selesai, tekan Tandai Sudah Dibayar, isi Tanggal dibayar, lalu tekan Tandai Sudah Dibayar.'
       ],
-      result: 'Status menjadi Sudah dibayar. Karyawan mendapat notifikasi dan slip muncul di Slip Gaji Saya.',
+      result: 'Status menjadi Sudah dibayar. Karyawan mendapat notifikasi, slip muncul di Slip Gaji Saya, dan PDF slip dikirim ke email masing-masing karyawan.',
       notes: [
+        'Slip dikirim ke Email perusahaan karyawan, atau Email pribadi bila email perusahaan kosong. Isi email tanpa angka gaji; angkanya hanya di lampiran PDF.',
+        'Karyawan tanpa email disebut di pesan dan bertanda Belum ada email di kartu Slip gaji. Isi emailnya di menu Karyawan, lalu tekan Kirim Email atau Kirim Slip yang Belum Terkirim.',
+        'Bila pengiriman gagal (misalnya kuota email harian habis), status tetap Sudah dibayar. Tekan Kirim Slip yang Belum Terkirim keesokan harinya.',
         'Baris "BELUM ADA REKENING" di file transfer berarti rekening karyawan itu belum dicatat. Lengkapi di Profil Gaji > Rekening.',
         'File transfer berisi nomor rekening lengkap. Simpan di komputer kantor, jangan dikirim lewat grup chat, dan hapus setelah selesai.'
       ]
