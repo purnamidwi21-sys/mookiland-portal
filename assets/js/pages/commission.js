@@ -243,10 +243,11 @@
     };
     rows.forEach(function (r) { r.sel.addEventListener('change', refresh); });
     result.appendChild(MklUI.card('Operator POS', [
-      h('p', null, 'Pilih karyawan untuk setiap operator kasir. Operator yang bukan kasir (misalnya akun manajer) pilih "Bukan kasir": struknya dialihkan ke kasir yang mencetak struk sebelumnya di POS yang sama. Pilihan disimpan untuk impor berikutnya.'),
+      h('p', null, 'Angka di kolom pertama adalah nomor operator (akun login kasir di Raptor POS, kolom OpNo di Receipt Number Report), bukan nomor struk. Pilih karyawan untuk setiap operator kasir. Operator yang bukan kasir (misalnya akun manajer) pilih "Bukan kasir": struknya dialihkan ke kasir yang mencetak struk sebelumnya di POS yang sama. Pilihan disimpan untuk impor berikutnya.'),
+      p.operators.some(function (o) { return !o.opName; }) ? h('p', { class: 'muted small' }, 'Nama operator belum tampil. Impor dulu POS Resto bersama file All Receipt Number Report-nya: nama operator terbaca dan pilihan kasir tersimpan untuk POS Ticket. (Laporan per operator POS Ticket mengelompokkan semua struk di bawah satu nama, jadi namanya tidak dipakai.)') : null,
       h('div', { class: 'recap-table' }, MklUI.table([
-        { label: 'Operator', render: function (r) { return h('span', null, h('code', null, r.o.opNo), r.o.opName ? ' ' + r.o.opName : ''); } },
-        { label: 'Struk', render: function (r) { return r.o.receipts + (r.o.firstDate ? ' (' + T.rangeLabel(r.o.firstDate, r.o.lastDate) + ')' : ''); } },
+        { label: 'No. operator (OpNo)', render: function (r) { return h('span', null, h('code', null, r.o.opNo), r.o.opName ? ' ' + r.o.opName : ''); } },
+        { label: 'Jumlah struk dicetak', render: function (r) { return r.o.receipts + ' struk' + (r.o.firstDate ? ' (' + T.rangeLabel(r.o.firstDate, r.o.lastDate) + ')' : ''); } },
         { label: 'Kasir', render: function (r) { return h('span', null, r.sel, r.o.saved ? h('span', { class: 'muted small' }, ' tersimpan') : (r.o.suggestedEmployeeId ? h('span', { class: 'muted small' }, ' saran dari nama') : null)); } }
       ], rows, ''))
     ]));
