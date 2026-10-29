@@ -52,8 +52,11 @@
     var eff = MklUI.field({ label: 'Berlaku mulai', name: 'effectiveFrom', type: 'date', required: true, value: latestEff || lastEffective || MklUI.todayYmd(),
       hint: latestEff ? 'Sekarang: berlaku sejak ' + MklUI.fmtDate(latestEff) + '. Salah angka → biarkan tanggalnya. Tarif ini sebenarnya sudah berlaku lebih awal → isi tanggal yang lebih awal. Kenaikan tarif → isi tanggal mulai tarif baru (sebelum tanggal itu tetap tarif lama).' : 'Periode yang berakhir sebelum tanggal ini tidak memakai profil ini. Untuk menghitung gaji periode lama, pilih tanggal sebelum awal periode itu.' });
     var reason = MklUI.field({ label: 'Alasan', name: 'reason', required: true, multiline: true, rows: 2, maxLength: 300, placeholder: 'Contoh: tarif awal, kenaikan tarif' });
+    var replaceOlder = MklUI.checkboxField({ label: 'Ganti juga tarif lama', name: 'replaceOlder', hint: 'Tarif lama yang tanggalnya sama atau sesudah Berlaku mulai tidak dipakai lagi; isian ini yang berlaku. Riwayat tetap tersimpan di audit log.' });
+    replaceOlder.wrap.hidden = true;
+    eff.input.addEventListener('change', function () { replaceOlder.wrap.hidden = true; replaceOlder.input.checked = false; });
     var alertSlot = h('div');
-    [payType.wrap, daily.wrap, monthly.wrap, div.wrap, cap.wrap, rounding.wrap, starts.wrap, autoBreak.wrap, ot.wrap, shortfall.wrap, req.wrap, eff.wrap, reason.wrap, alertSlot].forEach(function (x) { form.appendChild(x); });
+    [payType.wrap, daily.wrap, monthly.wrap, div.wrap, cap.wrap, rounding.wrap, starts.wrap, autoBreak.wrap, ot.wrap, shortfall.wrap, req.wrap, eff.wrap, replaceOlder.wrap, reason.wrap, alertSlot].forEach(function (x) { form.appendChild(x); });
     function sync() {
       starts.wrap.hidden = !rounding.input.checked;
       var harian = payType.input.value === 'harian';
@@ -88,7 +91,8 @@
         overtimeEligible: ot.input.checked, effectiveFrom: eff.input.value, reason: reason.input.value.trim(),
         hourlyDivisor: Number(String(div.input.value || 0).replace(',', '.')),
         shiftStarts: starts.input.value.replace(/\./g, ':').trim(),
-        autoBreak: autoBreak.input.checked
+        autoBreak: autoBreak.input.checked,
+        replaceOlder: !replaceOlder.wrap.hidden && replaceOlder.input.checked
       };
       if (harian) payload.dailyRate = Number(daily.input.value || 0);
       else {
@@ -100,7 +104,12 @@
       MklApi.call('hr.payroll.saveProfile', payload).then(function (res) {
         MklUI.setBusy(btn, false);
         if (res.success) lastEffective = payload.effectiveFrom;
-        if (!res.success) { if (!MklUI.showFieldErrors(form, res)) alertSlot.appendChild(MklUI.alertBox('error', res.message)); return; }
+        if (!res.success) {
+          var fe = (res.details && res.details.fields && res.details.fields.effectiveFrom) || '';
+          if (/Ganti juga tarif lama/.test(fe)) replaceOlder.wrap.hidden = false;
+          if (!MklUI.showFieldErrors(form, res)) alertSlot.appendChild(MklUI.alertBox('error', res.message));
+          return;
+        }
         c.close();
         MklUI.toast(res.message, 'success');
         done();

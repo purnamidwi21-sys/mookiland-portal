@@ -203,70 +203,160 @@
 
   // ================================================================== Absensi Saya
 
+  /** Menit berpecahan -> "8:37:04". */
+  function dur(min) {
+    if (!min) return '-';
+    var t = Math.round(min * 60), two = function (n) { return (n < 10 ? '0' : '') + n; };
+    return Math.floor(t / 3600) + ':' + two(Math.floor(t / 60) % 60) + ':' + two(t % 60);
+  }
+  function shiftMonth(ym, n) { var d = new Date(Date.UTC(+ym.slice(0, 4), +ym.slice(5, 7) - 1 + n, 1)); return d.toISOString().slice(0, 7); }
+
+  /** Absensi per periode gaji (27–26), dihitung seperti Rincian gaji tetapi tanpa angka rupiah. */
+  function periodView(root) {
+    var month = null;
+    var prev = h('button', { class: 'btn btn-secondary btn-small', type: 'button' }, '← Periode sebelumnya');
+    var next = h('button', { class: 'btn btn-secondary btn-small', type: 'button' }, 'Periode berikutnya →');
+    var label = h('strong', { class: 'week-label' });
+    root.appendChild(h('div', { class: 'week-nav' }, prev, label, next));
+    var area = h('div');
+    root.appendChild(area);
+    prev.addEventListener('click', function () { month = shiftMonth(month, -1); load(); });
+    next.addEventListener('click', function () { month = shiftMonth(month, 1); load(); });
+    function load() {
+      MklUI.clear(area).appendChild(MklUI.loadingState('Memuat absensi...'));
+      MklApi.call('me.attendancePeriod', month ? { month: month } : {}).then(function (res) {
+        MklUI.clear(area);
+        if (!res.success) { area.appendChild(MklUI.errorState(res, load)); return; }
+        var d = res.data;
+        if (d.linked === false) { area.appendChild(T.notLinked()); return; }
+        month = d.month;
+        label.textContent = 'Gaji ' + T.monthLabel(d.month) + ' (' + T.rangeLabel(d.from, d.to) + ')';
+        next.disabled = d.month >= d.currentMonth;
+        var s = d.summary;
+        var srcText = d.source === 'final' ? MklUI.alertBox('success', 'Sesuai gaji yang sudah disetujui Direktur.')
+          : (d.source === 'tanpa_profil' ? MklUI.alertBox('info', 'Jam absen apa adanya. Jam kerja dan lembur tampil setelah HR mengatur profil gaji Anda.')
+            : MklUI.alertBox('info', 'Perkiraan dari data absensi terbaru' + (d.periodStatus ? ' (gaji: ' + d.periodStatus + ')' : '') + '. Angka bisa berubah bila HR mengoreksi absensi.'));
+        area.appendChild(MklUI.card('Ringkasan', [srcText,
+          h('div', { class: 'stats' },
+            stat('Hari hadir', s.present), stat('Lama hadir', dur(s.spanMinutes)), stat('Jam kerja dihitung', dur(s.workMinutes)),
+            stat('Lembur', d.overtimeEligible ? dur(s.overtimeMinutes) : 'tidak ada', s.overtimeMinutes ? 'info' : null),
+            s.shortMinutes ? stat('Jam kurang', dur(s.shortMinutes), 'warning') : null,
+            stat('Belum absen pulang', s.incomplete, s.incomplete ? 'warning' : null)),
+          d.rule ? h('p', { class: 'muted small' }, 'Aturan jam masuk: ' + d.rule + '. Jam kerja dihitung paling banyak ' + d.paidHoursCap + ' jam per hari; selebihnya lembur' + (d.overtimeEligible ? ' (minimal 15 menit)' : '') + '.') : null]));
+        var canFix = d.canRequestCorrection && window.MklRequests;
+        area.appendChild(MklUI.card('Rincian harian', [
+          h('div', { class: 'recap-table' }, MklUI.table([
+            { label: 'Tanggal', render: function (x) { return T.dayLabel(x.date); } },
+            { label: 'Masuk', render: function (x) { return h('span', null, x.clockIn, x.countedIn ? h('span', { class: 'muted small' }, h('br'), 'dihitung ' + x.countedIn) : null); } },
+            { label: 'Pulang', render: function (x) { return x.clockOut || MklUI.badge('Belum absen pulang', 'warning'); } },
+            { label: 'Istirahat', render: function (x) { return x.breakMinutes ? dur(x.breakMinutes) : '-'; } },
+            { label: 'Lama hadir', render: function (x) { return dur(x.spanMinutes); } },
+            { label: 'Jam kerja', render: function (x) { return dur(x.workMinutes); } },
+            { label: 'Lembur', render: function (x) { return x.overtimeMinutes ? dur(x.overtimeMinutes) : '-'; } },
+            { label: 'Catatan', render: function (x) { return h('span', { class: 'small' }, x.shortMinutes ? 'Kurang ' + dur(x.shortMinutes) + (x.note ? '; ' : '') : '', x.note || ''); } },
+            canFix ? { label: 'Koreksi', className: 'col-action', render: function (x) {
+              if (x.correctionPending) return MklUI.badge('Koreksi menunggu', 'warning');
+              var b = h('button', { class: 'btn btn-secondary btn-small', type: 'button' }, 'Ajukan Koreksi');
+              b.addEventListener('click', function () { MklRequests.correctionForm({ date: x.date, clockIn: (x.clockIn || '').slice(0, 5), clockOut: (x.clockOut || '').slice(0, 5), onDone: load }); });
+              return b;
+            } } : null
+          ].filter(Boolean), d.days, 'Belum ada absensi pada periode ini.')),
+          h('p', { class: 'muted small' }, 'Durasi dalam jam:menit:detik. "Dihitung" = jam mulai kerja yang dipakai untuk gaji (dibulatkan ke jam shift). ' +
+            (canFix ? 'Jam salah? Tekan Ajukan Koreksi pada tanggal tersebut. Tidak absen sama sekali pada suatu hari? Tekan Koreksi Tanggal Lain.' : 'Jika ada data yang salah, hubungi HR.')),
+          canFix ? h('div', { class: 'form-actions' }, (function () {
+            var b = h('button', { class: 'btn btn-secondary btn-small', type: 'button' }, 'Koreksi Tanggal Lain');
+            b.addEventListener('click', function () { MklRequests.correctionForm({ onDone: load }); });
+            return b;
+          })()) : null
+        ]));
+      });
+    }
+    load();
+  }
+
   MklNav.register('/absensi-saya', {
     title: 'Absensi Saya',
     perm: 'attendance.read.own',
     menu: { label: 'Absensi Saya', order: 4 },
     render: function (root) {
-      var month = MklUI.todayYmd().slice(0, 7);
-      root.appendChild(MklUI.pageHeader('Absensi Saya', 'Catatan jam masuk dan pulang Anda per bulan.'));
-      var prev = h('button', { class: 'btn btn-secondary btn-small', type: 'button' }, '← Bulan lalu');
-      var next = h('button', { class: 'btn btn-secondary btn-small', type: 'button' }, 'Bulan berikutnya →');
-      var label = h('strong', { class: 'week-label' });
-      root.appendChild(h('div', { class: 'week-nav' }, prev, label, next));
-      var area = h('div');
-      root.appendChild(area);
-      function shift(n) {
-        var p = month.split('-').map(Number);
-        var d = new Date(Date.UTC(p[0], p[1] - 1 + n, 1));
-        month = d.toISOString().slice(0, 7);
-        load();
+      root.appendChild(MklUI.pageHeader('Absensi Saya', 'Jam masuk, pulang, jam kerja, dan lembur Anda.'));
+      var tabPeriod = h('button', { class: 'tab', type: 'button', role: 'tab', 'aria-selected': 'true' }, 'Per Periode Gaji');
+      var tabMonth = h('button', { class: 'tab', type: 'button', role: 'tab', 'aria-selected': 'false' }, 'Jadwal & Status');
+      root.appendChild(h('div', { class: 'tabs', role: 'tablist' }, tabPeriod, tabMonth));
+      var body = h('div');
+      root.appendChild(body);
+      function show(which) {
+        tabPeriod.setAttribute('aria-selected', which === 'period' ? 'true' : 'false');
+        tabMonth.setAttribute('aria-selected', which === 'month' ? 'true' : 'false');
+        MklUI.clear(body);
+        if (which === 'period') periodView(body); else monthView(body);
       }
-      prev.addEventListener('click', function () { shift(-1); });
-      next.addEventListener('click', function () { shift(1); });
-
-      function load() {
-        label.textContent = T.monthLabel(month);
-        next.disabled = month >= MklUI.todayYmd().slice(0, 7);
-        MklUI.clear(area).appendChild(MklUI.loadingState('Memuat absensi...'));
-        MklApi.call('me.attendance', { month: month }).then(function (res) {
-          MklUI.clear(area);
-          if (!res.success) { area.appendChild(MklUI.errorState(res, load)); return; }
-          if (res.data.linked === false) { area.appendChild(T.notLinked()); return; }
-          var s = res.data.summary;
-          area.appendChild(MklUI.card('Ringkasan', h('div', { class: 'stats' },
-            stat('Hari terjadwal', s.scheduled), stat('Hadir', s.present),
-            stat('Terlambat', s.late + (s.late ? ' (' + T.fmtMinutes(s.lateMinutes) + ')' : ''), s.late ? 'warning' : null),
-            stat('Tidak hadir', s.absent, s.absent ? 'warning' : null),
-            stat('Belum absen pulang', s.incomplete, s.incomplete ? 'warning' : null),
-            stat('Cuti / sakit / izin', (s.leave || 0) + ' / ' + (s.sick || 0) + ' / ' + (s.permit || 0)),
-            stat('Total jam kerja', T.fmtMinutes(s.workedMinutes)))));
-          var today = MklUI.todayYmd();
-          var canFix = res.data.canRequestCorrection && window.MklRequests;
-          var days = res.data.days.filter(function (d) { return d.status !== 'kosong'; });
-          area.appendChild(MklUI.card('Rincian harian', [
-            MklUI.table([
-              { label: 'Tanggal', render: function (d) { return T.dayLabel(d.date); } },
-              { label: 'Jadwal', render: function (d) { return d.shift ? h('span', null, T.shiftChip(d.shift), ' ' + d.shift.startTime + '–' + d.shift.endTime) : (d.off ? 'Libur' : '-'); } },
-              { label: 'Masuk', render: function (d) { return d.clockIn; } },
-              { label: 'Pulang', render: function (d) { return d.clockOut ? d.clockOut + (d.clockOutNextDay ? ' (+1)' : '') : ''; } },
-              { label: 'Status', render: function (d) { return T.statusBadge(d.status, d.statusLabel); } },
-              { label: 'Terlambat', render: function (d) { return d.lateMinutes ? d.lateMinutes + ' menit' : ''; } },
-              canFix ? { label: 'Koreksi', className: 'col-action', render: function (d) {
-                if (d.correctionPending) return MklUI.badge('Koreksi menunggu', 'warning');
-                if (d.date > today || d.status === 'libur' || T.isLeave(d.status)) return '';
-                var b = h('button', { class: 'btn btn-secondary btn-small', type: 'button' }, 'Ajukan Koreksi');
-                b.addEventListener('click', function () { MklRequests.correctionForm({ date: d.date, clockIn: d.clockIn, clockOut: d.clockOut, onDone: load }); });
-                return b;
-              } } : null
-            ].filter(Boolean), days, 'Belum ada jadwal atau absen di bulan ini.'),
-            h('p', { class: 'muted small' }, canFix ? 'Lupa absen atau jam salah? Tekan Ajukan Koreksi pada tanggal tersebut. Manajer Operasional akan memeriksanya.' : 'Jika ada data yang salah (misalnya lupa absen), hubungi HR.')
-          ]));
-        });
-      }
-      load();
+      tabPeriod.addEventListener('click', function () { show('period'); });
+      tabMonth.addEventListener('click', function () { show('month'); });
+      show('period');
     }
   });
+
+  /** Tampilan lama: per bulan kalender, dibandingkan dengan jadwal shift. */
+  function monthView(root) {
+    var month = MklUI.todayYmd().slice(0, 7);
+    root.appendChild(h('p', { class: 'muted small' }, 'Catatan jam masuk dan pulang per bulan kalender, dibandingkan dengan jadwal shift yang diterbitkan.'));
+    var prev = h('button', { class: 'btn btn-secondary btn-small', type: 'button' }, '← Bulan lalu');
+    var next = h('button', { class: 'btn btn-secondary btn-small', type: 'button' }, 'Bulan berikutnya →');
+    var label = h('strong', { class: 'week-label' });
+    root.appendChild(h('div', { class: 'week-nav' }, prev, label, next));
+    var area = h('div');
+    root.appendChild(area);
+    function shift(n) {
+      var p = month.split('-').map(Number);
+      var d = new Date(Date.UTC(p[0], p[1] - 1 + n, 1));
+      month = d.toISOString().slice(0, 7);
+      load();
+    }
+    prev.addEventListener('click', function () { shift(-1); });
+    next.addEventListener('click', function () { shift(1); });
+
+    function load() {
+      label.textContent = T.monthLabel(month);
+      next.disabled = month >= MklUI.todayYmd().slice(0, 7);
+      MklUI.clear(area).appendChild(MklUI.loadingState('Memuat absensi...'));
+      MklApi.call('me.attendance', { month: month }).then(function (res) {
+        MklUI.clear(area);
+        if (!res.success) { area.appendChild(MklUI.errorState(res, load)); return; }
+        if (res.data.linked === false) { area.appendChild(T.notLinked()); return; }
+        var s = res.data.summary;
+        area.appendChild(MklUI.card('Ringkasan', h('div', { class: 'stats' },
+          stat('Hari terjadwal', s.scheduled), stat('Hadir', s.present),
+          stat('Terlambat', s.late + (s.late ? ' (' + T.fmtMinutes(s.lateMinutes) + ')' : ''), s.late ? 'warning' : null),
+          stat('Tidak hadir', s.absent, s.absent ? 'warning' : null),
+          stat('Belum absen pulang', s.incomplete, s.incomplete ? 'warning' : null),
+          stat('Cuti / sakit / izin', (s.leave || 0) + ' / ' + (s.sick || 0) + ' / ' + (s.permit || 0)),
+          stat('Total jam kerja', T.fmtMinutes(s.workedMinutes)))));
+        var today = MklUI.todayYmd();
+        var canFix = res.data.canRequestCorrection && window.MklRequests;
+        var days = res.data.days.filter(function (d) { return d.status !== 'kosong'; });
+        area.appendChild(MklUI.card('Rincian harian', [
+          MklUI.table([
+            { label: 'Tanggal', render: function (d) { return T.dayLabel(d.date); } },
+            { label: 'Jadwal', render: function (d) { return d.shift ? h('span', null, T.shiftChip(d.shift), ' ' + d.shift.startTime + '–' + d.shift.endTime) : (d.off ? 'Libur' : '-'); } },
+            { label: 'Masuk', render: function (d) { return d.clockIn; } },
+            { label: 'Pulang', render: function (d) { return d.clockOut ? d.clockOut + (d.clockOutNextDay ? ' (+1)' : '') : ''; } },
+            { label: 'Status', render: function (d) { return T.statusBadge(d.status, d.statusLabel); } },
+            { label: 'Terlambat', render: function (d) { return d.lateMinutes ? d.lateMinutes + ' menit' : ''; } },
+            canFix ? { label: 'Koreksi', className: 'col-action', render: function (d) {
+              if (d.correctionPending) return MklUI.badge('Koreksi menunggu', 'warning');
+              if (d.date > today || d.status === 'libur' || T.isLeave(d.status)) return '';
+              var b = h('button', { class: 'btn btn-secondary btn-small', type: 'button' }, 'Ajukan Koreksi');
+              b.addEventListener('click', function () { MklRequests.correctionForm({ date: d.date, clockIn: d.clockIn, clockOut: d.clockOut, onDone: load }); });
+              return b;
+            } } : null
+          ].filter(Boolean), days, 'Belum ada jadwal atau absen di bulan ini.'),
+          h('p', { class: 'muted small' }, canFix ? 'Lupa absen atau jam salah? Tekan Ajukan Koreksi pada tanggal tersebut. Manajer Operasional akan memeriksanya.' : 'Jika ada data yang salah (misalnya lupa absen), hubungi HR.')
+        ]));
+      });
+    }
+    load();
+  }
 
   function stat(label, value, variant) {
     return h('div', { class: 'stat' + (variant ? ' stat-' + variant : '') },

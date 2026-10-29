@@ -13,8 +13,8 @@
  * perm : null = semua pengguna; selain itu cukup salah satu permission
  */
 window.MklHelp = {
-  version: '0.9.19',
-  updatedAt: '2026-10-28',
+  version: '0.10.0',
+  updatedAt: '2026-10-29',
 
   topics: [
     // ------------------------------------------------------------ semua pengguna
@@ -209,14 +209,20 @@ window.MklHelp = {
     },
     {
       id: 'absensi-saya', guide: 'staff', perm: ['attendance.read.own'], title: 'Melihat catatan absensi',
-      intro: 'Menu Absensi Saya menampilkan jam masuk, jam pulang, dan status kehadiran Anda per bulan.',
+      intro: 'Menu Absensi Saya menampilkan jam masuk, jam pulang, istirahat, jam kerja, dan lembur Anda per periode gaji (tanggal 27 sampai 26), dihitung dengan aturan yang sama seperti gaji.',
       steps: [
-        'Buka menu Absensi Saya.',
-        'Lihat Ringkasan: hari terjadwal, hadir, terlambat, tidak hadir, belum absen pulang, dan total jam kerja.',
-        'Gulir ke Rincian harian untuk melihat setiap hari. Tekan ← Bulan lalu untuk bulan sebelumnya.'
+        'Buka menu Absensi Saya. Tab Per Periode Gaji terbuka untuk periode gaji yang sedang berjalan.',
+        'Lihat Ringkasan: hari hadir, lama hadir, jam kerja dihitung, lembur, dan hari yang belum absen pulang.',
+        'Gulir ke Rincian harian. Kolom Masuk menampilkan jam absen; tulisan "dihitung" di bawahnya adalah jam mulai kerja yang dipakai untuk gaji (dibulatkan ke jam shift).',
+        'Tekan ← Periode sebelumnya untuk melihat periode lalu.'
       ],
-      result: 'Anda mengetahui catatan kehadiran Anda yang dipakai perusahaan.',
-      notes: ['Jika ada yang salah (misalnya lupa absen pulang), tekan Ajukan Koreksi pada tanggal itu. Lihat topik "Mengajukan koreksi absensi".']
+      result: 'Anda bisa memeriksa absensi dan lembur sebelum gaji disetujui.',
+      notes: [
+        'Selama gaji belum disetujui Direktur, angkanya perkiraan dan bisa berubah bila HR mengoreksi absensi. Setelah disetujui, tertulis "Sesuai gaji yang sudah disetujui Direktur".',
+        'Durasi ditulis jam:menit:detik, misalnya 8:37:04.',
+        'Tab Jadwal & Status menampilkan tampilan lama per bulan kalender dibandingkan dengan jadwal shift.',
+        'Jika ada yang salah (misalnya lupa absen pulang), tekan Ajukan Koreksi pada tanggal itu. Lihat topik "Mengajukan koreksi absensi".'
+      ]
     },
     {
       id: 'ajukan-cuti', guide: 'staff', perm: ['leave.request.own'], title: 'Mengajukan cuti, izin, atau sakit',
@@ -292,9 +298,10 @@ window.MklHelp = {
         'Cari baris periode yang ingin dilihat, misalnya Desember 2026.',
         'Tekan Unduh PDF.'
       ],
-      result: 'File PDF slip gaji tersimpan di ponsel atau komputer Anda. Isinya: rincian upah atau gaji, lembur, tambahan, potongan, dan gaji bersih.',
+      result: 'File PDF slip gaji tersimpan di ponsel atau komputer Anda. Isinya: rincian upah atau gaji, lembur, komisi, tambahan, potongan, dan gaji bersih.',
       notes: [
         'Slip belum muncul jika gaji periode itu belum ditandai dibayar. Anda mendapat notifikasi di lonceng saat slip tersedia.',
+        'Sebelum gaji disetujui, HR bisa mengirim DRAF slip ke email Anda untuk diperiksa. Draf bertanda DRAF dan angkanya masih bisa berubah. Jika ada yang salah, laporkan ke Manajer Operasional sebelum batas yang tertulis di email.',
         'Simpan file slip di tempat aman dan jangan dibagikan di grup chat.',
         'Jika ada angka yang tidak sesuai, hubungi Manajer Operasional.'
       ]
@@ -779,7 +786,8 @@ window.MklHelp = {
       notes: [
         'Saat Ubah Gaji, tanggal Berlaku mulai otomatis terisi tanggal profil yang sekarang. Biarkan tanggal itu untuk memperbaiki angka yang salah ketik.',
         'Kenaikan tarif tidak menimpa tarif lama. Isi tanggal Berlaku mulai yang lebih baru, maka periode yang berakhir sebelum tanggal itu tetap memakai tarif lama. Tekan Riwayat untuk melihat semua perubahan.',
-        'Tarif ini ternyata sudah berlaku lebih awal (misalnya tarif awal sejak April)? Di Ubah Gaji, isi Berlaku mulai dengan tanggal yang lebih awal lalu Simpan. Profil lama diganti, tidak ditumpuk. Hal ini ditolak bila karyawan punya tarif lain yang lebih lama di antara kedua tanggal itu, atau bila tanggalnya mengenai gaji yang sudah disetujui.',
+        'Tarif ini ternyata sudah berlaku lebih awal (misalnya tarif awal sejak April)? Di Ubah Gaji, isi Berlaku mulai dengan tanggal yang lebih awal lalu Simpan. Profil lama diganti, tidak ditumpuk. Bila karyawan punya tarif lain di antara kedua tanggal itu, muncul pesan berisi tarif tersebut dan kotak Ganti juga tarif lama. Centang bila isian ini memang berlaku mulai tanggal itu, lalu Simpan. Ditolak bila tanggalnya mengenai gaji yang sudah disetujui.',
+        'Profil gaji dipakai bila Berlaku mulai paling lambat tanggal akhir periode (tanggal 26). Contoh: agar gaji September (27 Agu – 26 Sep) memakai profil baru, isi Berlaku mulai paling lambat 27 Agustus. Bila profil terbaru belum berlaku, Rincian gaji menampilkan peringatan "Profil gaji terbaru ... BELUM dipakai".',
         'Untuk mengubah tanggal Berlaku mulai banyak karyawan sekaligus (misalnya setelah input awal), centang karyawannya atau Pilih semua yang punya profil, tekan Ubah Tanggal Berlaku, isi tanggal dan alasan, lalu Simpan. Tarifnya tidak berubah. Setelah itu tekan Hitung Ulang di periode gaji.',
         'Tanggal Berlaku mulai tidak boleh jatuh di periode yang sudah disetujui Direktur.',
         'Setiap perubahan tercatat di Audit Log payroll.'
@@ -859,8 +867,26 @@ window.MklHelp = {
         'Tambahan/potongan tidak bisa diubah setelah periode diajukan, kecuali Direktur menolaknya.',
         'Ada kesalahan fingerprint (misalnya lupa absen pulang)? Tekan Koreksi di baris tanggal itu, ubah Jam masuk, Jam pulang, atau Istirahat (menit), isi Alasan, lalu Simpan. Untuk tanggal yang tidak ada absennya, tekan Catat Absen Hari Lain. Setelah itu tekan Hitung Ulang Sekarang. Baris yang dikoreksi bertanda Dikoreksi HR dan tidak tertimpa saat impor Raptor berikutnya. Koreksi hanya bisa sebelum periode diajukan ke Direktur.',
         'Tekan Unduh Rincian (PDF) untuk menyimpan rincian gaji dan absensi per hari karyawan itu, seperti lembar "Salary & Absence Breakdown" di file lama.',
-        'Tekan Unduh Slip (DRAF) untuk melihat slip sebelum disetujui Direktur. Slip DRAF tidak bernomor dan bukan slip resmi, jadi jangan dikirim ke karyawan. Setelah disetujui, tombolnya menjadi Unduh Slip Gaji dan mengunduh slip resmi.',
+        'Tekan Unduh Slip (DRAF) untuk melihat slip sebelum disetujui Direktur. Slip DRAF tidak bernomor dan bukan slip resmi. Untuk mengirim draf ke karyawan agar diperiksa, pakai Kirim Draf Slip ke Karyawan (topik "Mengirim draf slip ke karyawan"). Setelah disetujui, tombolnya menjadi Unduh Slip Gaji dan mengunduh slip resmi.',
         'Rincian dan slip berisi data gaji. Simpan di tempat yang aman dan jangan diteruskan lewat grup chat.'
+      ]
+    },
+    {
+      id: 'payroll-draf-email', guide: 'payroll', perm: ['payroll.prepare'], title: 'Mengirim draf slip ke karyawan',
+      intro: 'Sebelum gaji disetujui Direktur, karyawan bisa menerima DRAF slip gaji (PDF) di email untuk memeriksa hari hadir, lembur, dan komisi.',
+      steps: [
+        'Di halaman periode, tekan Hitung Gaji atau Hitung Ulang sampai tidak ada peringatan "Ada perubahan ...".',
+        'Tekan Kirim Draf Slip ke Karyawan.',
+        'Isi Batas lapor bila ada yang salah (opsional), misalnya 2 hari sebelum rencana bayar.',
+        'Tekan Kirim. Tunggu sampai selesai (beberapa detik per karyawan).'
+      ],
+      result: 'Kolom Draf slip di tabel Per karyawan bertanda Terkirim dengan jam kirimnya. Karyawan menerima email "[DRAF] Slip gaji ... untuk diperiksa" dengan lampiran PDF bertanda DRAF.',
+      notes: [
+        'Bisa dikirim saat status Sudah dihitung atau Menunggu persetujuan Direktur. Setelah disetujui, slip resmi dikirim saat gaji ditandai sudah dibayar.',
+        'Tombol ini hanya mengirim ke karyawan yang belum menerima draf hitungan terakhir. Setelah Hitung Ulang, draf versi baru bisa dikirim lagi ke semua karyawan.',
+        'Untuk satu karyawan, tekan Kirim atau Kirim Ulang pada kolom Draf slip.',
+        'Isi email tanpa angka gaji; angka hanya di lampiran PDF. Karyawan tanpa email bertanda Belum ada email. Isi emailnya di menu Karyawan.',
+        'Kuota email Google terbatas per hari (akun Gmail biasa sekitar 100 email). Draf dan slip resmi memakai kuota yang sama.'
       ]
     },
     {
@@ -909,6 +935,63 @@ window.MklHelp = {
       notes: ['Setiap unduhan slip tercatat di Audit Log.']
     },
 
+    {
+      id: 'payroll-komisi-tarif', guide: 'payroll', perm: ['payroll.prepare'], title: 'Mengatur tarif komisi penjualan',
+      intro: 'Komisi kasir dihitung dari tarif per kategori barang, sama seperti sheet "Comission Rate" di file gaji Excel lama.',
+      steps: [
+        'Buka menu Komisi, lalu tab Tarif Komisi.',
+        'Pertama kali: di bagian Impor dari file gaji Excel lama, pilih file gaji Excel yang berisi sheet "Comission Rate", lalu tekan Impor Tarif.',
+        'Baca pesan hasil impor: jumlah kategori dan barang, barang yang dilewati, dan barang yang tercatat ganda di Excel.',
+        'Untuk mengubah satu kategori, tekan Ubah, isi Komisi (Rp) dan Cara hitung, lalu Simpan.',
+        'Untuk barang baru, tekan Tambah Barang, tulis nama persis seperti di laporan POS, pilih Kategori, lalu Simpan.'
+      ],
+      result: 'Tabel Kategori komisi dan Barang berkomisi terisi. Mooki Fun Time otomatis ditambahkan Rp50.000 per baris struk, sesuai rumus file lama.',
+      notes: [
+        'Cara hitung "Per barang" = tarif × jumlah barang. "Per baris struk" = tarif sekali per baris, tidak dikali jumlah.',
+        'Nama barang dicocokkan tanpa membedakan huruf besar/kecil.',
+        'Barang yang tercatat dua kali di tabel Excel dihitung satu kali di portal. Di file lama, komisinya terhitung dua kali.',
+        'Perubahan tarif berlaku untuk impor berikutnya. Untuk periode yang belum diajukan, impor ulang laporan POS agar komisinya ikut berubah.',
+        '[Perlu konfirmasi HR] Aturan komisi sebaiknya tertulis di peraturan perusahaan atau perjanjian kerja.'
+      ]
+    },
+    {
+      id: 'payroll-komisi-impor', guide: 'payroll', perm: ['payroll.prepare'], title: 'Mengimpor komisi dari laporan POS',
+      intro: 'Komisi setiap kasir dihitung dari laporan Raptor POS: PLU Receipt Details (barang per struk) dan Receipt Number Report (operator per struk).',
+      steps: [
+        'Di Raptor POS, pilih periode gaji (tanggal 27 sampai 26). Ekspor ke Excel untuk satu POS: PLU Receipt Details dan Receipt Number Report. Boleh ditambah All Receipt Number Report agar nama operator tampil.',
+        'Buka menu Komisi, lalu tab Impor dari POS.',
+        'Pilih 2 atau 3 file itu sekaligus, lalu tekan Periksa File.',
+        'Di tabel Operator POS, pilih karyawan untuk setiap operator kasir. Untuk akun yang bukan kasir (misalnya manajer), pilih Bukan kasir.',
+        'Periksa tabel Hasil: komisi per kasir, baris yang belum punya kasir, dan peringatan.',
+        'Tekan Simpan Komisi. Ulangi untuk POS lainnya (misalnya Resto, lalu Ticket).',
+        'Buka menu Penggajian, buka periodenya, lalu tekan Hitung Ulang.'
+      ],
+      result: 'Tab Hasil per Periode menampilkan komisi per kasir. Di Rincian gaji kasir muncul komponen "Komisi penjualan POS (N barang)".',
+      notes: [
+        'Refund (jumlah minus) otomatis mengurangi komisi.',
+        'Struk yang dicetak operator Bukan kasir dialihkan ke kasir yang mencetak struk sebelumnya di POS yang sama pada hari itu. Di Rincian, baris itu bertanda Kasir yang bertugas.',
+        'Komisi pada hari kasir tidak tercatat absen tetap dihitung dan disebut di peringatan. Di file Excel lama, komisi hari seperti itu tidak terhitung. [Perlu konfirmasi pemilik]',
+        'Mengimpor ulang POS dan tanggal yang sama menggantikan impor sebelumnya. Kasir yang sudah diubah HR dipertahankan.',
+        'File POS tidak disimpan di server; yang disimpan hanya baris barang yang punya komisi.',
+        'Komisi tidak bisa diubah setelah gaji periode itu diajukan ke Direktur.'
+      ]
+    },
+    {
+      id: 'payroll-komisi-cek', guide: 'payroll', perm: ['payroll.prepare', 'payroll.approve'], title: 'Memeriksa dan memindahkan komisi kasir',
+      intro: 'Tab Hasil per Periode di menu Komisi menampilkan komisi setiap kasir untuk satu periode gaji.',
+      steps: [
+        'Buka menu Komisi. Pilih periode dengan ← Periode sebelumnya atau Periode berikutnya →.',
+        'Tekan Rincian pada baris kasir untuk melihat setiap struk: tanggal, nomor struk, barang, jumlah, komisi, dan cara kasir ditentukan.',
+        'Untuk memindahkan komisi ke kasir lain, centang baris yang salah, pilih kasir di Pindahkan baris yang dipilih ke kasir, isi Alasan, lalu tekan Pindahkan.',
+        'Tekan Hitung Ulang di halaman periode gaji.'
+      ],
+      result: 'Komisi pindah ke kasir yang dipilih, dan barisnya bertanda Diubah HR.',
+      notes: [
+        'Baris "Belum ada kasir" berarti struknya tidak punya operator kasir pada hari itu. Komisinya belum masuk gaji siapa pun sampai dipindahkan.',
+        'Untuk menghapus impor yang salah, tekan Hapus di tabel Laporan POS yang diimpor, isi alasan, lalu impor file yang benar.',
+        'Nomor operator bisa diubah di tab Operator POS. Perubahan berlaku untuk impor berikutnya.'
+      ]
+    },
     {
       id: 'payroll-kasbon', guide: 'payroll', perm: ['loan.manage'], title: 'Menyerahkan dan memantau kasbon',
       intro: 'Kasbon yang disetujui Direktur muncul di menu Kasbon. Cicilan baru dipotong setelah uangnya ditandai diserahkan.',
