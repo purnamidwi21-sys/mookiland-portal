@@ -13,7 +13,7 @@
  * perm : null = semua pengguna; selain itu cukup salah satu permission
  */
 window.MklHelp = {
-  version: '0.10.1',
+  version: '0.10.2',
   updatedAt: '2026-10-29',
 
   topics: [
@@ -790,6 +790,7 @@ window.MklHelp = {
         'Profil gaji dipakai bila Berlaku mulai paling lambat tanggal akhir periode (tanggal 26). Contoh: agar gaji September (27 Agu – 26 Sep) memakai profil baru, isi Berlaku mulai paling lambat 27 Agustus. Bila profil terbaru belum berlaku, Rincian gaji menampilkan peringatan "Profil gaji terbaru ... BELUM dipakai".',
         'Untuk mengubah tanggal Berlaku mulai banyak karyawan sekaligus (misalnya setelah input awal), centang karyawannya atau Pilih semua yang punya profil, tekan Ubah Tanggal Berlaku, isi tanggal dan alasan, lalu Simpan. Tarifnya tidak berubah. Setelah itu tekan Hitung Ulang di periode gaji.',
         'Tanggal Berlaku mulai tidak boleh jatuh di periode yang sudah disetujui Direktur.',
+        'Potong jam kurang (bulanan): Jam wajib per hari tidak boleh lebih dari Jam dibayar per hari. Karyawan 9 jam: Jam dibayar per hari 9 jam dan jam wajib 540 menit. Karyawan 8 jam: jam wajib 480 menit, atau matikan Potong jam kurang. Bila tidak sesuai, satu hari bisa kena lembur dan potongan sekaligus, dan Rincian menampilkan peringatan "Profil gaji tidak cocok".',
         'Setiap perubahan tercatat di Audit Log payroll.'
       ]
     },

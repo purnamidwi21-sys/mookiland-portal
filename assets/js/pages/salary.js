@@ -47,7 +47,8 @@
     div.input.setAttribute('step', '0.01');
     var divPreview = h('div', { class: 'money-preview' });
     div.wrap.appendChild(divPreview);
-    var req = MklUI.field({ label: 'Jam wajib per hari (menit, termasuk istirahat)', name: 'requiredMinutes', type: 'number', inputmode: 'numeric', value: p.requiredMinutes ? String(p.requiredMinutes) : '540', hint: '540 menit = 9 jam.' });
+    var req = MklUI.field({ label: 'Jam wajib per hari (menit, termasuk istirahat)', name: 'requiredMinutes', type: 'number', inputmode: 'numeric', value: p.requiredMinutes ? String(p.requiredMinutes) : String((p.paidHoursCap || 8) * 60), hint: 'Tidak boleh lebih dari Jam dibayar per hari: 480 menit = 8 jam, 540 menit = 9 jam. Contoh karyawan 9 jam: Jam dibayar 9 jam dan jam wajib 540.' });
+    cap.input.addEventListener('change', function () { if (!p.requiredMinutes || Number(req.input.value) > Number(cap.input.value) * 60) req.input.value = String(Number(cap.input.value) * 60); });
     var latestEff = item.upcoming ? item.upcoming.effectiveFrom : (item.profile ? item.profile.effectiveFrom : '');
     var eff = MklUI.field({ label: 'Berlaku mulai', name: 'effectiveFrom', type: 'date', required: true, value: latestEff || lastEffective || MklUI.todayYmd(),
       hint: latestEff ? 'Sekarang: berlaku sejak ' + MklUI.fmtDate(latestEff) + '. Salah angka → biarkan tanggalnya. Tarif ini sebenarnya sudah berlaku lebih awal → isi tanggal yang lebih awal. Kenaikan tarif → isi tanggal mulai tarif baru (sebelum tanggal itu tetap tarif lama).' : 'Periode yang berakhir sebelum tanggal ini tidak memakai profil ini. Untuk menghitung gaji periode lama, pilih tanggal sebelum awal periode itu.' });
