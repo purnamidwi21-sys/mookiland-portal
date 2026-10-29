@@ -13,7 +13,7 @@
  * perm : null = semua pengguna; selain itu cukup salah satu permission
  */
 window.MklHelp = {
-  version: '0.10.0',
+  version: '0.10.1',
   updatedAt: '2026-10-29',
 
   topics: [
@@ -298,7 +298,7 @@ window.MklHelp = {
         'Cari baris periode yang ingin dilihat, misalnya Desember 2026.',
         'Tekan Unduh PDF.'
       ],
-      result: 'File PDF slip gaji tersimpan di ponsel atau komputer Anda. Isinya: rincian upah atau gaji, lembur, komisi, tambahan, potongan, dan gaji bersih.',
+      result: 'File PDF slip gaji tersimpan di ponsel atau komputer Anda. Isinya: rincian upah atau gaji, lembur, komisi, tambahan, potongan, gaji bersih, dan Rincian absensi per hari (setiap tanggal: jam masuk, pulang, jam dibayar, upah hari itu, dan lembur).',
       notes: [
         'Slip belum muncul jika gaji periode itu belum ditandai dibayar. Anda mendapat notifikasi di lonceng saat slip tersedia.',
         'Sebelum gaji disetujui, HR bisa mengirim DRAF slip ke email Anda untuk diperiksa. Draf bertanda DRAF dan angkanya masih bisa berubah. Jika ada yang salah, laporkan ke Manajer Operasional sebelum batas yang tertulis di email.',
@@ -880,7 +880,7 @@ window.MklHelp = {
         'Isi Batas lapor bila ada yang salah (opsional), misalnya 2 hari sebelum rencana bayar.',
         'Tekan Kirim. Tunggu sampai selesai (beberapa detik per karyawan).'
       ],
-      result: 'Kolom Draf slip di tabel Per karyawan bertanda Terkirim dengan jam kirimnya. Karyawan menerima email "[DRAF] Slip gaji ... untuk diperiksa" dengan lampiran PDF bertanda DRAF.',
+      result: 'Kolom Draf slip di tabel Per karyawan bertanda Terkirim dengan jam kirimnya. Karyawan menerima email "[DRAF] Slip gaji ... untuk diperiksa" dengan lampiran PDF bertanda DRAF, termasuk Rincian absensi per hari agar karyawan bisa mencocokkan setiap tanggal.',
       notes: [
         'Bisa dikirim saat status Sudah dihitung atau Menunggu persetujuan Direktur. Setelah disetujui, slip resmi dikirim saat gaji ditandai sudah dibayar.',
         'Tombol ini hanya mengirim ke karyawan yang belum menerima draf hitungan terakhir. Setelah Hitung Ulang, draf versi baru bisa dikirim lagi ke semua karyawan.',
