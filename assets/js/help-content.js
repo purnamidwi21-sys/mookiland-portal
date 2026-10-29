@@ -958,9 +958,9 @@ window.MklHelp = {
       id: 'payroll-komisi-impor', guide: 'payroll', perm: ['payroll.prepare'], title: 'Mengimpor komisi dari laporan POS',
       intro: 'Komisi setiap kasir dihitung dari laporan Raptor POS: PLU Receipt Details (barang per struk) dan Receipt Number Report (operator per struk).',
       steps: [
-        'Di Raptor POS, pilih periode gaji (tanggal 27 sampai 26). Ekspor ke Excel untuk satu POS: PLU Receipt Details dan Receipt Number Report. Boleh ditambah All Receipt Number Report agar nama operator tampil.',
+        'Di Raptor POS, pilih periode gaji (tanggal 27 sampai 26). Ekspor ke Excel untuk satu POS: PLU Receipt Details dan Receipt Number Report. Hanya untuk POS Resto pada impor pertama, boleh ditambah All Receipt Number Report agar nama operator tampil.',
         'Buka menu Komisi, lalu tab Impor dari POS.',
-        'Pilih 2 atau 3 file itu sekaligus, lalu tekan Periksa File.',
+        'Pilih 2 atau 3 file itu sekaligus, lalu tekan Periksa File. Tunggu sampai selesai (bisa 1–3 menit untuk POS Resto); jangan tutup halaman.',
         'Di tabel Operator POS, pilih karyawan untuk setiap operator kasir. Untuk akun yang bukan kasir (misalnya manajer), pilih Bukan kasir.',
         'Periksa tabel Hasil: komisi per kasir, baris yang belum punya kasir, dan peringatan.',
         'Tekan Simpan Komisi. Ulangi untuk POS lainnya (misalnya Resto, lalu Ticket).',

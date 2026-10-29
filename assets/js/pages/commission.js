@@ -158,7 +158,7 @@
     area.appendChild(MklUI.card('Impor laporan POS', [
       h('div', { class: 'note' }, h('ol', null,
         h('li', null, 'Di Raptor POS, pilih periode gaji (tanggal 27 sampai 26), lalu ekspor ke Excel untuk satu POS: ', h('strong', null, 'PLU Receipt Details'), ' dan ', h('strong', null, 'Receipt Number Report'), '.'),
-        h('li', null, 'Boleh ditambah ', h('strong', null, 'All Receipt Number Report'), ' (per operator) agar nama operator tampil.'),
+        h('li', null, 'Opsional, hanya untuk POS Resto pada impor pertama: tambahkan ', h('strong', null, 'All Receipt Number Report'), ' (per operator) agar nama operator tampil. Untuk POS Ticket tidak perlu; file tambahan membuat proses lebih lama.'),
         h('li', null, 'Pilih file-file itu sekaligus di bawah, tekan Periksa File, periksa operator, lalu Simpan Komisi.'),
         h('li', null, 'Ulangi untuk POS lainnya (misalnya Resto lalu Ticket).'))),
       h('p', { class: 'muted small' }, 'File tidak disimpan di server; hanya baris barang yang punya komisi. Mengimpor ulang POS dan tanggal yang sama menggantikan impor sebelumnya. Kasir yang sudah diubah HR dipertahankan.'),
@@ -175,7 +175,7 @@
         if (!err && f.size > 5 * 1024 * 1024) err = f.name + ' berukuran ' + MklUI.fmtBytes(f.size) + '. Maksimal 5 MB.';
       });
       if (err) { MklUI.showFieldErrors(form, { details: { fields: { files: err } } }); return; }
-      MklUI.setBusy(btn, true, 'Membaca file (bisa 1 menit)...');
+      MklUI.setBusy(btn, true, 'Membaca file (bisa 1–3 menit, jangan tutup halaman)...');
       Promise.all(fs.map(function (f) { return MklUI.readFileBase64(f).then(function (b) { return { fileName: f.name, base64: b }; }); })).then(function (list) {
         return MklApi.call('hr.commission.importPreview', { files: list });
       }, function () { return { success: false, message: 'File tidak bisa dibaca oleh browser. Coba pilih ulang file.' }; }).then(function (res) {

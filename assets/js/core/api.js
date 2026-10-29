@@ -11,6 +11,15 @@
 
   var TOKEN_KEY = 'mkl_session_token';
   var TIMEOUT_MS = 45000;
+  // Proses berat di server (membaca file Excel besar lewat Drive, membuat PDF, kirim email):
+  // tunggu sampai 5,5 menit (batas Apps Script 6 menit).
+  var LONG_MS = 330000;
+  var LONG_ACTIONS = {
+    'hr.commission.importPreview': 1, 'hr.commission.importCommit': 1, 'hr.commission.ratesImport': 1,
+    'hr.attendance.importPreview': 1, 'hr.attendance.importCommit': 1, 'hr.employees.importPreview': 1,
+    'hr.payroll.calculate': 1, 'hr.payroll.draftEmail': 1, 'hr.payroll.markPaid': 1, 'hr.payroll.payslipEmail': 1,
+    'hr.payroll.decide': 1, 'hr.payroll.summaryDownload': 1, 'hr.payroll.detailDownload': 1
+  };
   var listeners = { authLost: [], passwordChange: [] };
 
   function getToken() {
@@ -48,7 +57,8 @@
     }
 
     var controller = (typeof AbortController !== 'undefined') ? new AbortController() : null;
-    var timer = controller ? setTimeout(function () { controller.abort(); }, TIMEOUT_MS) : null;
+    var long = !!LONG_ACTIONS[action];
+    var timer = controller ? setTimeout(function () { controller.abort(); }, long ? LONG_MS : TIMEOUT_MS) : null;
     var client = '';
     try { client = String(global.navigator.userAgent || '').slice(0, 200); } catch (e) { client = ''; }
 
@@ -83,7 +93,9 @@
       })
       .catch(function (err) {
         if (err && err.name === 'AbortError') {
-          return failure('TIMEOUT', 'Server terlalu lama merespons. Periksa koneksi lalu coba lagi.');
+          return failure('TIMEOUT', long
+            ? 'Server belum selesai memproses setelah 5 menit. Coba lagi dengan file yang lebih kecil (misalnya ekspor per 2 minggu) atau tanpa file opsional.'
+            : 'Server terlalu lama merespons. Periksa koneksi lalu coba lagi.');
         }
         return failure('NETWORK_ERROR',
           'Tidak dapat terhubung ke server. Periksa koneksi internet Anda lalu coba lagi.');
