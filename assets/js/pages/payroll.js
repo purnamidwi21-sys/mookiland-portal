@@ -99,7 +99,7 @@
 
   // ================================================================== rincian per karyawan
 
-  function adjustModal(periodId, item, done) {
+  function adjustModal(periodId, item, done, quiet) {
     var form = h('form', { class: 'stack', novalidate: true });
     var kind = MklUI.selectField({ label: 'Jenis', name: 'kind', required: true, value: 'tambah', options: [{ value: 'tambah', label: 'Tambahan (bonus, insentif, uang makan, dll.)' }, { value: 'potong', label: 'Potongan (kasbon, kerusakan, dll.)' }] });
     var desc = MklUI.field({ label: 'Keterangan di slip', name: 'description', required: true, maxLength: 100, placeholder: 'Contoh: Bonus target, Kasbon Oktober' });
@@ -121,8 +121,7 @@
         MklUI.setBusy(btn, false);
         if (!res.success) { if (!MklUI.showFieldErrors(form, res)) alertSlot.appendChild(MklUI.alertBox('error', res.message)); return; }
         c.close();
-        var em = res.data && res.data.email;
-        MklUI.toast(res.message, em && ((em.failed && em.failed.length) || (em.noEmail && em.noEmail.length)) ? 'warning' : 'success');
+        if (!quiet) MklUI.toast(res.message, 'success');
         done();
       });
     }
@@ -172,31 +171,56 @@
         MklUI.setBusy(btn, false);
         if (!res.success) { if (!MklUI.showFieldErrors(form, res)) alertSlot.appendChild(MklUI.alertBox('error', res.message)); return; }
         c.close();
-        MklUI.toast(res.message + ' Tekan Hitung Ulang agar gaji diperbarui.', 'success');
-        done();
+        done(res.message);
       });
     }
   }
 
+  /** Hitung ulang gaji satu karyawan (cepat; karyawan lain tidak berubah). */
+  function recalcOne(periodId, item, quiet) {
+    return MklApi.call('hr.payroll.calculate', { periodId: periodId, employeeIds: [item.employeeId] }).then(function (r) {
+      if (!r.success) MklUI.toast(r.message, 'error');
+      else if (!quiet) MklUI.toast(r.message, 'success');
+      return r;
+    });
+  }
+
   function detailModal(periodId, item, onChanged) {
     var body = h('div', { class: 'stack' }, MklUI.loadingState('Memuat...'));
-        var ctl = MklUI.modal({ title: 'Rincian gaji: ' + item.fullName, content: body, wide: true, actions: [{ label: 'Tutup', onClick: function (c) { c.close(); } }] });
+    var dirty = false;
+    // Halaman periode dimuat ulang sekali saja, saat jendela ini ditutup.
+    var ctl = MklUI.modal({ title: 'Rincian gaji: ' + item.fullName, content: body, wide: true, actions: [{ label: 'Tutup', onClick: function (c) { c.close(); } }],
+      onClose: function () { if (dirty) onChanged(); } });
     ctl.dialog.classList.add('modal-payroll');
-    var corrected = false;
-    function afterCorrect() { corrected = true; onChanged(); load(); }
+    var canCalc = true;
+    /** Setelah koreksi/tambahan: gaji karyawan ini langsung dihitung ulang (tidak perlu menekan Hitung Ulang). */
+    function changed(msg) {
+      dirty = true;
+      MklUI.clear(body).appendChild(MklUI.loadingState('Menghitung ulang gaji ' + item.fullName + '...'));
+      if (!canCalc) { if (msg) MklUI.toast(msg, 'success'); load(); return; }
+      recalcOne(periodId, item, true).then(function (r) {
+        if (r.success) MklUI.toast((msg ? msg + ' ' : '') + 'Gaji ' + item.fullName + ' sudah dihitung ulang.', 'success');
+        load();
+      });
+    }
     function load() {
       MklApi.call('hr.payroll.detail', { periodId: periodId, employeeId: item.employeeId }).then(function (res) {
         MklUI.clear(body);
         if (!res.success) { body.appendChild(MklUI.alertBox('error', res.message)); return; }
         var d = res.data, p = d.profile || {};
-        d.corrected = corrected;
+        canCalc = !!d.canCalculate;
         var final = d.period.status === 'disetujui' || d.period.status === 'dibayar';
         var bRin = h('button', { class: 'btn btn-secondary btn-small', type: 'button' }, 'Unduh Rincian (PDF)');
         bRin.addEventListener('click', function () { download('hr.payroll.detailDownload', { periodId: periodId, employeeId: item.employeeId }, bRin); });
         var bSlip = h('button', { class: 'btn btn-secondary btn-small', type: 'button' }, d.payslipIssued ? 'Unduh Slip Gaji' : 'Unduh Slip (DRAF)');
         bSlip.addEventListener('click', function () { download('hr.payroll.slipDownload', { periodId: periodId, employeeId: item.employeeId }, bSlip); });
         body.appendChild(h('div', { class: 'btn-row' }, bRin, MklState.canAny(['payroll.prepare', 'payslip.read.all']) ? bSlip : null));
-        if (!final) body.appendChild(h('p', { class: 'muted small' }, 'Periode belum disetujui Direktur: rincian dan slip bertanda DRAF dan bisa berubah. Jangan kirim slip DRAF ke karyawan.'));
+        if (!final) body.appendChild(h('p', { class: 'muted small' }, 'Periode belum disetujui Direktur: rincian dan slip bertanda DRAF dan bisa berubah.'));
+        if (d.stale) {
+          var rc = d.canCalculate ? h('button', { class: 'btn btn-primary btn-small', type: 'button' }, 'Hitung Ulang ' + item.fullName) : null;
+          if (rc) rc.addEventListener('click', function () { changed(''); });
+          body.appendChild(h('div', { class: 'alert alert-warning' }, h('p', null, 'Data karyawan ini berubah setelah gajinya dihitung (' + (d.staleReason || 'ada perubahan') + '). Angka di bawah belum termasuk perubahan itu.'), rc ? h('div', { class: 'btn-row' }, rc) : null));
+        }
         body.appendChild(MklUI.infoList([
           ['Periode', d.period.label + ' (' + T.rangeLabel(d.period.startDate, d.period.endDate) + ')'],
           ['Profil gaji', p.payType ? p.payTypeLabel + ', ' + (p.payType === 'harian' ? MklUI.fmtMoney(p.dailyRate) + '/hari' : MklUI.fmtMoney(p.monthlySalary) + '/bulan') + ', maks ' + p.paidHoursCap + ' jam' + (p.clockinRounding ? ', jam masuk dibulatkan' : '') + (p.overtimeEligible ? ', dapat lembur' : ', tanpa lembur') : '-'],
@@ -216,7 +240,7 @@
               confirmLabel: 'Hapus', danger: true, reasonLabel: 'Alasan', reasonRequired: true,
               onConfirm: function (reason) {
                 return MklApi.call('hr.payroll.adjustRemove', { adjustmentId: l.adjustmentId, reason: reason }).then(function (r) {
-                  if (r.success) { MklUI.toast(r.message, 'success'); onChanged(); load(); }
+                  if (r.success) changed('Dihapus.');
                   return r;
                 });
               }
@@ -237,29 +261,16 @@
           { label: 'Aksi', className: 'col-action', render: function (l) { return l.manual && l.state !== 'removed' && d.canAdjust ? removeButton(l) : ''; } }
         ], lineRows, 'Tidak ada komponen.'));
         body.appendChild(MklUI.infoList([['Total pendapatan', MklUI.fmtMoney(d.gross)], ['Total potongan', MklUI.fmtMoney(d.deductions)], ['Gaji bersih', h('strong', null, MklUI.fmtMoney(d.net))]]));
-        if (lineRows.some(function (l) { return l.state; })) body.appendChild(MklUI.alertBox('info', 'Total di atas belum termasuk perubahan bertanda kuning. Tutup jendela ini lalu tekan Hitung Ulang.'));
+        if (lineRows.some(function (l) { return l.state; }) && !d.stale) body.appendChild(MklUI.alertBox('info', 'Total di atas belum termasuk perubahan bertanda kuning. Tekan Hitung Ulang di halaman periode.'));
         if (d.canAdjust) {
           var add = h('button', { class: 'btn btn-secondary btn-small', type: 'button' }, 'Tambah / Potong Manual');
-          add.addEventListener('click', function () { adjustModal(periodId, item, function () { onChanged(); load(); }); });
+          add.addEventListener('click', function () { adjustModal(periodId, item, function () { changed(''); }, true); });
           body.appendChild(h('div', { class: 'btn-row' }, add));
         }
         body.appendChild(h('h3', null, 'Rincian per hari'));
-        if (d.corrected) {
-          var recalc = d.canCalculate ? h('button', { class: 'btn btn-primary btn-small', type: 'button' }, 'Hitung Ulang Sekarang') : null;
-          if (recalc) recalc.addEventListener('click', function () {
-            MklUI.setBusy(recalc, true, 'Menghitung...');
-            MklApi.call('hr.payroll.calculate', { periodId: periodId }).then(function (r) {
-              MklUI.setBusy(recalc, false);
-              if (!r.success) { MklUI.toast(r.message, 'error'); return; }
-              MklUI.toast(r.message, 'success');
-              corrected = false; onChanged(); load();
-            });
-          });
-          body.appendChild(h('div', { class: 'alert alert-warning' }, h('p', null, 'Absensi sudah dikoreksi, tetapi angka di jendela ini belum berubah. Tekan Hitung Ulang agar gaji diperbarui.'), recalc ? h('div', { class: 'btn-row' }, recalc) : null));
-        }
         if (d.canCorrect) {
           var addDay = h('button', { class: 'btn btn-secondary btn-small', type: 'button' }, 'Catat Absen Hari Lain');
-          addDay.addEventListener('click', function () { correctModal(d, item, null, afterCorrect); });
+          addDay.addEventListener('click', function () { correctModal(d, item, null, changed); });
           body.appendChild(h('div', { class: 'btn-row' }, addDay));
         }
         body.appendChild(h('div', { class: 'recap-table' }, MklUI.table([
@@ -274,7 +285,7 @@
           { label: 'Catatan', render: function (x) { return x.note ? h('span', { class: 'small' }, x.note) : ''; } },
           d.canCorrect ? { label: 'Aksi', className: 'col-action', render: function (x) {
             var b = h('button', { class: 'btn btn-secondary btn-small', type: 'button' }, 'Koreksi');
-            b.addEventListener('click', function () { correctModal(d, item, x, afterCorrect); });
+            b.addEventListener('click', function () { correctModal(d, item, x, changed); });
             return b;
           } } : null
         ].filter(Boolean), d.days, 'Tidak ada absensi pada periode ini.')));
@@ -410,15 +421,15 @@
    * Kirim slip DRAF ke email karyawan untuk diperiksa sebelum disetujui Direktur.
    * one: satu karyawan (kirim/kirim ulang), selain itu semua yang belum menerima draf hitungan terakhir.
    */
-  function draftEmailModal(p, list, one, done) {
+  function draftEmailModal(p, list, one, done, selected) {
     var form = h('form', { class: 'stack', novalidate: true });
     var withEmail = list.filter(function (i) { return i.hasEmail; });
     var noEmail = list.filter(function (i) { return !i.hasEmail; });
     var reply = MklUI.field({ label: 'Batas lapor bila ada yang salah (opsional)', name: 'replyBy', type: 'date', hint: 'Ditulis di email dan di PDF draf.' });
     var slot = h('div');
     [
-      h('p', null, one ? 'Draf slip ' + one.fullName + ' (PDF bertanda DRAF) dikirim ke email karyawan ini.' : 'Draf slip (PDF bertanda DRAF) dikirim ke email ' + withEmail.length + ' karyawan yang belum menerima draf hitungan versi ' + p.calcVersion + '.'),
-      h('p', { class: 'muted small' }, 'Isi email tanpa angka gaji; angka hanya di lampiran PDF. Draf bukan slip resmi: angka masih bisa berubah sampai Direktur menyetujui. Bila gaji dihitung ulang, draf versi baru bisa dikirim lagi.'),
+      h('p', null, one ? 'Draf slip ' + one.fullName + ' (PDF bertanda DRAF) dikirim ke email karyawan ini.' : (selected ? 'Draf slip (PDF bertanda DRAF) dikirim ke email ' + withEmail.length + ' karyawan yang dipilih.' : 'Draf slip (PDF bertanda DRAF) dikirim ke email ' + withEmail.length + ' karyawan yang belum menerima draf, atau yang angkanya berubah sejak draf dikirim.')),
+      h('p', { class: 'muted small' }, 'Isi email tanpa angka gaji; angka hanya di lampiran PDF. Draf bukan slip resmi: angka masih bisa berubah sampai Direktur menyetujui. Karyawan yang datanya berubah dan belum dihitung ulang tidak dikirimi.'),
       !one && noEmail.length ? MklUI.alertBox('warning', noEmail.length + ' karyawan belum punya email dan tidak dikirimi: ' + noEmail.map(function (i) { return i.fullName; }).join(', ') + '. Isi email di data karyawan.') : null,
       reply.wrap, slot
     ].forEach(function (x) { if (x) form.appendChild(x); });
@@ -429,16 +440,143 @@
       MklUI.clearFieldErrors(form); MklUI.clear(slot);
       var payload = { periodId: p.periodId };
       if (one) payload.employeeId = one.employeeId;
+      else if (selected) payload.employeeIds = withEmail.map(function (i) { return i.employeeId; });
       if (reply.input.value) payload.replyBy = reply.input.value;
       MklUI.setBusy(btn, true, 'Mengirim (beberapa detik per karyawan)...');
       MklApi.call('hr.payroll.draftEmail', payload).then(function (r) {
         MklUI.setBusy(btn, false);
         if (!r.success) { if (!MklUI.showFieldErrors(form, r)) slot.appendChild(MklUI.alertBox('error', r.message)); return; }
         c.close();
-        MklUI.toast(r.message, r.data && (r.data.failed.length || r.data.noEmail.length) ? 'warning' : 'success');
+        MklUI.toast(r.message, r.data && (r.data.failed.length || r.data.noEmail.length || (r.data.skippedStale && r.data.skippedStale.length)) ? 'warning' : 'success');
         done();
       });
     }
+  }
+
+  /** Menu saat nama karyawan diklik: Rincian gaji, Profil Gaji, Data Karyawan. */
+  function nameMenu(p, i, load) {
+    var go = function (hash) { return function (c) { c.close(); location.hash = hash; }; };
+    var acts = [{ label: 'Rincian Gaji', variant: 'primary', onClick: function (c) { c.close(); detailModal(p.periodId, i, load); } }];
+    if (MklState.can('payroll.prepare')) acts.push({ label: 'Profil Gaji', onClick: go('#/profil-gaji/' + encodeURIComponent(i.employeeId)) });
+    if (MklState.canAny(['employee.manage', 'employee.read.all'])) acts.push({ label: 'Data Karyawan', onClick: go('#/karyawan/' + encodeURIComponent(i.employeeId)) });
+    MklUI.modal({ title: i.fullName, content: h('p', { class: 'muted' }, i.employeeId + (i.positionName ? ' · ' + i.positionName : '') + '. Buka:'), actions: acts });
+  }
+
+  var FILTERS = [
+    ['semua', 'Semua karyawan'], ['berubah', 'Perlu dihitung ulang'], ['peringatan', 'Ada peringatan'], ['draf_belum', 'Draf belum dikirim'],
+    ['harian', 'Harian'], ['bulanan', 'Bulanan'], ['lembur', 'Ada lembur'], ['komisi', 'Ada komisi'], ['potongan', 'Ada potongan'], ['rekening', 'Belum ada rekening']
+  ];
+  function matchFilter(i, f) {
+    switch (f) {
+      case 'berubah': return i.stale;
+      case 'peringatan': return i.warnings.length > 0;
+      case 'draf_belum': return !i.draftEmailedAt;
+      case 'harian': return i.payType === 'harian';
+      case 'bulanan': return i.payType === 'bulanan';
+      case 'lembur': return i.overtime > 0;
+      case 'komisi': return i.commission !== 0;
+      case 'potongan': return i.deductions > 0;
+      case 'rekening': return !i.hasBank;
+      default: return true;
+    }
+  }
+
+  /** Tabel per karyawan dengan cari nama, filter, dan pilih karyawan (hitung ulang / kirim draf untuk yang dipilih). */
+  function employeeCard(d, p, f, showDraft, load) {
+    var state = { q: '', filter: 'semua', sel: {} };
+    try { var saved = JSON.parse(window.sessionStorage.getItem('mkl_pay_filter') || '{}'); if (saved.periodId === p.periodId) { state.q = saved.q || ''; state.filter = saved.filter || 'semua'; } } catch (e) { /* abaikan */ }
+    var search = h('input', { class: 'input', type: 'search', placeholder: 'Cari nama, ID, atau jabatan', 'aria-label': 'Cari karyawan', value: state.q });
+    var filter = h('select', { class: 'input', 'aria-label': 'Filter karyawan' });
+    FILTERS.forEach(function (x) { filter.appendChild(h('option', { value: x[0] }, x[1])); });
+    filter.value = state.filter;
+    var allBox = h('input', { type: 'checkbox', 'aria-label': 'Pilih semua yang tampil' });
+    var count = h('span', { class: 'muted small' });
+    var bar = h('div', { class: 'btn-row bulk-bar' });
+    var tableArea = h('div');
+    var canSel = f.canCalculate || f.canDraftEmail;
+    var bRecalc = f.canCalculate ? h('button', { class: 'btn btn-secondary btn-small', type: 'button' }, 'Hitung Ulang Terpilih') : null;
+    var bDraft = f.canDraftEmail ? h('button', { class: 'btn btn-secondary btn-small', type: 'button' }, 'Kirim Draf ke Terpilih') : null;
+    var visible = [];
+    function selected() { return d.items.filter(function (i) { return state.sel[i.employeeId]; }); }
+    function refreshBar() {
+      var n = selected().length;
+      count.textContent = n ? n + ' dipilih' : '';
+      if (bRecalc) { bRecalc.disabled = !n; bRecalc.textContent = 'Hitung Ulang Terpilih' + (n ? ' (' + n + ')' : ''); }
+      if (bDraft) { bDraft.disabled = !n; bDraft.textContent = 'Kirim Draf ke Terpilih' + (n ? ' (' + n + ')' : ''); }
+      allBox.checked = visible.length > 0 && visible.every(function (i) { return state.sel[i.employeeId]; });
+    }
+    if (bRecalc) bRecalc.addEventListener('click', function () {
+      var ids = selected().map(function (i) { return i.employeeId; });
+      MklUI.setBusy(bRecalc, true, 'Menghitung...');
+      MklApi.call('hr.payroll.calculate', { periodId: p.periodId, employeeIds: ids }).then(function (r) {
+        MklUI.setBusy(bRecalc, false);
+        if (!r.success) { MklUI.toast(r.message, 'error'); return; }
+        MklUI.toast(r.message, 'success');
+        load();
+      });
+    });
+    if (bDraft) bDraft.addEventListener('click', function () { draftEmailModal(p, selected(), null, load, true); });
+    allBox.addEventListener('change', function () {
+      visible.forEach(function (i) { if (allBox.checked) state.sel[i.employeeId] = true; else delete state.sel[i.employeeId]; });
+      paint();
+    });
+    function remember() { try { window.sessionStorage.setItem('mkl_pay_filter', JSON.stringify({ periodId: p.periodId, q: state.q, filter: state.filter })); } catch (e) { /* abaikan */ } }
+    search.addEventListener('input', function () { state.q = search.value; remember(); paint(); });
+    filter.addEventListener('change', function () { state.filter = filter.value; remember(); paint(); });
+    function paint() {
+      var q = state.q.trim().toLowerCase();
+      visible = d.items.filter(function (i) {
+        if (!matchFilter(i, state.filter)) return false;
+        return !q || [i.fullName, i.nickname, i.employeeId, i.positionName].join(' ').toLowerCase().indexOf(q) !== -1;
+      });
+      MklUI.clear(tableArea).appendChild(h('div', { class: 'recap-table money-table' }, MklUI.table([
+        canSel ? { label: 'Pilih', className: 'col-check', render: function (i) {
+          var bx = h('input', { type: 'checkbox', 'aria-label': 'Pilih ' + i.fullName, checked: !!state.sel[i.employeeId] });
+          bx.addEventListener('change', function () { if (bx.checked) state.sel[i.employeeId] = true; else delete state.sel[i.employeeId]; refreshBar(); });
+          return bx;
+        } } : null,
+        { label: 'Nama', render: function (i) {
+          var nameBtn = h('button', { class: 'link-button', type: 'button', title: 'Buka Rincian, Profil Gaji, atau Data Karyawan' }, i.fullName);
+          nameBtn.addEventListener('click', function () { nameMenu(p, i, load); });
+          return h('span', null, h('strong', null, nameBtn), h('br'), h('span', { class: 'muted small' }, i.payTypeLabel + (i.positionName ? ' · ' + i.positionName : '')),
+            i.stale ? h('span', null, h('br'), MklUI.badge('Perlu dihitung ulang: ' + i.staleReason, 'warning')) : null,
+            i.warnings.length ? h('span', null, h('br'), MklUI.badge(i.warnings.length + ' peringatan', 'warning')) : null,
+            !i.hasBank && i.net > 0 ? h('span', null, h('br'), MklUI.badge('Belum ada rekening', 'muted')) : null);
+        } },
+        { label: 'Hadir', render: function (i) { return i.daysPresent + ' hari'; } },
+        { label: 'Jam dibayar', render: function (i) { return i.payType === 'harian' ? hours(i.paidMinutes) : '-'; } },
+        { label: 'Upah / gaji', render: function (i) { return MklUI.fmtMoney(i.base); } },
+        { label: 'Lembur', render: function (i) { return i.overtime ? h('span', null, MklUI.fmtMoney(i.overtime), h('br'), h('span', { class: 'muted small' }, hours(i.overtimeMinutes))) : '-'; } },
+        { label: 'Tambahan', render: function (i) { return i.additions ? MklUI.fmtMoney(i.additions) : '-'; } },
+        { label: 'Potongan', render: function (i) { return i.deductions ? '− ' + MklUI.fmtMoney(i.deductions) : '-'; } },
+        { label: 'Bersih', render: function (i) { return h('strong', null, MklUI.fmtMoney(i.net)); } },
+        showDraft ? { label: 'Draf slip', render: function (i) {
+          var st = i.draftEmailedAt ? h('span', { class: 'small' }, MklUI.badge('Terkirim', 'success'), ' ' + MklUI.fmtDateTime(i.draftEmailedAt))
+            : (i.draftChangedAt ? h('span', { class: 'small' }, MklUI.badge('Angka berubah', 'warning'), ' draf ' + MklUI.fmtDateTime(i.draftChangedAt) + ' perlu dikirim lagi')
+              : (i.hasEmail ? h('span', { class: 'muted small' }, 'Belum dikirim') : MklUI.badge('Belum ada email', 'muted')));
+          if (!f.canDraftEmail || !i.hasEmail || i.stale) return st;
+          var b = h('button', { class: 'btn btn-ghost btn-small', type: 'button' }, i.draftEmailedAt ? 'Kirim Ulang' : 'Kirim');
+          b.addEventListener('click', function () { draftEmailModal(p, [i], i, load); });
+          return h('span', null, st, h('br'), b);
+        } } : null,
+        { label: 'Aksi', className: 'col-action', render: function (i) {
+          var b = h('button', { class: 'btn btn-secondary btn-small', type: 'button' }, 'Rincian');
+          b.addEventListener('click', function () { detailModal(p.periodId, i, load); });
+          return b;
+        } }
+      ].filter(Boolean), visible, d.items.length ? 'Tidak ada karyawan yang cocok dengan pencarian atau filter.' : 'Tidak ada karyawan yang dihitung.')));
+      refreshBar();
+    }
+    var tools = h('div', { class: 'filter-bar' }, search, filter);
+    if (canSel) {
+      bar.appendChild(h('label', { class: 'checkbox-inline' }, allBox, ' Pilih semua yang tampil'));
+      if (bRecalc) bar.appendChild(bRecalc);
+      if (bDraft) bar.appendChild(bDraft);
+      bar.appendChild(count);
+    }
+    paint();
+    return MklUI.card('Per karyawan', [tools, canSel ? bar : null, tableArea,
+      h('p', { class: 'muted small' }, 'Klik nama karyawan untuk membuka Rincian Gaji, Profil Gaji, atau Data Karyawan. BPJS dan PPh 21 ditanggung perusahaan (tidak dipotong dari gaji). Lembur dihitung dari jam absen dan dibayar 1× tarif per jam, sesuai file gaji lama (keputusan pemilik) [Perlu konfirmasi HR/penasihat hukum: PP 35/2021].')]);
   }
 
   MklNav.register('/penggajian/:id', {
@@ -465,16 +603,21 @@
           actions.appendChild(b);
           return b;
         }
-        if (f.canCalculate) {
-          button(p.calcVersion ? 'Hitung Ulang' : 'Hitung Gaji', p.calcVersion && p.status !== 'draf' && !d.stale ? 'secondary' : 'primary', function (b) {
-            MklUI.setBusy(b, true, 'Menghitung...');
-            MklApi.call('hr.payroll.calculate', { periodId: p.periodId }).then(function (r) {
-              MklUI.setBusy(b, false);
-              if (!r.success) { MklUI.toast(r.message, 'error'); return; }
-              MklUI.toast(r.message, 'success');
-              load();
-            });
+        function calc(b, ids) {
+          MklUI.setBusy(b, true, 'Menghitung...');
+          MklApi.call('hr.payroll.calculate', ids ? { periodId: p.periodId, employeeIds: ids } : { periodId: p.periodId }).then(function (r) {
+            MklUI.setBusy(b, false);
+            if (!r.success) { MklUI.toast(r.message, 'error'); return; }
+            MklUI.toast(r.message, 'success');
+            load();
           });
+        }
+        var staleIds = d.staleIds || [];
+        if (f.canCalculate && p.calcVersion && staleIds.length && !d.staleAll) {
+          button('Hitung Ulang yang Berubah (' + staleIds.length + ')', 'primary', function (b) { calc(b, staleIds); });
+          button('Hitung Ulang Semua', 'secondary', function (b) { calc(b); });
+        } else if (f.canCalculate) {
+          button(p.calcVersion ? 'Hitung Ulang Semua' : 'Hitung Gaji', p.calcVersion && p.status !== 'draf' && !d.stale ? 'secondary' : 'primary', function (b) { calc(b); });
         }
         if (f.canSubmit) {
           button('Ajukan ke Direktur', d.stale ? 'secondary' : 'primary', function () {
@@ -494,7 +637,7 @@
           button('Tolak', 'danger', function () { decideModal(p, 'tolak', load); });
         }
         if (f.canDraftEmail) {
-          var notYet = d.items.filter(function (i) { return !i.draftEmailedAt; });
+          var notYet = d.items.filter(function (i) { return !i.draftEmailedAt && !i.stale; });
           button('Kirim Draf Slip ke Karyawan', 'secondary', function () { draftEmailModal(p, notYet, null, load); });
         }
         if (p.calcVersion) button('Unduh Ringkasan (PDF)', 'secondary', function (b) { download('hr.payroll.summaryDownload', { periodId: p.periodId }, b); });
@@ -531,7 +674,11 @@
           f.decideBlockedReason ? MklUI.alertBox('info', f.decideBlockedReason) : null]));
 
         if (p.status === 'draf' && p.decisionNote) area.appendChild(MklUI.alertBox('warning', 'Ditolak Direktur: ' + p.decisionNote + ' Perbaiki, lalu Hitung Ulang dan ajukan lagi.'));
-        if (d.stale) area.appendChild(MklUI.alertBox('warning', 'Ada perubahan absensi, profil gaji, komisi, atau tambahan/potongan setelah gaji dihitung. Tekan Hitung Ulang sebelum mengajukan atau mengirim draf slip.'));
+        if (d.staleAll) area.appendChild(MklUI.alertBox('warning', 'Ada impor absensi yang dihapus setelah gaji dihitung. Tekan Hitung Ulang Semua sebelum mengajukan atau mengirim draf slip.'));
+        else if (d.stale) {
+          var nm = d.items.filter(function (i) { return i.stale; }).map(function (i) { return i.fullName; }).concat((d.notCalculated || []).map(function (x) { return x.fullName + ' (belum dihitung)'; }));
+          area.appendChild(MklUI.alertBox('warning', staleIds.length + ' karyawan perlu dihitung ulang karena datanya berubah: ' + nm.join(', ') + '. Tekan Hitung Ulang yang Berubah; karyawan lain tidak ikut dihitung ulang.'));
+        }
         else if (p.status === 'draf' && p.calcVersion) area.appendChild(MklUI.alertBox('info', 'Ada tambahan/potongan yang belum masuk ke total. Tekan Hitung Ulang.'));
         var missing = d.missingProfiles || [];
         if (missing.length) {
@@ -563,35 +710,7 @@
           stat('Tambahan', MklUI.fmtMoney(d.totals.additions)), stat('Potongan', MklUI.fmtMoney(d.totals.deductions)),
           stat('Total bersih', MklUI.fmtMoney(d.totals.net), 'info'), stat('Perlu dicek', warnCount, warnCount ? 'warning' : null))));
 
-        area.appendChild(MklUI.card('Per karyawan', [
-          h('div', { class: 'recap-table money-table' }, MklUI.table([
-            { label: 'Nama', render: function (i) {
-              return h('span', null, h('strong', null, i.fullName), h('br'), h('span', { class: 'muted small' }, i.payTypeLabel + (i.positionName ? ' · ' + i.positionName : '')),
-                i.warnings.length ? h('span', null, h('br'), MklUI.badge(i.warnings.length + ' peringatan', 'warning')) : null,
-                !i.hasBank && i.net > 0 ? h('span', null, h('br'), MklUI.badge('Belum ada rekening', 'muted')) : null);
-            } },
-            { label: 'Hadir', render: function (i) { return i.daysPresent + ' hari'; } },
-            { label: 'Jam dibayar', render: function (i) { return i.payType === 'harian' ? hours(i.paidMinutes) : '-'; } },
-            { label: 'Upah / gaji', render: function (i) { return MklUI.fmtMoney(i.base); } },
-            { label: 'Lembur', render: function (i) { return i.overtime ? h('span', null, MklUI.fmtMoney(i.overtime), h('br'), h('span', { class: 'muted small' }, hours(i.overtimeMinutes))) : '-'; } },
-            { label: 'Tambahan', render: function (i) { return i.additions ? MklUI.fmtMoney(i.additions) : '-'; } },
-            { label: 'Potongan', render: function (i) { return i.deductions ? '− ' + MklUI.fmtMoney(i.deductions) : '-'; } },
-            { label: 'Bersih', render: function (i) { return h('strong', null, MklUI.fmtMoney(i.net)); } },
-            showDraft ? { label: 'Draf slip', render: function (i) {
-              var st = i.draftEmailedAt ? h('span', { class: 'small' }, MklUI.badge('Terkirim', 'success'), ' ' + MklUI.fmtDateTime(i.draftEmailedAt)) : (i.hasEmail ? h('span', { class: 'muted small' }, 'Belum dikirim') : MklUI.badge('Belum ada email', 'muted'));
-              if (!f.canDraftEmail || !i.hasEmail) return st;
-              var b = h('button', { class: 'btn btn-ghost btn-small', type: 'button' }, i.draftEmailedAt ? 'Kirim Ulang' : 'Kirim');
-              b.addEventListener('click', function () { draftEmailModal(p, [i], i, load); });
-              return h('span', null, st, h('br'), b);
-            } } : null,
-            { label: 'Aksi', className: 'col-action', render: function (i) {
-              var b = h('button', { class: 'btn btn-secondary btn-small', type: 'button' }, 'Rincian');
-              b.addEventListener('click', function () { detailModal(p.periodId, i, load); });
-              return b;
-            } }
-          ].filter(Boolean), d.items, 'Tidak ada karyawan yang dihitung.')),
-          h('p', { class: 'muted small' }, 'BPJS dan PPh 21 ditanggung perusahaan (tidak dipotong dari gaji). Lembur dihitung dari jam absen dan dibayar 1× tarif per jam, sesuai file gaji lama (keputusan pemilik) [Perlu konfirmasi HR/penasihat hukum: PP 35/2021].')
-        ]));
+        area.appendChild(employeeCard(d, p, f, showDraft, load));
 
         if (p.status === 'disetujui' || p.status === 'dibayar') area.appendChild(payslipCard(p.periodId));
       }

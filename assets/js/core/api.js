@@ -18,7 +18,8 @@
     'hr.commission.importPreview': 1, 'hr.commission.importCommit': 1, 'hr.commission.ratesImport': 1,
     'hr.attendance.importPreview': 1, 'hr.attendance.importCommit': 1, 'hr.employees.importPreview': 1,
     'hr.payroll.calculate': 1, 'hr.payroll.draftEmail': 1, 'hr.payroll.markPaid': 1, 'hr.payroll.payslipEmail': 1,
-    'hr.payroll.decide': 1, 'hr.payroll.summaryDownload': 1, 'hr.payroll.detailDownload': 1
+    'hr.payroll.decide': 1, 'hr.payroll.summaryDownload': 1, 'hr.payroll.detailDownload': 1,
+    'time.schedules.importPreview': 1, 'time.schedules.importCommit': 1
   };
   var listeners = { authLost: [], passwordChange: [] };
 

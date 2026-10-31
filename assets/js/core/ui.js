@@ -117,7 +117,7 @@
 
   // ------------------------------------------------------------------ toast
 
-  function toast(message, type) {
+  function toast(message, type, ms) {
     var root = doc.getElementById('toast-root');
     if (!root) return;
     var el = h('div', { class: 'toast toast-' + (type || 'info'), role: type === 'error' ? 'alert' : 'status' }, message);
@@ -125,7 +125,7 @@
     global.setTimeout(function () {
       el.classList.add('toast-hide');
       global.setTimeout(function () { if (el.parentNode) el.parentNode.removeChild(el); }, 300);
-    }, type === 'error' ? 6000 : 4000);
+    }, ms || (type === 'error' ? 6000 : 4000));
   }
 
   // ------------------------------------------------------------------ busy button
@@ -274,7 +274,7 @@
   // ------------------------------------------------------------------ modal
 
   /**
-   * opts: {title, content (Node), actions: [{label, variant, onClick(ctl), id}], dismissible (default true)}
+   * opts: {title, content (Node), actions: [{label, variant, onClick(ctl), id}], dismissible (default true), onClose()}
    * Mengembalikan { close(), dialog, buttons }.
    */
   function modal(opts) {
@@ -287,11 +287,15 @@
     var dialog = h('div', { class: 'modal' + (opts.wide ? ' modal-wide' : ''), role: 'dialog', 'aria-modal': 'true', 'aria-labelledby': titleId });
     var overlay = h('div', { class: 'modal-overlay' }, dialog);
 
+    var closed = false;
     function close() {
+      if (closed) return;
+      closed = true;
       if (overlay.parentNode) overlay.parentNode.removeChild(overlay);
       doc.removeEventListener('keydown', onKey);
       doc.body.classList.remove('modal-open');
       if (previous && previous.focus) previous.focus();
+      if (typeof opts.onClose === 'function') { try { opts.onClose(); } catch (e) { /* abaikan */ } }
     }
 
     function onKey(e) {

@@ -13,8 +13,9 @@
  * perm : null = semua pengguna; selain itu cukup salah satu permission
  */
 window.MklHelp = {
-  version: '0.10.2',
-  updatedAt: '2026-10-29',
+  version: '0.11.0',
+  // 0.11.0: kecepatan, hitung ulang per karyawan, cari/filter penggajian, impor jadwal
+  updatedAt: '2026-10-30',
 
   topics: [
     // ------------------------------------------------------------ semua pengguna
@@ -204,8 +205,8 @@ window.MklHelp = {
         'Hari ini ditandai dengan warna dan tulisan (hari ini).',
         'Tekan Berikutnya → untuk melihat dua minggu berikutnya, atau ← Sebelumnya untuk dua minggu sebelumnya.'
       ],
-      result: 'Anda melihat kode shift, nama shift, dan jam masuk–pulang setiap hari, atau Libur.',
-      notes: ['Jika jadwal Anda diubah setelah terbit, Anda mendapat notifikasi di ikon lonceng.', '"Belum ada jadwal" berarti jadwal hari itu belum diterbitkan atasan/HR.']
+      result: 'Anda melihat kode shift, nama shift, dan jam masuk–pulang setiap hari, atau Libur / Cuti / Sakit / Izin. Hari libur nasional (garis merah) dan event di park (jam, area, nama event) juga tampil di tanggalnya.',
+      notes: ['Jika jadwal Anda diubah setelah terbit, Anda mendapat notifikasi di ikon lonceng.', '"Belum ada jadwal" berarti jadwal hari itu belum diterbitkan atasan/HR.', 'Jadwal tidak dipakai untuk menghitung gaji; gaji dihitung dari absensi.']
     },
     {
       id: 'absensi-saya', guide: 'staff', perm: ['attendance.read.own'], title: 'Melihat catatan absensi',
@@ -349,18 +350,20 @@ window.MklHelp = {
 
     {
       id: 'susun-jadwal', guide: 'supervisor', perm: ['schedule.manage.all', 'schedule.manage.team'], title: 'Menyusun dan menerbitkan jadwal mingguan',
-      intro: 'Jadwal disusun per minggu (Senin–Minggu). Supervisor hanya bisa menjadwalkan anggota timnya; HR bisa menjadwalkan semua karyawan.',
+      intro: 'Jadwal disusun per minggu (Senin–Minggu) dan dikelompokkan per section (jabatan). Supervisor hanya bisa menjadwalkan anggota timnya; HR bisa menjadwalkan semua karyawan.',
       steps: [
         'Buka menu Susun Jadwal. Pilih minggu dengan ← Minggu lalu / Minggu depan →.',
         'Untuk memulai dari jadwal minggu sebelumnya, tekan Salin dari Minggu Lalu. Sel yang sudah terisi tidak ditimpa.',
-        'Di setiap kotak (karyawan × hari), pilih shift, Libur, atau – (kosong). Kotak yang diubah berwarna kuning.',
+        'Di setiap kotak (karyawan × hari), pilih jam/shift, Libur, Cuti, Sakit, Izin, atau – (kosong). Kotak yang diubah berwarna kuning.',
+        'Tanggal yang bertanda "Libur nas." adalah hari libur nasional; "1 event" berarti ada event di park. Klik tanggal untuk melihat jadwal harian: event, catatannya, dan siapa masuk jam berapa per section.',
         'Tekan Simpan Draf. Draf (warna biru) belum terlihat oleh karyawan.',
         'Jika sudah benar, tekan Terbitkan lalu konfirmasi.'
       ],
       result: 'Muncul pesan "Jadwal ... diterbitkan". Karyawan yang jadwalnya berubah mendapat notifikasi dan bisa melihatnya di Jadwal Saya.',
       notes: [
-        'Absensi (terlambat, tidak hadir) dihitung dari jadwal yang sudah terbit.',
+        'Jadwal tidak dipakai untuk menghitung gaji: gaji dihitung dari absensi, jadi jadwal boleh diubah kapan saja.',
         'Mengubah jadwal yang sudah terbit tidak langsung terlihat karyawan sampai Anda menekan Terbitkan lagi.',
+        'Urutan section bisa diubah admin di spreadsheet MKL_DB_Core, sheet Settings, baris schedule_section_order (nama jabatan dipisah koma).',
         'Di ponsel, geser tabel ke kanan untuk melihat hari lainnya.'
       ]
     },
@@ -651,6 +654,44 @@ window.MklHelp = {
         'Shift yang tidak dipakai lagi: tekan Ubah, hapus centang Aktif. Jadwal lama tetap terbaca.',
         'Mengubah jam shift berlaku juga untuk jadwal yang sudah dibuat dengan shift itu.',
         'Toleransi terlambat dan aturan potongan [Perlu konfirmasi HR].'
+      ]
+    },
+    {
+      id: 'hr-jadwal-impor', guide: 'hr', perm: ['schedule.manage.all'], title: 'Impor jadwal dari Excel dan unduh template',
+      intro: 'Jadwal bisa disusun di Excel (seperti file Staff Working Schedule) lalu diimpor sekaligus, lengkap dengan hari libur nasional dan event di park.',
+      steps: [
+        'Buka menu Susun Jadwal, pilih minggu awal, lalu tekan Unduh Template. Pilih rentang tanggal (maksimal 93 hari), lalu tekan Unduh Template.',
+        'Buka file di Excel. Sheet Jadwal: satu baris per karyawan per section; isi sel dengan jam masuk (08:00), Day Off, Leave (cuti), Sick (sakit), atau Izin. Sel kosong tidak mengubah jadwal.',
+        'Isi sheet Public Holiday (Tanggal | Hari Libur) dan sheet Event (Date, Time, Area, Category, Name, Summary, Remarks, Children, Adults) bila perlu. Simpan file.',
+        'Di Susun Jadwal tekan Impor dari Excel, pilih file, lalu tekan Periksa File.',
+        'Periksa pratinjau: pasangkan setiap nama di file dengan karyawan (pilih "Lewati" untuk nama yang tidak diimpor), periksa rentang tanggal, dan centang Langsung terbitkan bila jadwal sudah final.',
+        'Tekan Simpan Jadwal.'
+      ],
+      result: 'Muncul pesan "Jadwal diimpor: ... baru, ... diubah". Jadwal tampil di Susun Jadwal; hari libur dan event tampil di tanggalnya.',
+      notes: [
+        'File lama "Staff Working Schedule" juga bisa langsung diimpor: tabel Section | Staff Name dengan tanggal ke kanan, sheet Public_Holiday, dan sheet Event dibaca otomatis. Contoh jadwal mingguan (Mon, Tue, ...) dilewati.',
+        'Jam masuk yang belum punya shift dibuatkan shift otomatis, misalnya "Masuk 07:00" (pulang 9 jam kemudian, istirahat 60 menit). Ubah jam pulangnya di Shift & Lokasi bila perlu.',
+        'Bawaan rentang tanggal mulai hari ini, agar jadwal yang sudah lewat tidak berubah.',
+        'Pasangan nama yang Anda pilih diingat untuk impor berikutnya. Gelar Pak/Bu/Mbak/Mas di depan nama diabaikan.',
+        'Event yang sama (tanggal, jam, dan nama) diperbarui, tidak digandakan. Hari libur pada tanggal yang sama diganti namanya.',
+        'Catatan (Remarks) event bisa berisi data pelanggan. Hanya penyusun jadwal yang melihatnya; karyawan hanya melihat jam, area, nama, dan ringkasan. Jangan bagikan file Excel ke luar tim.',
+        'Template juga berfungsi sebagai ekspor: jadwal, hari libur, dan event yang sudah ada ikut terisi.'
+      ]
+    },
+    {
+      id: 'hr-libur-event', guide: 'hr', perm: ['schedule.manage.all'], title: 'Mencatat hari libur nasional dan event di park',
+      intro: 'Menu Libur & Event berisi daftar hari libur nasional dan event di park (pesta ulang tahun, kunjungan sekolah, dll.) yang tampil di Susun Jadwal dan Jadwal Saya.',
+      steps: [
+        'Buka menu Libur & Event. Atur rentang Dari–Sampai, lalu tekan Tampilkan.',
+        'Tekan Tambah Hari Libur, isi tanggal dan nama, lalu Simpan.',
+        'Tekan Tambah Event, isi tanggal, jam, area, kategori, nama event, ringkasan (terlihat karyawan), catatan (hanya penyusun jadwal), jumlah anak dan dewasa, lalu Simpan.',
+        'Untuk mengubah atau menghapus, tekan Ubah atau Hapus pada barisnya.'
+      ],
+      result: 'Hari libur dan event tampil di tanggalnya pada Susun Jadwal (klik tanggal) dan Jadwal Saya.',
+      notes: [
+        'Daftar hari libur nasional mengikuti SKB Menteri yang berlaku; periksa setiap tahun [Perlu konfirmasi HR].',
+        'Hari libur dan event tidak mengubah hitungan gaji.',
+        'Semua perubahan tercatat di Audit Log.'
       ]
     },
     {

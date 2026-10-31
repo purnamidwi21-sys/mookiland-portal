@@ -206,8 +206,26 @@
     title: 'Profil Gaji',
     perm: 'payroll.prepare',
     menu: { label: 'Profil Gaji', order: 19, section: 'Penggajian' },
-    render: function (root) {
+    render: function (root) { profilePage(root, null); }
+  });
+
+  // Tautan langsung dari Penggajian: membuka Ubah Gaji karyawan itu.
+  MklNav.register('/profil-gaji/:id', {
+    title: 'Profil Gaji',
+    perm: 'payroll.prepare',
+    render: function (root, params) { profilePage(root, params.id); }
+  });
+
+  function profilePage(root, openId) {
+    {
+      if (openId) {
+        var back = h('a', { href: '#/penggajian' }, '← Kembali');
+        back.addEventListener('click', function (e) { if (window.history.length > 1) { e.preventDefault(); window.history.back(); } });
+        root.appendChild(h('p', null, back));
+      }
       root.appendChild(MklUI.pageHeader('Profil Gaji', 'Jenis gaji, tarif, aturan jam, dan rekening setiap karyawan.'));
+      var q = '';
+      var opened = false;
       var area = h('div');
       root.appendChild(area);
       function load() {
@@ -234,7 +252,17 @@
             refresh();
           });
           bulkBtn.addEventListener('click', function () { bulkEffectiveModal(Object.keys(selected), load); });
+          var search = h('input', { class: 'input', type: 'search', placeholder: 'Cari nama, ID, atau jabatan', 'aria-label': 'Cari karyawan', value: q });
+          search.addEventListener('input', function () {
+            q = search.value;
+            var t = q.trim().toLowerCase();
+            Array.prototype.forEach.call(area.querySelectorAll('tbody tr'), function (tr, idx) {
+              var i = d.items[idx];
+              tr.hidden = !!t && [i.fullName, i.employeeId, i.positionName].join(' ').toLowerCase().indexOf(t) === -1;
+            });
+          });
           area.appendChild(MklUI.card(null, [
+            h('div', { class: 'filter-bar' }, search),
             withProfile.length ? h('div', { class: 'btn-row bulk-bar' }, h('label', { class: 'checkbox-inline', for: 'sal-all' }, allBox, ' Pilih semua yang punya profil'), bulkBtn) : null,
             h('div', { class: 'recap-table' }, MklUI.table([
               { label: 'Pilih', className: 'col-check', render: function (i) {
@@ -282,9 +310,15 @@
             ], d.items, 'Tidak ada karyawan aktif.')),
             h('p', { class: 'muted small' }, 'Perubahan tarif dicatat dengan tanggal berlaku dan tercatat di audit log payroll. Data ini hanya terlihat oleh Payroll.')
           ]));
+          if (q) search.dispatchEvent(new window.Event('input'));
+          if (openId && !opened) {
+            opened = true;
+            var it = d.items.filter(function (x) { return x.employeeId === openId; })[0];
+            if (it) profileForm(it, load); else MklUI.toast('Karyawan ' + openId + ' tidak ada di daftar (mungkin tidak aktif).', 'warning');
+          }
         });
       }
       load();
     }
-  });
+  }
 })();

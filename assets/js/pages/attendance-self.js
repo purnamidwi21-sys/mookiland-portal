@@ -187,14 +187,20 @@
           res.data.days.forEach(function (d) {
             var body;
             if (d.shift) body = [T.shiftChip(d.shift), ' ', h('span', null, T.shiftText(d.shift))];
-            else if (d.off) body = MklUI.badge('Libur', 'muted');
+            else if (d.off) body = MklUI.badge(d.note || 'Libur', d.note ? 'info' : 'muted');
             else body = h('span', { class: 'muted' }, 'Belum ada jadwal');
-            list.appendChild(h('li', { class: 'day-item' + (d.isToday ? ' is-today' : ''), 'aria-current': d.isToday ? 'date' : null },
+            var extra = [];
+            if (d.holiday) extra.push(h('span', { class: 'day-holiday' }, 'Hari libur: ' + d.holiday));
+            (d.events || []).forEach(function (e) {
+              extra.push(h('span', { class: 'day-event small' }, 'Event' + (e.time ? ' ' + e.time : '') + (e.area ? ' · ' + e.area : '') + ': ' + e.name + (e.summary ? ' (' + e.summary + ')' : '')));
+            });
+            list.appendChild(h('li', { class: 'day-item' + (d.isToday ? ' is-today' : '') + (d.holiday ? ' is-holiday' : ''), 'aria-current': d.isToday ? 'date' : null },
               h('span', { class: 'day-name' }, T.dayLabel(d.date), d.isToday ? h('span', { class: 'muted small' }, ' (hari ini)') : null),
-              h('span', { class: 'day-body' }, body)));
+              h('span', { class: 'day-body' }, body),
+              extra.length ? h('span', { class: 'day-extra' }, extra) : null));
           });
           area.appendChild(MklUI.card(null, [list,
-            h('p', { class: 'muted small' }, 'Jadwal bisa berubah. Jika ada perubahan, Anda mendapat notifikasi di ikon lonceng.')]));
+            h('p', { class: 'muted small' }, 'Jadwal bisa berubah. Jika ada perubahan, Anda mendapat notifikasi di ikon lonceng. Hari libur nasional dan event di park ikut ditampilkan.')]));
         });
       }
       load();
