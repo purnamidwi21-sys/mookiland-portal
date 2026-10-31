@@ -25,22 +25,41 @@
     return Math.floor(t / 3600) + ':' + two(Math.floor(t / 60) % 60) + ':' + two(t % 60);
   }
 
-  /** Perkiraan tanggal periode di layar (server yang menentukan). */
-  function periodPreview(ym) {
-    if (!/^\d{4}-\d{2}$/.test(ym)) return '';
-    var y = +ym.slice(0, 4), m = +ym.slice(5, 7);
-    var end = new Date(Date.UTC(y, m - 1, 26)), start = new Date(Date.UTC(y, m - 2, 27));
-    return 'Periode ' + T.monthLabel(ym) + ': ' + MklUI.fmtDate(start.toISOString().slice(0, 10)) + ' – ' + MklUI.fmtDate(end.toISOString().slice(0, 10)) + '.';
+  /** Tanggal bawaan periode (sama dengan aturan server: tanggal mulai s.d. sehari sebelumnya). */
+  function defaultDates(ym, startDay) {
+    if (!/^\d{4}-\d{2}$/.test(ym)) return null;
+    var y = +ym.slice(0, 4), m = +ym.slice(5, 7), sd = startDay || 27;
+    return { start: new Date(Date.UTC(y, m - 2, sd)).toISOString().slice(0, 10), end: new Date(Date.UTC(y, m - 1, sd - 1)).toISOString().slice(0, 10) };
+  }
+  function periodPreview(ym, startDay) {
+    var d = defaultDates(ym, startDay);
+    return d ? 'Periode ' + T.monthLabel(ym) + ': ' + MklUI.fmtDate(d.start) + ' – ' + MklUI.fmtDate(d.end) + '.' : '';
   }
 
-  function createPeriodModal(suggested, done) {
+  function createPeriodModal(suggested, done, startDay) {
     var form = h('form', { class: 'stack', novalidate: true });
-    var month = MklUI.field({ label: 'Bulan gaji', name: 'month', type: 'month', required: true, value: suggested, hint: 'Gaji bulan X = absensi tanggal 27 bulan sebelumnya sampai tanggal 26 bulan X.' });
-    var preview = h('p', { class: 'muted small' }, periodPreview(suggested));
+    var sd = startDay || 27;
+    var month = MklUI.field({ label: 'Bulan gaji', name: 'month', type: 'month', required: true, value: suggested, hint: 'Gaji bulan X = absensi tanggal ' + sd + ' bulan sebelumnya sampai tanggal ' + (sd - 1) + ' bulan X.' });
+    var preview = h('p', { class: 'muted small' }, periodPreview(suggested, sd));
+    var own = MklUI.checkboxField({ label: 'Atur tanggal sendiri', name: 'custom', hint: 'Misalnya periode Desember dipercepat karena libur akhir tahun. Pastikan tidak ada tanggal yang terlewat antarperiode.' });
+    var d0 = defaultDates(suggested, sd) || { start: '', end: '' };
+    var startF = MklUI.field({ label: 'Tanggal mulai', name: 'startDate', type: 'date', value: d0.start });
+    var endF = MklUI.field({ label: 'Tanggal akhir', name: 'endDate', type: 'date', value: d0.end });
+    var datesBox = h('div', { class: 'form-grid' }, startF.wrap, endF.wrap);
+    datesBox.style.display = 'none';
     var pay = MklUI.field({ label: 'Rencana tanggal bayar (opsional)', name: 'payDate', type: 'date' });
     var alertSlot = h('div');
-    [month.wrap, preview, pay.wrap, alertSlot].forEach(function (x) { form.appendChild(x); });
-    month.input.addEventListener('input', function () { preview.textContent = periodPreview(month.input.value); });
+    [month.wrap, preview, own.wrap, datesBox, pay.wrap, alertSlot].forEach(function (x) { form.appendChild(x); });
+    month.input.addEventListener('input', function () {
+      preview.textContent = periodPreview(month.input.value, sd);
+      var d = defaultDates(month.input.value, sd);
+      if (d && !own.input.checked) { startF.input.value = d.start; endF.input.value = d.end; }
+    });
+    own.input.addEventListener('change', function () {
+      datesBox.style.display = own.input.checked ? '' : 'none';
+      preview.style.display = own.input.checked ? 'none' : '';
+      if (!own.input.checked) { var d = defaultDates(month.input.value, sd); if (d) { startF.input.value = d.start; endF.input.value = d.end; } }
+    });
     var ctl = MklUI.modal({
       title: 'Buat periode gaji', content: form,
       actions: [{ label: 'Batal', onClick: function (c) { c.close(); } }, { label: 'Buat Periode', variant: 'primary', id: 'ok', onClick: submit }]
@@ -51,13 +70,43 @@
       MklUI.clear(alertSlot);
       var p = { month: month.input.value };
       if (pay.input.value) p.payDate = pay.input.value;
+      if (own.input.checked) { p.startDate = startF.input.value; p.endDate = endF.input.value; }
       MklUI.setBusy(btn, true, 'Membuat...');
       MklApi.call('hr.payroll.createPeriod', p).then(function (res) {
         MklUI.setBusy(btn, false);
         if (!res.success) { if (!MklUI.showFieldErrors(form, res)) alertSlot.appendChild(MklUI.alertBox('error', res.message)); return; }
         c.close();
-        MklUI.toast(res.message, 'success');
+        MklUI.toast(res.message, res.data.notes && res.data.notes.length ? 'warning' : 'success', res.data.notes && res.data.notes.length ? 12000 : null);
         done(res.data.periodId);
+      });
+    }
+  }
+
+  /** Mengubah tanggal periode selama belum diajukan ke Direktur. */
+  function periodDatesModal(p, done) {
+    var form = h('form', { class: 'stack', novalidate: true });
+    var startF = MklUI.field({ label: 'Tanggal mulai', name: 'startDate', type: 'date', required: true, value: p.startDate });
+    var endF = MklUI.field({ label: 'Tanggal akhir', name: 'endDate', type: 'date', required: true, value: p.endDate });
+    var reason = MklUI.field({ label: 'Alasan', name: 'reason', required: true, multiline: true, rows: 2, maxLength: 300, hint: 'Dicatat di audit log, misalnya "Periode Desember dipercepat karena libur akhir tahun".' });
+    var alertSlot = h('div');
+    [h('p', { class: 'muted small' }, 'Absensi dihitung dari tanggal mulai sampai tanggal akhir. Periode sebelum dan sesudahnya tidak ikut berubah, jadi pastikan tidak ada tanggal yang terlewat atau dobel. ' + (p.calcVersion ? 'Setelah diubah, tekan Hitung Ulang Semua.' : '')),
+      h('div', { class: 'form-grid' }, startF.wrap, endF.wrap), reason.wrap, alertSlot].forEach(function (x) { form.appendChild(x); });
+    var ctl = MklUI.modal({
+      title: 'Ubah tanggal periode ' + p.label, content: form,
+      actions: [{ label: 'Batal', onClick: function (c) { c.close(); } }, { label: 'Simpan Tanggal', variant: 'primary', id: 'ok', onClick: submit }]
+    });
+    form.addEventListener('submit', function (e) { e.preventDefault(); submit(ctl, ctl.buttons.ok); });
+    function submit(c, btn) {
+      MklUI.clearFieldErrors(form);
+      MklUI.clear(alertSlot);
+      MklUI.setBusy(btn, true, 'Menyimpan...');
+      MklApi.call('hr.payroll.updatePeriodDates', { periodId: p.periodId, startDate: startF.input.value, endDate: endF.input.value, reason: reason.input.value.trim() }).then(function (res) {
+        MklUI.setBusy(btn, false);
+        if (!res.success) { if (!MklUI.showFieldErrors(form, res)) alertSlot.appendChild(MklUI.alertBox('error', res.message)); return; }
+        c.close();
+        var warn = res.data.notes && res.data.notes.length;
+        MklUI.toast(res.message, warn ? 'warning' : 'success', warn || res.data.needsRecalc ? 12000 : null);
+        done();
       });
     }
   }
@@ -70,17 +119,18 @@
     menu: { label: 'Penggajian', order: 18, section: 'Penggajian' },
     render: function (root) {
       var createBtn = MklState.can('payroll.prepare') ? h('button', { class: 'btn btn-primary', type: 'button' }, 'Buat Periode') : null;
-      root.appendChild(MklUI.pageHeader('Penggajian', 'Periode gaji tanggal 27 sampai 26, dihitung dari absensi.', createBtn));
+      root.appendChild(MklUI.pageHeader('Penggajian', 'Periode gaji bawaan tanggal 27 sampai 26 (tanggal bisa diatur per periode), dihitung dari absensi.', createBtn));
       var area = h('div');
       root.appendChild(area);
-      var suggested = '';
-      if (createBtn) createBtn.addEventListener('click', function () { createPeriodModal(suggested, function (id) { MklNav.go('/penggajian/' + id); }); });
+      var suggested = '', startDay = 27;
+      if (createBtn) createBtn.addEventListener('click', function () { createPeriodModal(suggested, function (id) { MklNav.go('/penggajian/' + id); }, startDay); });
       function load() {
         MklUI.clear(area).appendChild(MklUI.loadingState('Memuat...'));
         MklApi.call('hr.payroll.periods', {}).then(function (res) {
           MklUI.clear(area);
           if (!res.success) { area.appendChild(MklUI.errorState(res, load)); return; }
           suggested = res.data.suggestedMonth;
+          if (res.data.startDay) startDay = res.data.startDay;
           var waiting = res.data.items.filter(function (p) { return p.status === 'diajukan'; });
           if (waiting.length && MklState.can('payroll.approve')) area.appendChild(MklUI.alertBox('warning', waiting.length + ' periode gaji menunggu persetujuan Direktur.'));
           area.appendChild(MklUI.card(null, MklUI.table([
@@ -643,6 +693,7 @@
         if (p.calcVersion) button('Unduh Ringkasan (PDF)', 'secondary', function (b) { download('hr.payroll.summaryDownload', { periodId: p.periodId }, b); });
         if (f.canTransfer) button('Unduh Daftar Transfer', 'secondary', function (b) { download('hr.payroll.transferList', { periodId: p.periodId }, b); });
         if (f.canMarkPaid) button('Tandai Sudah Dibayar', 'primary', function () { markPaidModal(p, load); });
+        if (f.canEditDates) button('Ubah Tanggal', 'secondary', function () { periodDatesModal(p, load); });
         if (f.canDelete) {
           button('Hapus Periode', 'ghost', function () {
             MklUI.confirmAction({

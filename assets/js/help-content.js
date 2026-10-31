@@ -13,9 +13,9 @@
  * perm : null = semua pengguna; selain itu cukup salah satu permission
  */
 window.MklHelp = {
-  version: '0.11.0',
+  version: '0.11.2',
   // 0.11.0: kecepatan, hitung ulang per karyawan, cari/filter penggajian, impor jadwal
-  updatedAt: '2026-10-30',
+  updatedAt: '2026-10-31',
 
   topics: [
     // ------------------------------------------------------------ semua pengguna
@@ -877,11 +877,11 @@ window.MklHelp = {
     },
     {
       id: 'payroll-periode', guide: 'payroll', perm: ['payroll.prepare'], title: 'Membuat periode dan menghitung gaji',
-      intro: 'Gaji bulan X dihitung dari absensi tanggal 27 bulan sebelumnya sampai tanggal 26 bulan X.',
+      intro: 'Bawaannya, gaji bulan X dihitung dari absensi tanggal 27 bulan sebelumnya sampai tanggal 26 bulan X. Tanggal satu periode bisa diatur sendiri bila perlu.',
       steps: [
         'Pastikan absensi periode itu sudah lengkap: impor Raptor sudah dilakukan dan absen tanpa jam pulang sudah diperbaiki.',
         'Buka menu Penggajian, lalu tekan Buat Periode.',
-        'Pilih Bulan gaji. Di bawahnya tampil tanggal periode. Isi Rencana tanggal bayar jika perlu, lalu tekan Buat Periode.',
+        'Pilih Bulan gaji. Di bawahnya tampil tanggal periode. Bila tanggalnya perlu berbeda (misalnya periode Desember dipercepat), centang Atur tanggal sendiri lalu isi Tanggal mulai dan Tanggal akhir. Isi Rencana tanggal bayar jika perlu, lalu tekan Buat Periode.',
         'Di halaman periode, tekan Hitung Gaji.',
         'Baca kotak kuning (jika ada): karyawan tanpa profil gaji, atau hari tanpa jam pulang.',
         'Periksa tabel Per karyawan: Hadir, Jam dibayar, Upah / gaji, Lembur, Tambahan, Potongan, Bersih.'
@@ -889,7 +889,10 @@ window.MklHelp = {
       result: 'Status periode menjadi Sudah dihitung dan Ringkasan menampilkan Total bersih.',
       notes: [
         'Jika absensi, profil gaji, atau tambahan/potongan berubah setelah dihitung, muncul peringatan. Tekan Hitung Ulang.',
-        'Hitung Ulang aman dilakukan berkali-kali sebelum diajukan. Hasil lama disimpan sebagai versi sebelumnya.',
+        'Hitung Ulang aman dilakukan berkali-kali sebelum diajukan.',
+        'Mengubah tanggal periode yang sudah dibuat: buka periode itu, tekan Ubah Tanggal, isi tanggal baru dan alasan, lalu tekan Simpan Tanggal. Hanya bisa sebelum diajukan ke Direktur. Bila gaji sudah dihitung, semua karyawan ditandai "Perlu dihitung ulang: tanggal periode diubah"; tekan Hitung Ulang Semua.',
+        'Periode sebelum dan sesudahnya tidak ikut bergeser. Sistem menolak tanggal yang bertabrakan dengan periode lain, dan memberi peringatan bila ada tanggal yang tidak masuk periode mana pun (absensi tanggal itu tidak dibayar). Contoh: Desember diubah menjadi 27 Nov – 20 Des, maka periode Januari perlu diatur mulai 21 Des.',
+        'Gaji bulanan tetap dibayar penuh walaupun periodenya lebih pendek atau lebih panjang; gaji harian mengikuti hari hadir dalam periode. [Perlu konfirmasi HR]',
         'Salah memilih bulan? Buka periode itu, tekan Hapus Periode, isi alasan, lalu tekan Hapus Periode lagi. Hanya bisa sebelum diajukan ke Direktur. Hasil hitungan dan tambahan/potongan periode itu ikut terhapus; absensi, profil gaji, dan kasbon tidak berubah. Penghapusan tercatat di Audit Log.'
       ]
     },
