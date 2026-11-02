@@ -7,6 +7,7 @@
   var h = MklUI.h;
 
   var lastEffective = '';
+  var tenureRule = { amount: 0, months: 6 }; // dari server (Settings payroll_tenure_bonus_*)
 
   function hoursText(min) { return min ? (Math.round(min / 6) / 10) + ' jam' : '-'; }
   var DEF_DIV = { harian: 8, bulanan: 173 };
@@ -39,6 +40,9 @@
       hint: 'Isi bila jam masuk karyawan ini berbeda dari jabatannya, misalnya 10:00. Beberapa jam dipisah koma: 08:00, 11:00, 13:00.' });
     var autoBreak = MklUI.checkboxField({ label: 'Istirahat otomatis 1 jam (absen istirahat tidak dihitung)', name: 'autoBreak', checked: !!p.autoBreak,
       hint: 'Untuk karyawan yang tidak perlu absen saat istirahat. Lama hadir = jam pulang − jam masuk, dianggap sudah termasuk istirahat 1 jam. Istirahat pendek yang tercatat tidak menambah jam kerja.' });
+    var tenure = MklUI.checkboxField({ label: 'Dapat tambahan masa kerja' + (tenureRule.amount ? ' (+' + MklUI.fmtMoney(tenureRule.amount) + '/hari setelah ' + tenureRule.months + ' bulan)' : ''), name: 'tenureBonus', checked: cur ? p.tenureBonus !== false : true,
+      hint: (item.tenureFrom ? 'Masuk ' + MklUI.fmtDate(item.joinDate) + ': genap ' + tenureRule.months + ' bulan pada ' + MklUI.fmtDate(item.tenureFrom) + ', tambahan berlaku mulai periode gaji berikutnya. ' : (item.joinDate ? '' : 'Tanggal masuk belum diisi di Data Karyawan, jadi tambahan belum bisa dihitung. ')) +
+        'Hapus centang bila tarif harian di atas sudah termasuk tambahan masa kerja, agar tidak dihitung dua kali.' });
     var ot = MklUI.checkboxField({ label: 'Dapat upah lembur', name: 'overtimeEligible', checked: cur ? p.overtimeEligible : true, hint: 'Lembur = lama hadir di atas batas jam, minimal 15 menit, 1× tarif per jam.' });
     var shortfall = MklUI.checkboxField({ label: 'Potong jam kurang (khusus bulanan)', name: 'shortfallDeduction', checked: !!p.shortfallDeduction, hint: 'Pada hari hadir, jam di bawah jam wajib dipotong gaji ÷ 173 per jam.' });
     var div = MklUI.field({ label: 'Tarif per jam = gaji ÷', name: 'hourlyDivisor', type: 'number', inputmode: 'numeric', required: true,
@@ -57,11 +61,12 @@
     replaceOlder.wrap.hidden = true;
     eff.input.addEventListener('change', function () { replaceOlder.wrap.hidden = true; replaceOlder.input.checked = false; });
     var alertSlot = h('div');
-    [payType.wrap, daily.wrap, monthly.wrap, div.wrap, cap.wrap, rounding.wrap, starts.wrap, autoBreak.wrap, ot.wrap, shortfall.wrap, req.wrap, eff.wrap, replaceOlder.wrap, reason.wrap, alertSlot].forEach(function (x) { form.appendChild(x); });
+    [payType.wrap, daily.wrap, tenure.wrap, monthly.wrap, div.wrap, cap.wrap, rounding.wrap, starts.wrap, autoBreak.wrap, ot.wrap, shortfall.wrap, req.wrap, eff.wrap, replaceOlder.wrap, reason.wrap, alertSlot].forEach(function (x) { form.appendChild(x); });
     function sync() {
       starts.wrap.hidden = !rounding.input.checked;
       var harian = payType.input.value === 'harian';
       daily.wrap.hidden = !harian;
+      tenure.wrap.hidden = !harian || !tenureRule.amount;
       monthly.wrap.hidden = harian;
       shortfall.wrap.hidden = harian;
       req.wrap.hidden = harian || !shortfall.input.checked;
@@ -95,7 +100,7 @@
         autoBreak: autoBreak.input.checked,
         replaceOlder: !replaceOlder.wrap.hidden && replaceOlder.input.checked
       };
-      if (harian) payload.dailyRate = Number(daily.input.value || 0);
+      if (harian) { payload.dailyRate = Number(daily.input.value || 0); payload.tenureBonus = tenure.input.checked; }
       else {
         payload.monthlySalary = Number(monthly.input.value || 0);
         payload.shortfallDeduction = shortfall.input.checked;
@@ -234,6 +239,7 @@
           MklUI.clear(area);
           if (!res.success) { area.appendChild(MklUI.errorState(res, load)); return; }
           var d = res.data;
+          tenureRule = { amount: d.tenureBonus || 0, months: d.tenureMonths || 6 };
           var missing = d.items.filter(function (i) { return !i.profile && !i.upcoming; }).length;
           if (missing) area.appendChild(MklUI.alertBox('warning', missing + ' karyawan aktif belum punya profil gaji dan tidak akan dihitung gajinya.'));
           var selected = {};
@@ -286,6 +292,7 @@
                 var p = i.profile || i.upcoming, parts = [hourlyText(p), 'maks ' + p.paidHoursCap + ' jam'];
                 parts.push(!p.clockinRounding ? 'jam masuk asli' : (p.shiftStarts ? 'masuk dibulatkan ke shift ' + p.shiftStarts.split(',').join(' / ') + ' (khusus)' : (i.shiftStarts && i.shiftStarts.length ? 'masuk dibulatkan ke shift ' + i.shiftStarts.join(' / ') : 'masuk dibulatkan (tabel umum)')));
                 if (p.autoBreak) parts.push('istirahat otomatis 1 jam');
+                if (p.payType === 'harian' && d.tenureBonus) parts.push(!p.tenureBonus ? 'tanpa tambahan masa kerja' : (!i.tenureFrom ? 'tambahan masa kerja: tanggal masuk kosong' : (i.tenureFrom <= d.today ? '+' + MklUI.fmtMoney(d.tenureBonus) + ' masa kerja (genap ' + d.tenureMonths + ' bln ' + MklUI.fmtDate(i.tenureFrom) + ')' : '+' + MklUI.fmtMoney(d.tenureBonus) + ' masa kerja setelah ' + MklUI.fmtDate(i.tenureFrom))));
                 parts.push(p.overtimeEligible ? 'dapat lembur' : 'tanpa lembur');
                 if (p.shortfallDeduction) parts.push('potong jam kurang dari ' + hoursText(p.requiredMinutes));
                 return h('span', { class: 'small' }, parts.join(' · '));

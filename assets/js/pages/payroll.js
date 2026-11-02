@@ -274,11 +274,14 @@
         body.appendChild(MklUI.infoList([
           ['Periode', d.period.label + ' (' + T.rangeLabel(d.period.startDate, d.period.endDate) + ')'],
           ['Profil gaji', p.payType ? p.payTypeLabel + ', ' + (p.payType === 'harian' ? MklUI.fmtMoney(p.dailyRate) + '/hari' : MklUI.fmtMoney(p.monthlySalary) + '/bulan') + ', maks ' + p.paidHoursCap + ' jam' + (p.clockinRounding ? ', jam masuk dibulatkan' : '') + (p.overtimeEligible ? ', dapat lembur' : ', tanpa lembur') : '-'],
+          d.stats.tenureBonus ? ['Tambahan masa kerja', d.stats.tenureBonus.amount
+            ? '+' + MklUI.fmtMoney(d.stats.tenureBonus.amount) + '/hari (tarif ' + MklUI.fmtMoney(d.stats.tenureBonus.baseRate) + ' + ' + MklUI.fmtMoney(d.stats.tenureBonus.amount) + ' = ' + MklUI.fmtMoney(d.stats.tenureBonus.baseRate + d.stats.tenureBonus.amount) + '; masuk ' + MklUI.fmtDate(d.stats.tenureBonus.joinDate) + ')'
+            : 'Belum: ' + (d.stats.tenureBonus.note || '-')] : null,
           ['Tarif per jam', d.stats.hourlyRate ? money2(d.stats.hourlyRate) + ' (gaji ÷ ' + String(Math.round(d.stats.hourlyDivisor * 100) / 100).replace('.', ',') + ')' : 'Hitung Ulang untuk menampilkan'],
           ['Aturan jam masuk', d.stats.shiftRule || 'Tekan Hitung Ulang (versi 0.9.16) untuk menampilkan'],
           ['Hari hadir', String(d.stats.present || 0)],
           ['Lembur disetujui di Persetujuan', T.fmtMinutes(d.stats.approvedOvertimeMinutes || 0) + ' (sebagai pembanding; upah lembur dihitung dari jam absen)']
-        ]));
+        ].filter(Boolean)));
         if (d.warnings.length) body.appendChild(h('div', { class: 'alert alert-warning' }, h('ul', { class: 'warning-list' }, d.warnings.map(function (w) { return h('li', null, w); }))));
         var lineRows = d.lines.map(function (l) { return Object.assign({ state: l.removed ? 'removed' : '' }, l); })
           .concat((d.pendingAdjustments || []).map(function (j) { return Object.assign({ manual: true, state: 'pending' }, j); }));

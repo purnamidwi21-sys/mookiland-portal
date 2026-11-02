@@ -13,9 +13,9 @@
  * perm : null = semua pengguna; selain itu cukup salah satu permission
  */
 window.MklHelp = {
-  version: '0.11.2',
+  version: '0.11.3',
   // 0.11.0: kecepatan, hitung ulang per karyawan, cari/filter penggajian, impor jadwal
-  updatedAt: '2026-10-31',
+  updatedAt: '2026-11-01',
 
   topics: [
     // ------------------------------------------------------------ semua pengguna
@@ -825,6 +825,7 @@ window.MklHelp = {
       ],
       result: 'Muncul pesan "Profil gaji ... disimpan, berlaku mulai ...: Rp... per hari". Cocokkan angkanya. Kolom Tarif / gaji dan Aturan di tabel terisi.',
       notes: [
+        'Gaji harian: centang Dapat tambahan masa kerja (bawaan tercentang) agar tarif naik Rp10.000 per hari setelah 6 bulan kerja, mulai periode gaji berikutnya. Hapus centang bila tarif harian yang diisi sudah termasuk tambahan itu, agar tidak dihitung dua kali. Kolom Aturan di daftar Profil Gaji menampilkan status setiap karyawan. Tanggal masuk diambil dari Data Karyawan.',
         'Saat Ubah Gaji, tanggal Berlaku mulai otomatis terisi tanggal profil yang sekarang. Biarkan tanggal itu untuk memperbaiki angka yang salah ketik.',
         'Kenaikan tarif tidak menimpa tarif lama. Isi tanggal Berlaku mulai yang lebih baru, maka periode yang berakhir sebelum tanggal itu tetap memakai tarif lama. Tekan Riwayat untuk melihat semua perubahan.',
         'Tarif ini ternyata sudah berlaku lebih awal (misalnya tarif awal sejak April)? Di Ubah Gaji, isi Berlaku mulai dengan tanggal yang lebih awal lalu Simpan. Profil lama diganti, tidak ditumpuk. Bila karyawan punya tarif lain di antara kedua tanggal itu, muncul pesan berisi tarif tersebut dan kotak Ganti juga tarif lama. Centang bila isian ini memang berlaku mulai tanggal itu, lalu Simpan. Ditolak bila tanggalnya mengenai gaji yang sudah disetujui.',
@@ -860,6 +861,7 @@ window.MklHelp = {
         'Shift khusus (karyawan diminta datang di luar jam resmi): buka Rincian, tekan Koreksi pada tanggal itu, centang Shift khusus, lalu Simpan. Jam masuk hari itu dipakai apa adanya.',
         'Lama hadir = jam pulang − jam masuk (setelah dibulatkan), termasuk istirahat. Jika Raptor mencatat istirahat dan istirahatnya lebih pendek dari 50 menit, sisa sampai 60 menit ditambahkan.',
         'Tarif per jam = tarif harian atau gaji bulanan ÷ angka di profil gaji (bawaan: harian 8, bulanan 173).',
+        'Tambahan masa kerja (gaji harian): karyawan yang sudah bekerja 6 bulan sejak tanggal masuk mendapat tambahan Rp10.000 pada tarif hariannya, mulai periode gaji berikutnya setelah genap 6 bulan. Contoh masuk 15 Mei: genap 15 November, tambahan mulai periode yang dimulai 27 November. Tarif per jam dan lembur ikut naik. Tambahan hanya sekali, tidak bertambah lagi. Berlaku mulai Gaji November 2026.',
         'Harian: jam dibayar = jam penuh lama hadir, paling banyak 8 (atau 9). Jika kurang dari 8 jam, dibayar sesuai lama hadir sampai detik.',
         'Jam masuk, pulang, dan lama hadir dihitung sampai detik dari data Raptor, sama seperti file gaji lama.',
         'Lembur = lama hadir di atas 8 (atau 9) jam, minimal 15 menit, dibayar 1× tarif per jam (sampai detik).',
