@@ -40,6 +40,7 @@
         var save = h('button', { class: 'btn btn-primary', type: 'button' }, 'Simpan');
         body.appendChild(MklUI.card('Kelompok fitur karyawan', [list,
           h('p', { class: 'muted small' }, 'Selama Gaji belum dibuka, slip gaji (resmi maupun draf) tidak dikirim ke email karyawan dan karyawan tidak mendapat notifikasi slip. PDF slip tetap bisa diunduh HR dari halaman Penggajian.'),
+          d.push ? h('p', { class: 'muted small' }, 'Pengingat di HP: ' + (d.push.enabled ? d.push.users + ' pengguna sudah mengaktifkan di ' + d.push.devices + ' perangkat. Pengingat belum absen hanya dikirim bila Absen lewat HP dibuka.' : 'belum aktif (jalankan setupJalankanSemua dan setupPasangPemicu).')) : null,
           d.updatedAt ? h('p', { class: 'muted small' }, 'Terakhir diubah ' + MklUI.fmtDateTime(d.updatedAt) + (d.updatedBy ? ' oleh ' + d.updatedBy : '') + '. Riwayat lengkap ada di Log Aktivitas.') : null,
           h('div', { class: 'form-actions' }, save)]));
 

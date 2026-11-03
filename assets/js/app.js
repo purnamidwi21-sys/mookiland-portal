@@ -4,7 +4,7 @@
 (function () {
   'use strict';
   var h = MklUI.h;
-  var VERSION = '0.12.0';
+  var VERSION = '0.13.0';
 
   function appRoot() {
     return document.getElementById('app');
@@ -221,6 +221,7 @@
     afterLogin: function (user) {
       rememberPreviousLogin(user);
       MklState.set(user);
+      if (window.MklPush) { MklPush.register(); MklPush.clearBadge(); }
       startIdle();
       startNotificationPolling();
       MklNav.go(user.mustChangePassword ? '/ganti-password' : '/beranda');
@@ -254,6 +255,7 @@
       if (res.success) {
         rememberPreviousLogin(res.data.user);
         MklState.set(res.data.user);
+        if (window.MklPush) { MklPush.register(); MklPush.clearBadge(); }
         startIdle();
         startNotificationPolling();
       } else if (res.errorCode !== 'SESSION_EXPIRED' && res.errorCode !== 'UNAUTHENTICATED') {

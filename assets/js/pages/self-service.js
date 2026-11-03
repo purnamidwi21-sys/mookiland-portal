@@ -115,6 +115,7 @@
   MklNav.register('/notifikasi', {
     title: 'Notifikasi',
     render: function (root) {
+      if (window.MklPush) MklPush.clearBadge();
       var markAll = h('button', { class: 'btn btn-secondary', type: 'button' }, 'Tandai Semua Sudah Dibaca');
       root.appendChild(MklUI.pageHeader('Notifikasi', '50 notifikasi terbaru.', markAll));
       var area = h('div');

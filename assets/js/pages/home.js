@@ -194,8 +194,6 @@
         h('li', null, h('a', { href: '#/ganti-password' }, 'Ganti Password')));
       root.appendChild(MklUI.card('Yang bisa Anda lakukan saat ini', list));
 
-      root.appendChild(MklUI.card('Sedang dikembangkan', h('p', { class: 'muted' },
-        'Impor komisi kasir (Tahap 4b) dan notifikasi WhatsApp (Tahap 4c) akan muncul setelah selesai dan diuji.')));
     }
   });
 })();

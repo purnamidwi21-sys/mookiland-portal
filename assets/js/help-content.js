@@ -13,7 +13,7 @@
  * perm : null = semua pengguna; selain itu cukup salah satu permission
  */
 window.MklHelp = {
-  version: '0.12.0',
+  version: '0.13.0',
   // 0.11.0: kecepatan, hitung ulang per karyawan, cari/filter penggajian, impor jadwal
   updatedAt: '2026-11-01',
 
@@ -84,8 +84,7 @@ window.MklHelp = {
       steps: [
         'Kotak Kepegawaian Anda menampilkan Employee ID, jabatan, atasan, dan masa kerja. Jika ada pesan kuning "Mohon lengkapi data kontak", buka Profil Saya.',
         'Kotak Akun Anda menampilkan username, role, dan kapan Anda terakhir masuk. Jika waktu masuk sebelumnya tidak Anda kenali, segera ganti password dan hubungi admin.',
-        'Kotak Yang bisa Anda lakukan saat ini berisi tautan ke menu yang boleh Anda buka.',
-        'Kotak Sedang dikembangkan menjelaskan fitur yang belum tersedia.'
+        'Kotak Yang bisa Anda lakukan saat ini berisi tautan ke menu yang boleh Anda buka.'
       ],
       result: 'Anda mengetahui akun dan menu apa saja yang bisa dipakai.'
     },
@@ -194,7 +193,28 @@ window.MklHelp = {
       notes: [
         'Absen hanya bisa di dalam radius lokasi kerja. Jika ditolak karena jarak, pastikan Anda berada di area Mookiland lalu coba lagi.',
         'Jika pesan menyebut sinyal GPS kurang akurat, tunggu beberapa detik di tempat terbuka lalu tekan lagi.',
-        'Lupa absen atau ponsel bermasalah? Hubungi HR untuk dicatat manual. Jangan meminta rekan memakai akun Anda.'
+        'Lupa absen atau ponsel bermasalah? Hubungi HR untuk dicatat manual. Jangan meminta rekan memakai akun Anda.',
+        'Tetap tempelkan jari di mesin fingerprint seperti biasa. Fingerprint dipakai sebagai cadangan bila absen portal kosong, dan untuk mencocokkan jam.',
+        'Aktifkan pengingat di HP agar diingatkan bila belum absen. Lihat topik "Memasang portal di HP dan menyalakan pengingat".'
+      ]
+    },
+    {
+      id: 'pengingat-hp', guide: 'staff', title: 'Memasang portal di HP dan menyalakan pengingat',
+      intro: 'Portal bisa dipasang seperti aplikasi di layar utama HP. Setelah pengingat dinyalakan, notifikasi muncul di layar HP, misalnya bila Anda belum absen masuk 15 menit setelah shift mulai atau belum absen pulang 30 menit setelah shift selesai.',
+      steps: [
+        'Android: buka portal di Chrome, tekan menu ⋮, lalu pilih Tambahkan ke layar utama (atau Instal aplikasi).',
+        'iPhone (iOS 16.4 atau lebih baru): buka portal di Safari, tekan tombol Bagikan, pilih Tambah ke Layar Utama, lalu Tambah. Setelah itu buka Mookiland dari ikon baru di layar utama dan masuk.',
+        'Buka Profil Saya. Di kotak Pengingat di HP, tekan Aktifkan pengingat di HP ini.',
+        'Saat HP menanyakan izin notifikasi, pilih Izinkan.',
+        'Tekan Kirim notifikasi uji. Dalam beberapa detik notifikasi "Notifikasi uji berhasil" muncul di layar HP.'
+      ],
+      result: 'Kotak Pengingat di HP menampilkan "Aktif di HP ini". Menekan notifikasi membuka portal langsung di halaman yang dituju (misalnya Absen).',
+      notes: [
+        'Di iPhone, notifikasi hanya muncul bila portal dibuka dari ikon di layar utama, bukan dari Safari biasa.',
+        'Pengingat absen hanya untuk hari yang ada jadwal shift-nya, dan tidak dikirim saat Anda cuti, sakit, atau izin yang sudah disetujui.',
+        'Notifikasi tentang gaji atau kasbon tampil sebagai "Ada pemberitahuan baru di portal". Isinya dibaca di portal.',
+        'Ganti HP? Aktifkan lagi di HP baru. Untuk mematikan, tekan Matikan di HP ini.',
+        'Notifikasi tidak muncul? Periksa izin notifikasi untuk Chrome/Mookiland di pengaturan HP, dan pastikan mode hemat baterai tidak memblokir Chrome.'
       ]
     },
     {
@@ -210,18 +230,19 @@ window.MklHelp = {
     },
     {
       id: 'absensi-saya', guide: 'staff', perm: ['attendance.read.own'], title: 'Melihat catatan absensi',
-      intro: 'Menu Absensi Saya menampilkan jam masuk, jam pulang, istirahat, jam kerja, dan lembur Anda per periode gaji (tanggal 27 sampai 26), dihitung dengan aturan yang sama seperti gaji.',
+      intro: 'Menu Absensi Saya menampilkan jam masuk, jam pulang, jam kerja, dan lembur Anda per periode gaji (tanggal 27 sampai 26), dihitung dengan aturan yang sama seperti gaji, tanpa angka rupiah.',
       steps: [
         'Buka menu Absensi Saya. Tab Per Periode Gaji terbuka untuk periode gaji yang sedang berjalan.',
-        'Lihat Ringkasan: hari hadir, lama hadir, jam kerja dihitung, lembur, dan hari yang belum absen pulang.',
-        'Gulir ke Rincian harian. Kolom Masuk menampilkan jam absen; tulisan "dihitung" di bawahnya adalah jam mulai kerja yang dipakai untuk gaji (dibulatkan ke jam shift).',
+        'Lihat Ringkasan: hari hadir, jam kerja, dan lembur. Tekan Cara menghitung untuk penjelasan singkat aturannya.',
+        'Gulir ke Rincian harian. Kolom Catatan menjelaskan hal khusus, misalnya "Masuk dihitung 13:00 (jam shift)" atau "Kurang 8 mnt dari 8 jam".',
+        'Tekan Detail pada sebuah tanggal untuk melihat jam asli dari mesin absen, istirahat, dan lama hadir (jam:menit:detik).',
         'Tekan ← Periode sebelumnya untuk melihat periode lalu.'
       ],
       result: 'Anda bisa memeriksa absensi dan lembur sebelum gaji disetujui.',
       notes: [
         'Selama gaji belum disetujui Direktur, angkanya perkiraan dan bisa berubah bila HR mengoreksi absensi. Setelah disetujui, tertulis "Sesuai gaji yang sudah disetujui Direktur".',
-        'Durasi ditulis jam:menit:detik, misalnya 8:37:04.',
-        'Tab Jadwal & Status menampilkan tampilan lama per bulan kalender dibandingkan dengan jadwal shift.',
+        'Istirahat tidak dipotong dari jam kerja.',
+        'Tab Jadwal & Status menampilkan tampilan per bulan kalender dibandingkan dengan jadwal shift.',
         'Jika ada yang salah (misalnya lupa absen pulang), tekan Ajukan Koreksi pada tanggal itu. Lihat topik "Mengajukan koreksi absensi".'
       ]
     },
@@ -738,6 +759,23 @@ window.MklHelp = {
       notes: ['Catatan HR tidak akan ditimpa oleh impor Raptor berikutnya.']
     },
     {
+      id: 'hr-portal-fingerprint', guide: 'hr', perm: ['attendance.read.all', 'attendance.manage'], title: 'Mencocokkan absen portal dengan fingerprint',
+      intro: 'Bila karyawan absen lewat portal dan tetap memakai fingerprint Raptor, kotak Portal vs Fingerprint di Rekap Absensi menunjukkan hari yang perlu dicek.',
+      steps: [
+        'Impor file Raptor seperti biasa (Rekap Absensi → Impor dari Raptor).',
+        'Di Rekap Absensi, pilih rentang tanggal lalu tekan Tampilkan.',
+        'Gulir ke kotak Portal vs Fingerprint. Periksa baris bertanda Tanpa fingerprint dan Selisih jam bersama karyawan atau atasannya.',
+        'Bila jam portal salah, koreksi dari Rincian gaji atau Rekap Absensi seperti biasa.'
+      ],
+      result: 'Anda melihat ringkasan hari absen portal, hari tanpa fingerprint, dan hari dengan selisih jam besar.',
+      notes: [
+        'Tanpa fingerprint = ada absen portal tetapi tidak ada sidik jari di Raptor pada hari itu. Bisa berarti lupa fingerprint, atau titip absen.',
+        'Selisih jam = jam masuk atau pulang portal dan fingerprint berbeda sekian menit atau lebih (Settings attendance_compare_minutes, bawaan 15).',
+        'Hanya fingerprint = tidak absen di portal; gaji memakai jam fingerprint.',
+        'Tanggal setelah impor Raptor terakhir belum dibandingkan.'
+      ]
+    },
+    {
       id: 'hr-impor-raptor', guide: 'hr', perm: ['attendance.import'], title: 'Mengimpor absensi dari Raptor',
       intro: 'Jam masuk/pulang dari laporan Raptor "Employee\'s Time / Attendance" bisa dimasukkan ke portal.',
       steps: [
@@ -751,7 +789,7 @@ window.MklHelp = {
       notes: [
         'Beberapa sesi dalam sehari (misalnya keluar saat istirahat) digabung: jam masuk pertama dan jam pulang terakhir.',
         'Sesi tanpa jam pulang atau lebih dari 16 jam dianggap lupa absen pulang dan ditandai perlu dicek. [Perlu konfirmasi HR]',
-        'Absen dari aplikasi (GPS) dan catatan HR tidak pernah ditimpa. Selisih jam masuk ≥ 15 menit antara aplikasi dan Raptor ditampilkan untuk dicek.',
+        'Absen portal (GPS) dan catatan HR tidak pernah ditimpa. Gaji memakai jam absen portal; fingerprint hanya mengisi hari tanpa absen portal, serta jam pulang dan istirahat absen portal yang kosong. Jam fingerprint disimpan untuk laporan Portal vs Fingerprint di Rekap Absensi.',
         'Mengimpor file yang sama dua kali tidak menggandakan data.',
         'Riwayat impor tampil di bawah Rekap Absensi dan di halaman Impor dari Raptor. Salah unggah atau ingin mengulang? Di Riwayat impor, tekan Hapus Data pada impor itu. Jendela konfirmasi menampilkan jumlah hari yang akan dihapus. Isi Alasan, lalu tekan Hapus Data Absensi. Setelah itu unggah file yang benar dan tekan Hitung Ulang di periode gaji.',
         'Hapus Data hanya menghapus absensi dari Raptor pada rentang tanggal impor itu. Absen aplikasi (GPS) dan catatan HR tidak dihapus. Hari Raptor yang sudah dikoreksi HR tetap disimpan, kecuali Anda mencentang Hapus juga hari yang sudah dikoreksi HR.',

@@ -118,6 +118,7 @@
       root.appendChild(MklUI.pageHeader('Profil Saya', 'Data pribadi dan kontak Anda.'));
       var container = h('div');
       root.appendChild(container);
+      if (window.MklPush) root.appendChild(MklPush.card());
 
       function render(me) {
         if (me.missingContact && me.missingContact.length) {
