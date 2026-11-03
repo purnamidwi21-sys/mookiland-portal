@@ -37,6 +37,14 @@
       return false;
     },
 
+    /**
+     * Tahap Peluncuran (0.12.0): kelompok fitur karyawan yang belum dibuka.
+     * Server juga menolak fitur ini; di sini hanya untuk menyembunyikan menu/tombol.
+     */
+    moduleOpen: function (code) {
+      return !code || !user || !user.closedModules || user.closedModules.indexOf(code) === -1;
+    },
+
     roleNames: function () {
       return user ? user.roles.map(function (r) { return r.name; }) : [];
     },

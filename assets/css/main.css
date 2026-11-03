@@ -542,3 +542,9 @@ fieldset[hidden] { display: none; }
 .sched-cell.is-note .sched-select { color: var(--info-text); font-weight: 600; }
 .daily-section { margin: 0 0 4px; font-size: 0.9375rem; }
 .import-map select.input { min-width: 180px; }
+
+/* Tahap Peluncuran (0.12.0) */
+.rollout-row { display: flex; flex-wrap: wrap; align-items: flex-start; justify-content: space-between; gap: 8px; padding: 10px 0; border-bottom: 1px solid var(--border, #e5e7eb); }
+.rollout-row:last-child { border-bottom: 0; }
+.rollout-row .checkbox { flex: 1 1 260px; margin: 0; }
+.rollout-badges { display: flex; gap: 6px; flex-wrap: wrap; }

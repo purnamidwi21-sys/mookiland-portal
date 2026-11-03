@@ -15,7 +15,7 @@
   };
 
   function visible(item) {
-    return !item.perm || MklState.canAny(item.perm);
+    return (!item.perm || MklState.canAny(item.perm)) && MklState.moduleOpen(item.module);
   }
 
   MklNav.register('/bantuan', {

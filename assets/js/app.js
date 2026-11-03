@@ -4,7 +4,7 @@
 (function () {
   'use strict';
   var h = MklUI.h;
-  var VERSION = '0.11.3';
+  var VERSION = '0.12.0';
 
   function appRoot() {
     return document.getElementById('app');
@@ -139,6 +139,14 @@
     ]));
   }
 
+  function notOpenYet(container) {
+    container.appendChild(MklUI.pageHeader('Belum dibuka'));
+    container.appendChild(MklUI.card(null, [
+      h('p', null, 'Fitur ini belum dibuka untuk karyawan. HR akan memberi tahu bila sudah bisa dipakai.'),
+      h('a', { class: 'btn btn-secondary', href: '#/beranda' }, 'Kembali ke Beranda')
+    ]));
+  }
+
   function route() {
     var m = MklNav.match(window.location.hash);
     var user = MklState.user;
@@ -150,7 +158,9 @@
 
     document.title = def.title + ' · Mookiland Staff Portal';
     var container = (def.layout === 'bare') ? bareLayout() : shellLayout(m.actualPath);
-    if (def.perm && !MklState.canAny([].concat(def.perm))) {
+    if (def.module && !MklState.moduleOpen(def.module)) {
+      notOpenYet(container);
+    } else if (def.perm && !MklState.canAny([].concat(def.perm))) {
       forbidden(container);
     } else {
       def.render(container, m.params);
@@ -216,7 +226,15 @@
       MklNav.go(user.mustChangePassword ? '/ganti-password' : '/beranda');
     },
 
-    logout: logout
+    logout: logout,
+
+    /** Memuat ulang data pengguna (permission, Tahap Peluncuran) lalu menampilkan ulang halaman. */
+    refreshUser: function () {
+      return MklApi.call('auth.me', {}).then(function (res) {
+        if (res.success) { MklState.set(res.data.user); route(); }
+        return res;
+      });
+    }
   };
   window.MklApp = MklApp;
 

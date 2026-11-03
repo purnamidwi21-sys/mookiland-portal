@@ -8,6 +8,7 @@
  *   layout  : 'bare' (tanpa menu) atau 'shell' (dengan menu, bawaan)
  *   perm    : permission yang dibutuhkan (satu atau daftar; cukup salah satu)
  *   menu    : { label, order, section } jika tampil di menu samping
+ *   module  : kelompok Tahap Peluncuran (mis. 'kepegawaian'); halaman disembunyikan bila belum dibuka
  *   render  : function (container, params)
  */
 (function (global) {
@@ -55,7 +56,7 @@
     /** Halaman yang tampil di menu untuk pengguna saat ini. */
     menuItems: function (canAny) {
       return routes.filter(function (r) {
-        return r.def.menu && canAny(r.def.perm ? [].concat(r.def.perm) : []);
+        return r.def.menu && canAny(r.def.perm ? [].concat(r.def.perm) : []) && (!r.def.module || !global.MklState || global.MklState.moduleOpen(r.def.module));
       }).map(function (r) {
         return { path: r.path, label: r.def.menu.label, order: r.def.menu.order || 50, section: r.def.menu.section || '' };
       }).sort(function (a, b) { return a.order - b.order; });

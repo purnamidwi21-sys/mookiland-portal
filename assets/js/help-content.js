@@ -13,7 +13,7 @@
  * perm : null = semua pengguna; selain itu cukup salah satu permission
  */
 window.MklHelp = {
-  version: '0.11.3',
+  version: '0.12.0',
   // 0.11.0: kecepatan, hitung ulang per karyawan, cari/filter penggajian, impor jadwal
   updatedAt: '2026-11-01',
 
@@ -108,7 +108,7 @@ window.MklHelp = {
       ]
     },
     {
-      id: 'data-diri', guide: 'staff', perm: ['profile.update.own'], title: 'Melengkapi data diri dan foto KTP',
+      id: 'data-diri', guide: 'staff', module: 'kepegawaian', perm: ['profile.update.own'], title: 'Melengkapi data diri dan foto KTP',
       intro: 'Anda mengisi sendiri tempat dan tanggal lahir, jenis kelamin, nomor KTP, dan foto KTP. HR mencocokkannya dengan foto KTP sebelum disimpan.',
       steps: [
         'Siapkan KTP asli. Foto seluruh kartu di tempat terang sampai tulisan terbaca jelas.',
@@ -174,7 +174,7 @@ window.MklHelp = {
       result: 'Anda mengetahui status kepesertaan BPJS. Jika berbeda, hubungi HR.'
     },
     {
-      id: 'dokumen-saya', guide: 'staff', perm: ['profile.read.own'], title: 'Mengunduh dokumen saya',
+      id: 'dokumen-saya', guide: 'staff', module: 'kepegawaian', perm: ['profile.read.own'], title: 'Mengunduh dokumen saya',
       intro: 'Dokumen Anda yang disimpan HR (misalnya ijazah, sertifikat, kartu BPJS) bisa diunduh di menu Dokumen Saya.',
       steps: ['Buka menu Dokumen Saya.', 'Tekan Unduh pada dokumen yang diperlukan.'],
       result: 'File tersimpan di perangkat Anda.',
@@ -692,6 +692,23 @@ window.MklHelp = {
         'Daftar hari libur nasional mengikuti SKB Menteri yang berlaku; periksa setiap tahun [Perlu konfirmasi HR].',
         'Hari libur dan event tidak mengubah hitungan gaji.',
         'Semua perubahan tercatat di Audit Log.'
+      ]
+    },
+    {
+      id: 'hr-tahap-peluncuran', guide: 'hr', perm: ['settings.manage', 'user.manage.privileged', 'employee.manage'], title: 'Membuka fitur karyawan bertahap (Tahap Peluncuran)',
+      intro: 'Fitur portal untuk karyawan dibuka per kelompok. Fase 1: Jadwal, Absensi, dan Pengajuan. Gaji, Kepegawaian, dan Absen lewat HP menyusul.',
+      steps: [
+        'Buka menu Administrasi > Tahap Peluncuran.',
+        'Centang kelompok yang ingin dibuka (Jadwal, Absensi, Pengajuan, Gaji, Kepegawaian, Absen lewat HP). Hapus centang untuk menutup.',
+        'Tekan Simpan. Periksa ringkasan Dibuka/Ditutup, isi catatan bila perlu, lalu tekan Simpan sekali lagi.'
+      ],
+      result: 'Menu kelompok yang dibuka langsung tampil di portal karyawan (setelah halaman dimuat ulang). Menu kelompok yang ditutup hilang dan server menolaknya walaupun alamat halamannya dibuka langsung.',
+      notes: [
+        'Selalu terbuka: Beranda, Profil Saya, Kepegawaian Saya, Pengumuman, Notifikasi, Pusat Bantuan, dan ganti password.',
+        'Hanya fitur milik sendiri karyawan yang dibatasi. Menu pengelola (Susun Jadwal, Rekap Absensi, Penggajian, Persetujuan, dll.) tetap berjalan. Akun HR atau Direktur yang juga karyawan ikut mengikuti sakelar ini untuk fitur milik sendirinya.',
+        'Selama Gaji belum dibuka, slip gaji (resmi maupun draf) tidak dikirim ke email karyawan dan tidak ada notifikasi slip. PDF slip tetap bisa diunduh HR dari Penggajian.',
+        'Notifikasi untuk fitur yang belum dibuka (misalnya kontrak aktif atau slip tersedia) tidak dibuat.',
+        'Setiap perubahan tercatat di Log Aktivitas.'
       ]
     },
     {

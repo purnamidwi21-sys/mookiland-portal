@@ -11,6 +11,7 @@
   MklNav.register('/slip-saya', {
     title: 'Slip Gaji Saya',
     perm: 'payslip.read.own',
+    module: 'gaji',
     menu: { label: 'Slip Gaji Saya', order: 4.8 },
     render: function (root) {
       root.appendChild(MklUI.pageHeader('Slip Gaji Saya', 'Slip gaji tersedia setelah gaji periode itu dibayar.'));

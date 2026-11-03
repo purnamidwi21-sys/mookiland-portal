@@ -30,6 +30,7 @@
   MklNav.register('/kontrak-saya', {
     title: 'Kontrak Saya',
     perm: 'contract.read.own',
+    module: 'kepegawaian',
     menu: { label: 'Kontrak Saya', order: 7 },
     render: function (root) {
       root.appendChild(MklUI.pageHeader('Kontrak Saya', 'Kontrak kerja Anda yang sudah ditandatangani.'));
@@ -61,6 +62,7 @@
   MklNav.register('/bpjs-saya', {
     title: 'BPJS Saya',
     perm: 'bpjs.read.own',
+    module: 'kepegawaian',
     menu: { label: 'BPJS Saya', order: 8 },
     render: function (root) {
       root.appendChild(MklUI.pageHeader('BPJS Saya', 'Status kepesertaan BPJS Anda yang tercatat di perusahaan.'));
@@ -86,6 +88,7 @@
   MklNav.register('/dokumen-saya', {
     title: 'Dokumen Saya',
     perm: 'profile.read.own',
+    module: 'kepegawaian',
     menu: { label: 'Dokumen Saya', order: 9 },
     render: function (root) {
       root.appendChild(MklUI.pageHeader('Dokumen Saya', 'Dokumen Anda yang disimpan HR.'));

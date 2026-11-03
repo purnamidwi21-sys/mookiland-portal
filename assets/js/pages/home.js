@@ -129,7 +129,7 @@
               body.appendChild(MklUI.alertBox('warning', 'Mohon lengkapi data kontak Anda: ' + me.missingContact.join(', ') + '.'));
             }
             var idt = me.identity;
-            if (idt && !idt.pending && idt.missing && idt.missing.length) {
+            if (idt && !idt.pending && idt.missing && idt.missing.length && MklState.moduleOpen('kepegawaian')) {
               body.appendChild(MklUI.alertBox('warning', 'Mohon lengkapi data diri Anda (' + idt.missing.join(', ') + ') di menu Profil Saya → Lengkapi Data Diri.'));
             }
             body.appendChild(MklUI.infoList([

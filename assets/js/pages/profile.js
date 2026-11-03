@@ -31,6 +31,8 @@
     var parts = [];
     if (idt.pending) {
       parts.push(MklUI.alertBox('info', 'Data diri yang Anda kirim pada ' + MklUI.fmtDateTime(idt.pending.submittedAt) + ' sedang diperiksa HR. Data di bawah akan berubah setelah disetujui.'));
+    } else if (!MklState.moduleOpen('kepegawaian')) {
+      // Kirim data diri & foto KTP belum dibuka (Tahap Peluncuran): tidak ada ajakan melengkapi.
     } else if (idt.lastRejected) {
       parts.push(MklUI.alertBox('warning', 'Data diri yang Anda kirim perlu diperbaiki' + (idt.lastRejected.note ? ': ' + idt.lastRejected.note : '.') + ' Tekan Lengkapi Data Diri untuk mengirim ulang.'));
     } else if (idt.missing.length) {
@@ -60,7 +62,7 @@
         });
       });
       actions.appendChild(cancel);
-    } else if (MklState.can('profile.update.own')) {
+    } else if (MklState.can('profile.update.own') && MklState.moduleOpen('kepegawaian')) {
       var b = h('button', { class: idt.missing.length ? 'btn btn-primary' : 'btn btn-secondary', type: 'button' }, 'Lengkapi Data Diri');
       b.addEventListener('click', function () { identityForm(me); });
       actions.appendChild(b);

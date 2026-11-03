@@ -80,6 +80,7 @@
   MklNav.register('/absen', {
     title: 'Absen',
     perm: 'attendance.clock.own',
+    module: 'absen_hp',
     menu: { label: 'Absen', order: 1.5 },
     render: function (root) {
       root.appendChild(MklUI.pageHeader('Absen', 'Absen masuk dan pulang dari ponsel di lokasi kerja.'));
@@ -162,6 +163,7 @@
   MklNav.register('/jadwal-saya', {
     title: 'Jadwal Saya',
     perm: 'schedule.read.own',
+    module: 'jadwal',
     menu: { label: 'Jadwal Saya', order: 3 },
     render: function (root) {
       var start = T.mondayOf(MklUI.todayYmd());
@@ -283,6 +285,7 @@
   MklNav.register('/absensi-saya', {
     title: 'Absensi Saya',
     perm: 'attendance.read.own',
+    module: 'absensi',
     menu: { label: 'Absensi Saya', order: 4 },
     render: function (root) {
       root.appendChild(MklUI.pageHeader('Absensi Saya', 'Jam masuk, pulang, jam kerja, dan lembur Anda.'));
