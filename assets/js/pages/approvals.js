@@ -7,7 +7,8 @@
   'use strict';
   var h = MklUI.h;
   var T = window.MklTimeUI;
-  var APPROVE = ['leave.manage', 'overtime.manage', 'attendance.manage', 'hr.sensitive.manage', 'loan.approve', 'request.approve.hr'];
+  // Ditentukan server (0.13.1): hanya penyetuju yang mendapat 'approval.queue'; hak kelola HR saja tidak cukup.
+  var APPROVE = ['approval.queue'];
   var TYPE_VARIANT = { leave: 'info', overtime: 'warning', correction: 'neutral', identity: 'muted', loan: 'warning' };
 
   function range(a, b) { return a === b ? T.dayLabel(a, true) : MklUI.fmtDate(a) + ' – ' + MklUI.fmtDate(b); }

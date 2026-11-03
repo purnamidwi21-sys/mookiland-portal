@@ -13,7 +13,7 @@
  * perm : null = semua pengguna; selain itu cukup salah satu permission
  */
 window.MklHelp = {
-  version: '0.13.0',
+  version: '0.13.1',
   // 0.11.0: kecepatan, hitung ulang per karyawan, cari/filter penggajian, impor jadwal
   updatedAt: '2026-11-01',
 
@@ -817,7 +817,7 @@ window.MklHelp = {
       ]
     },
     {
-      id: 'hr-persetujuan', guide: 'hr', perm: ['leave.manage', 'overtime.manage', 'attendance.manage'], title: 'Menyetujui atau menolak pengajuan',
+      id: 'hr-persetujuan', guide: 'hr', perm: ['approval.queue'], title: 'Menyetujui atau menolak pengajuan',
       intro: 'Semua pengajuan cuti, izin, sakit, lembur, dan koreksi absensi masuk ke menu Persetujuan. Jumlah yang menunggu tampil di Beranda.',
       steps: [
         'Buka menu Persetujuan, tab Menunggu.',
@@ -828,7 +828,8 @@ window.MklHelp = {
       result: 'Karyawan mendapat notifikasi. Cuti mengurangi saldo; koreksi langsung mengubah jam absen; cuti/izin/sakit tampil di Rekap Absensi.',
       notes: [
         'Anda tidak bisa memutuskan pengajuan Anda sendiri. Pengajuan Manajer Operasional diputuskan oleh Direktur.',
-        'Persetujuan oleh Supervisor belum dipakai: semua pengajuan diputuskan Manajer Operasional.'
+        'Persetujuan oleh Supervisor belum dipakai: semua pengajuan diputuskan Manajer Operasional.',
+        'Yang bisa menyetujui: akun dengan role HR Admin DAN Supervisor (Manajer Operasional). Akun HR Admin tanpa Supervisor (misalnya admin) mengelola data, tetapi tidak menyetujui pengajuan; lembur yang dicatatnya untuk karyawan menunggu persetujuan Manajer Operasional.'
       ]
     },
     {
