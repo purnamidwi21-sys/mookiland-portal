@@ -67,7 +67,7 @@
       var count = h('strong');
       function upd() { count.textContent = (inc.input.checked ? s.raptorDays + s.correctedDays : s.raptorDays) + ' hari absensi dari Raptor'; }
       inc.input.addEventListener('change', upd); upd();
-      [h('p', null, 'Rentang ' + T.rangeLabel(s.from, s.to) + ': ', count, ' akan dihapus. Absen portal (GPS) dan catatan HR yang bukan dari Raptor tidak dihapus; jam yang dilengkapi fingerprint pada absen portal dikembalikan kosong.'),
+      [h('p', null, 'Rentang ' + T.rangeLabel(s.from, s.to) + ': ', count, ' akan dihapus. Hari yang juga diabsen di portal tidak dihapus, tetapi kembali memakai jam absen portal. Catatan HR tidak dihapus.'),
         s.correctedDays ? inc.wrap : null, reason.wrap,
         h('p', { class: 'muted small' }, 'Setelah dihapus, unggah ulang file Raptor, lalu tekan Hitung Ulang di periode gaji. Penghapusan tercatat di audit log.'), alertSlot
       ].forEach(function (x) { if (x) form.appendChild(x); });
@@ -168,7 +168,7 @@
           var KIND = { tanpa_fingerprint: ['Tanpa fingerprint', 'danger'], selisih: ['Selisih jam', 'warning'], tanpa_portal: ['Hanya fingerprint', 'info'] };
           var diff = function (m) { return m === null || m === undefined ? '' : (m > 0 ? '+' : '') + m + ' mnt'; };
           cmpArea.appendChild(MklUI.card('Portal vs Fingerprint', [
-            h('p', { class: 'muted small' }, 'Gaji memakai jam absen portal. Fingerprint Raptor dipakai sebagai pembanding dan cadangan (mengisi hari tanpa absen portal, serta jam pulang/istirahat yang kosong). ' +
+            h('p', { class: 'muted small' }, 'Gaji memakai jam fingerprint Raptor. Absen portal dipakai sebagai cadangan bila fingerprint tidak ada (atau tidak punya jam pulang), dan sebagai pembanding. ' +
               (d.lastImported ? 'Fingerprint terakhir diimpor sampai ' + MklUI.fmtDate(d.lastImported) + '.' : 'Belum ada file Raptor yang diimpor.')),
             h('div', { class: 'stats' },
               T.stat('Hari absen portal', s.portalDays),
@@ -184,7 +184,7 @@
               { label: 'Selisih masuk/pulang', render: function (i) { return [diff(i.diffIn), diff(i.diffOut)].filter(Boolean).join(' / ') || '-'; } },
               { label: 'Keterangan', render: function (i) { var k = KIND[i.kind] || [i.label, 'muted']; return MklUI.badge(k[0], k[1]); } }
             ], d.items, '')) : h('p', { class: 'muted' }, 'Tidak ada yang perlu dicek.'),
-            h('p', { class: 'muted small' }, 'Tanpa fingerprint = absen di portal tetapi tidak ada sidik jari di Raptor pada hari itu (cek kemungkinan titip absen). Selisih = jam portal dan fingerprint berbeda jauh. Hanya fingerprint = tidak absen di portal; gaji memakai jam fingerprint.' + (d.total > d.items.length ? ' Ditampilkan ' + d.items.length + ' dari ' + d.total + '.' : ''))
+            h('p', { class: 'muted small' }, 'Tanpa fingerprint = absen di portal tetapi tidak ada sidik jari di Raptor pada hari itu (cek kemungkinan titip absen). Selisih = jam portal dan fingerprint berbeda jauh. Hanya fingerprint = tidak absen di portal. Gaji selalu memakai jam fingerprint bila ada.' + (d.total > d.items.length ? ' Ditampilkan ' + d.items.length + ' dari ' + d.total + '.' : ''))
           ]));
         });
       }
@@ -310,7 +310,7 @@
             h('li', null, 'Di Raptor, buka laporan Employee\'s Time / Attendance.'),
             h('li', null, 'Pilih periode (misalnya tanggal 27 sampai 26 bulan berikutnya), lalu ekspor ke Excel.'),
             h('li', null, 'Unggah file tersebut di sini.'))),
-          h('p', { class: 'muted small' }, 'Pratinjau belum menyimpan apa pun. File tidak disimpan di server. Absen portal (GPS) dan catatan HR tidak akan ditimpa; fingerprint hanya melengkapi jam pulang dan istirahat absen portal yang kosong.'),
+          h('p', { class: 'muted small' }, 'Pratinjau belum menyimpan apa pun. File tidak disimpan di server. Fingerprint menjadi dasar gaji; jam absen portal disimpan sebagai pembanding dan cadangan. Catatan HR tidak akan ditimpa.'),
           form
         ]));
         var hist = h('div');
@@ -397,7 +397,7 @@
             message: h('div', null,
               h('p', null, 'Simpan absensi Raptor periode ' + T.rangeLabel(p.period.from, p.period.to) + '?'),
               unpicked ? h('p', null, unpicked + ' nomor Raptor belum dipilih dan akan dilewati.') : null,
-              h('p', { class: 'muted small' }, 'Hari yang punya absen portal tetap memakai jam portal; fingerprint hanya melengkapi jam pulang dan istirahat yang kosong. Hari yang sudah dikoreksi HR tidak diubah.')),
+              h('p', { class: 'muted small' }, 'Hari yang juga diabsen di portal sekarang memakai jam fingerprint (jam portal disimpan sebagai pembanding). Bila fingerprint tidak punya jam pulang, jam pulang portal dipakai. Hari yang sudah dikoreksi HR tidak diubah.')),
             confirmLabel: 'Impor',
             onConfirm: function () {
               return MklApi.call('hr.attendance.importCommit', { importId: p.importId, mappings: mappings }).then(function (res) {
@@ -421,8 +421,8 @@
           ['Diperbarui', String(r.updated)],
           ['Sama seperti sebelumnya', String(r.unchanged)],
           ['Perlu dicek HR', r.needsCheck ? MklUI.badge(String(r.needsCheck), 'warning') : '0'],
-          ['Memakai absen portal (fingerprint disimpan sebagai pembanding)', String(r.portalDays || 0)],
-          ['Jam pulang/istirahat portal dilengkapi dari fingerprint', String(r.filledFromRaptor || 0)],
+          ['Hari portal yang sekarang memakai jam fingerprint', String(r.portalDays || 0)],
+          ['Jam pulang dari portal (fingerprint pulang tidak ada)', String(r.portalOutUsed || 0)],
           ['Dilewati: sudah dikoreksi HR', String(r.skippedExisting)],
           ['Dilewati: nomor belum dipasangkan', String(r.skippedUnmapped)],
           ['Dilewati: diabaikan', String(r.skippedIgnored)],

@@ -13,7 +13,7 @@
  * perm : null = semua pengguna; selain itu cukup salah satu permission
  */
 window.MklHelp = {
-  version: '0.15.1',
+  version: '0.16.0',
   // 0.11.0: kecepatan, hitung ulang per karyawan, cari/filter penggajian, impor jadwal
   updatedAt: '2026-11-01',
 
@@ -194,7 +194,7 @@ window.MklHelp = {
         'Absen hanya bisa di dalam radius lokasi kerja. Jika ditolak karena jarak, pastikan Anda berada di area Mookiland lalu coba lagi.',
         'Jika pesan menyebut sinyal GPS kurang akurat, tunggu beberapa detik di tempat terbuka lalu tekan lagi.',
         'Lupa absen atau ponsel bermasalah? Hubungi HR untuk dicatat manual. Jangan meminta rekan memakai akun Anda.',
-        'Tetap tempelkan jari di mesin fingerprint seperti biasa. Fingerprint dipakai sebagai cadangan bila absen portal kosong, dan untuk mencocokkan jam.',
+        'Tetap tempelkan jari di mesin fingerprint saat masuk, istirahat, dan pulang. Gaji dihitung dari jam fingerprint; absen portal dipakai bila fingerprint tidak ada.',
         'Aktifkan pengingat di HP agar diingatkan bila belum absen. Lihat topik "Memasang portal di HP dan menyalakan pengingat".',
         'Ingin absen tanpa login? Lihat topik "Absen Cepat tanpa login (PIN)".'
       ]
@@ -811,7 +811,8 @@ window.MklHelp = {
       notes: [
         'Tanpa fingerprint = ada absen portal tetapi tidak ada sidik jari di Raptor pada hari itu. Bisa berarti lupa fingerprint, atau titip absen.',
         'Selisih jam = jam masuk atau pulang portal dan fingerprint berbeda sekian menit atau lebih (Settings attendance_compare_minutes, bawaan 15).',
-        'Hanya fingerprint = tidak absen di portal; gaji memakai jam fingerprint.',
+        'Hanya fingerprint = tidak absen di portal.',
+        'Gaji memakai jam fingerprint. Absen portal hanya dipakai bila fingerprint tidak ada, atau bila fingerprint tidak punya jam pulang.',
         'Tanggal setelah impor Raptor terakhir belum dibandingkan.'
       ]
     },
@@ -829,10 +830,10 @@ window.MklHelp = {
       notes: [
         'Beberapa sesi dalam sehari (misalnya keluar saat istirahat) digabung: jam masuk pertama dan jam pulang terakhir.',
         'Sesi tanpa jam pulang atau lebih dari 16 jam dianggap lupa absen pulang dan ditandai perlu dicek. [Perlu konfirmasi HR]',
-        'Absen portal (GPS) dan catatan HR tidak pernah ditimpa. Gaji memakai jam absen portal; fingerprint hanya mengisi hari tanpa absen portal, serta jam pulang dan istirahat absen portal yang kosong. Jam fingerprint disimpan untuk laporan Portal vs Fingerprint di Rekap Absensi.',
+        'Fingerprint Raptor adalah dasar gaji. Untuk hari yang juga diabsen di portal, jam fingerprint dipakai dan jam portal disimpan sebagai pembanding. Bila fingerprint tidak punya jam pulang, jam pulang portal dipakai. Catatan HR tidak pernah ditimpa.',
         'Mengimpor file yang sama dua kali tidak menggandakan data.',
         'Riwayat impor tampil di bawah Rekap Absensi dan di halaman Impor dari Raptor. Salah unggah atau ingin mengulang? Di Riwayat impor, tekan Hapus Data pada impor itu. Jendela konfirmasi menampilkan jumlah hari yang akan dihapus. Isi Alasan, lalu tekan Hapus Data Absensi. Setelah itu unggah file yang benar dan tekan Hitung Ulang di periode gaji.',
-        'Hapus Data hanya menghapus absensi dari Raptor pada rentang tanggal impor itu. Absen aplikasi (GPS) dan catatan HR tidak dihapus. Hari Raptor yang sudah dikoreksi HR tetap disimpan, kecuali Anda mencentang Hapus juga hari yang sudah dikoreksi HR.',
+        'Hapus Data menghapus absensi dari Raptor pada rentang tanggal impor itu. Hari yang juga diabsen di portal tidak dihapus, tetapi kembali memakai jam portal. Hari Raptor yang sudah dikoreksi HR tetap disimpan, kecuali Anda mencentang Hapus juga hari yang sudah dikoreksi HR.',
         'Hapus Data ditolak bila rentangnya mengenai gaji yang sedang diajukan atau sudah disetujui Direktur.',
         'Sesi terakhir yang berlanjut sampai keesokan hari (misalnya absen lagi malam hari) diberi catatan. Periksa dan koreksi bila salah absen.',
         'File Raptor tidak disimpan di server.'
