@@ -9,7 +9,7 @@
   var T = window.MklTimeUI;
   // Ditentukan server (0.13.1): hanya penyetuju yang mendapat 'approval.queue'; hak kelola HR saja tidak cukup.
   var APPROVE = ['approval.queue'];
-  var TYPE_VARIANT = { leave: 'info', overtime: 'warning', correction: 'neutral', identity: 'muted', loan: 'warning' };
+  var TYPE_VARIANT = { leave: 'info', overtime: 'warning', correction: 'neutral', identity: 'muted', loan: 'warning', schedule: 'info' };
 
   function range(a, b) { return a === b ? T.dayLabel(a, true) : MklUI.fmtDate(a) + ' – ' + MklUI.fmtDate(b); }
 
@@ -48,6 +48,18 @@
       lr.push(['Kasbon sebelumnya', d.previousPaid ? d.previousPaid + ' kali, semua lunas' : 'Belum pernah']);
       if (it.status !== 'menunggu' && d.amount) lr.push(['Disetujui', MklUI.fmtMoney(d.amount) + ', ' + d.installments + '× ' + MklUI.fmtMoney(d.installmentAmount) + ', mulai gaji ' + d.startMonthLabel + ' (' + d.statusLabel + ')']);
       return lr;
+    }
+    if (d.kind === 'schedule') {
+      var cols = [{ label: 'Tanggal', render: function (r) { return T.dayLabel(r.date, true); } },
+        { label: d.requesterName, render: function (r) { return h('span', null, r.a.from, ' → ', h('strong', null, r.a.to)); } }];
+      if (d.partner) cols.push({ label: d.partnerName, render: function (r) { return r.b ? h('span', null, r.b.from, ' → ', h('strong', null, r.b.to)) : ''; } });
+      var sr = [['Jenis', d.sub === 'tukar' ? 'Tukar jadwal ' + d.requesterName + ' ↔ ' + d.partnerName : 'Ubah jadwal']];
+      if (d.partner) sr.push(['Persetujuan rekan', d.partner.acceptedAt ? d.partnerName + ' setuju ' + MklUI.fmtDateTime(d.partner.acceptedAt) + (d.partner.note ? ' (' + d.partner.note + ')' : '') : 'Belum']);
+      sr.push(['Perubahan', h('div', { class: 'recap-table' }, MklUI.table(cols, d.rows, ''))]);
+      sr.push(['Alasan', d.reason]);
+      if (d.warning) sr.push(['Perhatian', MklUI.alertBox('warning', d.warning)]);
+      else if (it.status === 'menunggu') sr.push(['Setelah disetujui', 'Jadwal terbit langsung berubah dan karyawan mendapat notifikasi.']);
+      return sr;
     }
     if (d.kind === 'identity') {
       var cmp = function (now, before) { return before && before !== now ? h('span', null, now || '-', h('br'), h('span', { class: 'muted small' }, 'Sebelumnya: ' + before)) : (now || '-'); };
@@ -171,7 +183,7 @@
     menu: { label: 'Persetujuan', order: 9.8, section: 'Jadwal & Absensi' },
     render: function (root) {
       var otBtn = MklState.can('overtime.manage') ? h('button', { class: 'btn btn-secondary', type: 'button' }, 'Catat Lembur Karyawan') : null;
-      root.appendChild(MklUI.pageHeader('Persetujuan', 'Cuti, izin, sakit, lembur, koreksi absensi, data diri, dan kasbon yang menunggu keputusan.', otBtn));
+      root.appendChild(MklUI.pageHeader('Persetujuan', 'Cuti, izin, sakit, lembur, koreksi absensi, data diri, ubah/tukar jadwal, dan kasbon yang menunggu keputusan.', otBtn));
       var view = 'menunggu';
       var tabPending = h('button', { class: 'tab', type: 'button', role: 'tab', 'aria-selected': 'true' }, 'Menunggu');
       var tabHistory = h('button', { class: 'tab', type: 'button', role: 'tab', 'aria-selected': 'false' }, 'Riwayat');
@@ -234,6 +246,7 @@
         if (d.kind === 'leave') return d.leaveType.split(' (')[0] + ', ' + range(d.startDate, d.endDate) + ' (' + d.totalDays + ' hari)';
         if (d.kind === 'overtime') return MklUI.fmtDate(d.workDate) + ' ' + d.startTime + '–' + d.endTime + (d.approvedMinutes ? ' (' + d.approvedMinutes + ' m disetujui)' : '');
         if (d.kind === 'loan') return MklUI.fmtMoney(d.amount || d.requestedAmount) + (d.installments ? ', ' + d.installments + '× cicilan' : '');
+        if (d.kind === 'schedule') return (d.sub === 'tukar' ? '↔ ' + d.partnerName + ', ' : '') + d.rows.length + ' tanggal (' + MklUI.fmtDate(d.rows[0].date) + (d.rows.length > 1 ? ' – ' + MklUI.fmtDate(d.rows[d.rows.length - 1].date) : '') + ')';
         if (d.kind === 'identity') return 'KTP ' + String(d.proposed.idNumber).slice(-4).replace(/^/, '****');
         return MklUI.fmtDate(d.workDate);
       }

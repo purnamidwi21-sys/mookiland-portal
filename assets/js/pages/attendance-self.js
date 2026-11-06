@@ -62,12 +62,34 @@
         window.navigator.geolocation.getCurrentPosition(function (pos) {
           resolve({ latitude: pos.coords.latitude, longitude: pos.coords.longitude, accuracy: Math.round(pos.coords.accuracy) });
         }, function (err) {
+          if (err && err.code === 1) { T.deniedMessage().then(function (m) { reject(new Error(m)); }); return; }
           var msg = 'Lokasi tidak bisa dibaca. Coba lagi di tempat terbuka.';
-          if (err && err.code === 1) msg = 'Izin lokasi ditolak. Buka pengaturan browser, izinkan Lokasi untuk portal ini, lalu muat ulang halaman.';
-          else if (err && err.code === 3) msg = 'Lokasi terlalu lama didapat. Pastikan GPS/Lokasi ponsel menyala, lalu coba lagi.';
+          if (err && err.code === 3) msg = 'Lokasi terlalu lama didapat. Pastikan GPS/Lokasi ponsel menyala, lalu coba lagi.';
           reject(new Error(msg));
         }, { enableHighAccuracy: true, timeout: 20000, maximumAge: 0 });
       });
+    },
+    /**
+     * Pesan "izin lokasi ditolak" yang menunjuk penyebabnya (0.14.0): browser di dalam aplikasi lain
+     * (WhatsApp/Instagram/Facebook), izin situs yang ditolak, atau izin situs sudah ada tetapi lokasi
+     * untuk aplikasi browser dimatikan di pengaturan HP.
+     */
+    deniedMessage: function () {
+      var ua = window.navigator.userAgent || '';
+      var ios = /iPhone|iPad|iPod/.test(ua);
+      if (/FBAN|FBAV|Instagram|Line\/|WhatsApp|; wv\)/.test(ua)) {
+        return Promise.resolve('Portal sedang dibuka di dalam aplikasi lain (misalnya WhatsApp), yang tidak memberi akses lokasi. Buka portal langsung di ' + (ios ? 'Safari' : 'Chrome') + ' atau dari ikon Mookiland di layar utama, lalu absen lagi.');
+      }
+      var site = ios
+        ? 'Izin lokasi ditolak. Buka Pengaturan iPhone → Privasi & Keamanan → Layanan Lokasi → Situs Web Safari → pilih "Saat Menggunakan App", lalu muat ulang portal.'
+        : 'Izin lokasi untuk portal ini ditolak. Di Chrome, tekan ikon di kiri alamat portal → Izin → Lokasi → Izinkan, lalu muat ulang halaman.';
+      var os = ios
+        ? 'Izin lokasi untuk portal sudah ada, tetapi Layanan Lokasi iPhone mati untuk browser ini. Buka Pengaturan → Privasi & Keamanan → Layanan Lokasi: nyalakan, lalu Situs Web Safari → "Saat Menggunakan App" dan nyalakan Lokasi Tepat.'
+        : 'Izin lokasi untuk portal sudah ada, tetapi lokasi HP atau izin lokasi untuk aplikasi Chrome masih mati. Nyalakan Lokasi di HP, lalu buka Setelan → Aplikasi → Chrome (atau Mookiland) → Izin → Lokasi → "Izinkan hanya saat aplikasi digunakan".';
+      if (!window.navigator.permissions || !window.navigator.permissions.query) return Promise.resolve(site);
+      return window.navigator.permissions.query({ name: 'geolocation' }).then(function (st) {
+        return st && st.state === 'granted' ? os : site;
+      }).catch(function () { return site; });
     },
     notLinked: function () {
       return MklUI.card(null, MklUI.alertBox('info', 'Akun Anda belum terhubung dengan data karyawan. Hubungi HR.'));

@@ -13,7 +13,7 @@
  * perm : null = semua pengguna; selain itu cukup salah satu permission
  */
 window.MklHelp = {
-  version: '0.13.1',
+  version: '0.14.1',
   // 0.11.0: kecepatan, hitung ulang per karyawan, cari/filter penggajian, impor jadwal
   updatedAt: '2026-11-01',
 
@@ -247,6 +247,22 @@ window.MklHelp = {
       ]
     },
     {
+      id: 'ubah-tukar-jadwal', guide: 'staff', perm: ['schedule.read.own'], title: 'Mengajukan ubah jadwal atau tukar jadwal dengan rekan',
+      intro: 'Dari menu Pengajuan Saya, Anda bisa mengajukan perubahan shift atau libur pada tanggal tertentu, atau mengajak rekan berjabatan sama untuk bertukar jadwal. Paling lambat H-1.',
+      steps: [
+        'Ubah jadwal: buka Pengajuan Saya → Ubah Jadwal. Pada tanggal yang ingin diubah, pilih shift baru (atau Libur). Boleh lebih dari satu tanggal. Isi alasan, lalu Kirim Pengajuan.',
+        'Tukar jadwal: buka Pengajuan Saya → Tukar Jadwal. Pilih rekan (hanya yang jabatannya sama), centang tanggal yang ditukar, isi alasan, lalu Kirim Ajakan.',
+        'Rekan mendapat notifikasi. Di Pengajuan Saya miliknya, ajakan tampil dengan tombol Setuju dan Tolak.',
+        'Setelah rekan setuju, pengajuan masuk ke Manajer Operasional. Status di Pengajuan Saya berubah dari "Menunggu rekan" menjadi "Menunggu MO".'
+      ],
+      result: 'Setelah Manajer Operasional menyetujui, jadwal di Jadwal Saya langsung berubah (untuk tukar jadwal: jadwal Anda dan rekan) dan Anda mendapat notifikasi.',
+      notes: [
+        'Pada tanggal yang ditukar, jadwal Anda dan rekan ditukar seluruhnya. Contoh: Anda masuk Senin dan libur Selasa, rekan libur Senin dan masuk Selasa; tukar Senin dan Selasa → Anda libur Senin dan masuk Selasa.',
+        'Hanya tanggal yang sudah ada jadwal terbitnya, mulai besok. Tanggal cuti, sakit, atau izin tidak bisa diubah.',
+        'Pengajuan yang masih menunggu (rekan atau MO) bisa Anda batalkan. Bila jadwal sempat diubah HR sebelum disetujui, pengajuan akan ditolak dan perlu diajukan ulang.'
+      ]
+    },
+    {
       id: 'ajukan-cuti', guide: 'staff', perm: ['leave.request.own'], title: 'Mengajukan cuti, izin, atau sakit',
       intro: 'Cuti tahunan hanya untuk karyawan bulanan yang ditetapkan HR. Semua karyawan bisa mengajukan sakit, izin, dan cuti khusus. Semua disetujui Manajer Operasional.',
       steps: [
@@ -259,7 +275,8 @@ window.MklHelp = {
       notes: [
         'Cuti tahunan diajukan paling lambat 3 hari sebelumnya. Untuk keadaan mendesak, hubungi Manajer Operasional.',
         'Sakit dan izin boleh diajukan setelah kejadian, paling lama 30 hari ke belakang.',
-        'Saldo cuti baru berkurang setelah disetujui. Pengajuan yang masih menunggu sudah diperhitungkan agar tidak melebihi saldo.'
+        'Saldo cuti baru berkurang setelah disetujui. Pengajuan yang masih menunggu sudah diperhitungkan agar tidak melebihi saldo.',
+        'Setelah disetujui, Jadwal Saya otomatis berubah: hari kerja di tanggal cuti menjadi Libur (Cuti), Libur (Sakit), atau Libur (Izin). Hari libur rutin tetap Libur.'
       ]
     },
     {
@@ -829,6 +846,8 @@ window.MklHelp = {
       notes: [
         'Anda tidak bisa memutuskan pengajuan Anda sendiri. Pengajuan Manajer Operasional diputuskan oleh Direktur.',
         'Persetujuan oleh Supervisor belum dipakai: semua pengajuan diputuskan Manajer Operasional.',
+        'Cuti, izin, dan sakit yang disetujui otomatis mengubah jadwal karyawan: hari kerja di tanggal itu menjadi Libur (Cuti/Sakit/Izin) dan langsung terbit (draf yang belum terbit ikut diganti). Hari libur rutin tidak diubah; tanggal yang belum ada jadwalnya dibuatkan Libur (Cuti). Anda tidak perlu mengubah Jadwal Kerja secara manual.',
+        'Ubah/tukar jadwal: rincian menampilkan jadwal sebelum → sesudah untuk setiap tanggal (pada tukar jadwal: kedua karyawan, setelah rekan setuju). Setelah disetujui, jadwal terbit langsung berubah; draf yang belum terbit untuk sel itu ikut diganti.',
         'Yang bisa menyetujui: akun dengan role HR Admin DAN Supervisor (Manajer Operasional). Akun HR Admin tanpa Supervisor (misalnya admin) mengelola data, tetapi tidak menyetujui pengajuan; lembur yang dicatatnya untuk karyawan menunggu persetujuan Manajer Operasional.'
       ]
     },
@@ -852,7 +871,8 @@ window.MklHelp = {
       id: 'hr-batal-cuti', guide: 'hr', perm: ['leave.manage'], title: 'Membatalkan cuti yang sudah disetujui',
       intro: 'Jika cuti yang sudah disetujui batal dilakukan, HR membatalkannya agar saldo kembali.',
       steps: ['Buka menu Persetujuan, tab Riwayat.', 'Pada cuti yang dimaksud, tekan Batalkan Cuti.', 'Isi alasan, lalu tekan Batalkan Cuti.'],
-      result: 'Status menjadi Dibatalkan, saldo cuti tahunan dikembalikan, dan karyawan mendapat notifikasi.'
+      result: 'Status menjadi Dibatalkan, saldo cuti tahunan dikembalikan, jadwal kembali seperti sebelum cuti disetujui, dan karyawan mendapat notifikasi.',
+      notes: ['Jadwal hanya dikembalikan pada tanggal yang masih Libur (Cuti/Sakit/Izin). Jika Anda sudah mengubah jadwal tanggal itu secara manual, jadwal tersebut dibiarkan.', 'Cek Jadwal Kerja setelah membatalkan, lalu atur shift bila perlu.']
     },
     {
       id: 'hr-catat-lembur', guide: 'hr', perm: ['overtime.manage'], title: 'Mencatat lembur untuk karyawan',

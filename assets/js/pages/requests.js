@@ -8,7 +8,7 @@
   var h = MklUI.h;
   var T = window.MklTimeUI;
 
-  var STATUS_VARIANT = { menunggu: 'warning', disetujui: 'success', ditolak: 'danger', dibatalkan: 'muted', aktif: 'info', lunas: 'success' };
+  var STATUS_VARIANT = { menunggu: 'warning', disetujui: 'success', ditolak: 'danger', dibatalkan: 'muted', aktif: 'info', lunas: 'success', menunggu_rekan: 'warning', ditolak_rekan: 'danger' };
   function statusBadge(s, label) { return MklUI.badge(label || s, STATUS_VARIANT[s] || 'muted'); }
 
   function minutesBetween(a, b) {
@@ -158,6 +158,107 @@
     }, onDone));
   }
 
+  // ------------------------------------------------------------------ ubah / tukar jadwal (0.14.0)
+  function scheduleChangeForm(onDone) {
+    var form = h('form', { class: 'form', novalidate: true });
+    var alertSlot = h('div');
+    var body = h('div', null, MklUI.loadingState('Memuat jadwal Anda...'));
+    var reason = MklUI.field({ label: 'Alasan', name: 'reason', required: true, multiline: true, rows: 2, maxLength: 300 });
+    form.appendChild(h('p', { class: 'muted small' }, 'Pilih shift baru pada tanggal yang ingin diubah (boleh lebih dari satu). Paling lambat H-1. Setelah disetujui Manajer Operasional, jadwal Anda langsung berubah.'));
+    form.appendChild(body);
+    form.appendChild(reason.wrap);
+    var selects = [];
+    MklApi.call('me.schedreq.options', {}).then(function (res) {
+      MklUI.clear(body);
+      if (!res.success) { body.appendChild(MklUI.alertBox('error', res.message)); return; }
+      var d = res.data;
+      if (!d.mine.length) { body.appendChild(MklUI.alertBox('info', 'Belum ada jadwal terbit mulai besok.')); return; }
+      body.appendChild(h('div', { class: 'recap-table' }, MklUI.table([
+        { label: 'Tanggal', render: function (x) { return T.dayLabel(x.date, true); } },
+        { label: 'Jadwal sekarang', render: function (x) { return x.label; } },
+        { label: 'Ubah menjadi', render: function (x) {
+          if (x.locked) return h('span', { class: 'muted small' }, x.lockReason);
+          var sel = h('select', { class: 'input', 'aria-label': 'Shift baru ' + x.date }, h('option', { value: '' }, '(tetap)'),
+            d.shifts.filter(function (s) { return s.shiftId !== x.shiftId; }).map(function (s) { return h('option', { value: s.shiftId }, s.label); }));
+          selects.push({ date: x.date, el: sel });
+          return sel;
+        } }
+      ], d.mine, '')));
+    });
+    openModal('Ajukan ubah jadwal', form, alertSlot, submitter(form, alertSlot, 'me.schedreq.submit', function () {
+      var items = selects.filter(function (s) { return s.el.value; }).map(function (s) { return { date: s.date, toShiftId: s.el.value }; });
+      if (!items.length) return { error: 'Pilih shift baru minimal pada satu tanggal.' };
+      return { kind: 'ubah', items: items, reason: reason.input.value.trim() };
+    }, onDone));
+  }
+
+  function scheduleSwapForm(onDone) {
+    var form = h('form', { class: 'form', novalidate: true });
+    var alertSlot = h('div');
+    var partner = MklUI.selectField({ label: 'Tukar dengan', name: 'partnerId', required: true, options: [{ value: '', label: 'Memuat...' }] });
+    var body = h('div');
+    var reason = MklUI.field({ label: 'Alasan', name: 'reason', required: true, multiline: true, rows: 2, maxLength: 300 });
+    form.appendChild(h('p', { class: 'muted small' }, 'Hanya dengan rekan berjabatan sama. Centang tanggal yang ditukar (jumlahnya bebas): pada tanggal itu jadwal Anda dan rekan ditukar seluruhnya. Rekan harus setuju dulu, lalu Manajer Operasional. Paling lambat H-1.'));
+    [partner.wrap, body, reason.wrap].forEach(function (x) { form.appendChild(x); });
+    var checks = [];
+    MklApi.call('me.schedreq.options', {}).then(function (res) {
+      MklUI.clear(partner.input);
+      if (!res.success) { body.appendChild(MklUI.alertBox('error', res.message)); return; }
+      if (!res.data.partners.length) { partner.input.appendChild(h('option', { value: '' }, '(tidak ada rekan berjabatan sama)')); return; }
+      partner.input.appendChild(h('option', { value: '' }, '— pilih rekan —'));
+      res.data.partners.forEach(function (p) { partner.input.appendChild(h('option', { value: p.employeeId }, p.fullName)); });
+    });
+    partner.input.addEventListener('change', function () {
+      checks = [];
+      MklUI.clear(body);
+      if (!partner.input.value) return;
+      body.appendChild(MklUI.loadingState('Memuat jadwal...'));
+      MklApi.call('me.schedreq.options', { partnerId: partner.input.value }).then(function (res) {
+        MklUI.clear(body);
+        if (!res.success) { body.appendChild(MklUI.alertBox('error', res.message)); return; }
+        var d = res.data, mine = {}, theirs = {}, dates = {};
+        d.mine.forEach(function (x) { mine[x.date] = x; dates[x.date] = true; });
+        d.partner.days.forEach(function (x) { theirs[x.date] = x; dates[x.date] = true; });
+        var rows = Object.keys(dates).sort().map(function (k) { return { date: k, a: mine[k], b: theirs[k] }; });
+        if (!rows.length) { body.appendChild(MklUI.alertBox('info', 'Belum ada jadwal terbit mulai besok.')); return; }
+        var first = d.partner.fullName.split(' ')[0];
+        body.appendChild(h('div', { class: 'recap-table' }, MklUI.table([
+          { label: 'Tukar', render: function (r) {
+            var why = !r.a ? 'Anda belum ada jadwal' : !r.b ? first + ' belum ada jadwal' : r.a.locked ? r.a.lockReason : r.b.locked ? first + ': ' + r.b.lockReason : r.a.shiftId === r.b.shiftId ? 'Jadwal sama' : '';
+            if (why) return h('span', { class: 'muted small' }, why);
+            var cb = h('input', { type: 'checkbox', 'aria-label': 'Tukar ' + r.date });
+            checks.push({ date: r.date, el: cb });
+            return cb;
+          } },
+          { label: 'Tanggal', render: function (r) { return T.dayLabel(r.date, true); } },
+          { label: 'Jadwal Anda', render: function (r) { return r.a ? r.a.label : '-'; } },
+          { label: 'Jadwal ' + first, render: function (r) { return r.b ? r.b.label : '-'; } }
+        ], rows, '')));
+      });
+    });
+    openModal('Ajak tukar jadwal', form, alertSlot, submitter(form, alertSlot, 'me.schedreq.submit', function () {
+      if (!partner.input.value) return { error: 'Pilih rekan yang diajak tukar.' };
+      var dates = checks.filter(function (c) { return c.el.checked; }).map(function (c) { return c.date; });
+      if (!dates.length) return { error: 'Centang minimal satu tanggal.' };
+      return { kind: 'tukar', partnerId: partner.input.value, dates: dates, reason: reason.input.value.trim() };
+    }, onDone), 'Kirim Ajakan');
+  }
+
+  /** Rekan menyetujui/menolak ajakan tukar jadwal. */
+  function swapRespond(item, decision, onDone) {
+    var form = h('form', { class: 'form', novalidate: true });
+    var alertSlot = h('div');
+    var note = MklUI.field({ label: decision === 'setuju' ? 'Catatan (tidak wajib)' : 'Alasan menolak (tidak wajib)', name: 'note', multiline: true, rows: 2, maxLength: 300 });
+    form.appendChild(h('p', null, decision === 'setuju'
+      ? 'Setuju tukar jadwal? Pengajuan diteruskan ke Manajer Operasional. Jadwal berubah setelah disetujui.'
+      : 'Tolak ajakan tukar jadwal ini?'));
+    form.appendChild(h('ul', { class: 'small' }, (item.changes || []).map(function (c) { return h('li', null, c); })));
+    form.appendChild(note.wrap);
+    openModal(decision === 'setuju' ? 'Setujui tukar jadwal' : 'Tolak tukar jadwal', form, alertSlot, submitter(form, alertSlot, 'me.schedreq.respond', function () {
+      return { requestId: item.requestId, decision: decision, note: note.input.value.trim() };
+    }, onDone), decision === 'setuju' ? 'Setuju' : 'Tolak');
+  }
+
   window.MklRequests = { correctionForm: correctionForm, statusBadge: statusBadge, period: period };
 
   // ================================================================== halaman
@@ -167,7 +268,7 @@
     perm: ['leave.request.own', 'overtime.request.own', 'attendance.correction.request.own', 'loan.request.own'],
     menu: { label: 'Pengajuan Saya', order: 4.5 },
     render: function (root) {
-      root.appendChild(MklUI.pageHeader('Pengajuan Saya', 'Cuti, izin, sakit, lembur, koreksi absensi, dan kasbon.'));
+      root.appendChild(MklUI.pageHeader('Pengajuan Saya', 'Cuti, izin, sakit, lembur, koreksi absensi, ubah/tukar jadwal, dan kasbon.'));
       var top = h('div');
       var listArea = h('div');
       root.appendChild(top);
@@ -202,6 +303,14 @@
             var b3 = h('button', { class: 'btn btn-secondary', type: 'button' }, 'Ajukan Koreksi Absen');
             b3.addEventListener('click', function () { correctionForm({ onDone: loadAll }); });
             buttons.appendChild(b3);
+          }
+          if (MklState.can('schedule.read.own')) {
+            var b5 = h('button', { class: 'btn btn-secondary', type: 'button' }, 'Ubah Jadwal');
+            b5.addEventListener('click', function () { scheduleChangeForm(loadAll); });
+            var b6 = h('button', { class: 'btn btn-secondary', type: 'button' }, 'Tukar Jadwal');
+            b6.addEventListener('click', function () { scheduleSwapForm(loadAll); });
+            buttons.appendChild(b5);
+            buttons.appendChild(b6);
           }
           var ln = res[1] && res[1].success ? res[1].data : null;
           if (ln && ln.linked) {
@@ -239,7 +348,11 @@
           if (res.data.linked === false) return;
           listArea.appendChild(MklUI.card('Riwayat pengajuan', [
             MklUI.table([
-              { label: 'Jenis', render: function (i) { return h('span', null, h('strong', null, i.title), h('br'), h('span', { class: 'muted small' }, i.typeLabel)); } },
+              { label: 'Jenis', render: function (i) {
+                return h('span', null, h('strong', null, i.title), h('br'), h('span', { class: 'muted small' }, i.typeLabel),
+                  i.changes ? h('ul', { class: 'small sched-changes' }, i.changes.map(function (c) { return h('li', null, c); })) : null,
+                  i.partnerNote ? h('span', { class: 'small' }, 'Catatan rekan: ' + i.partnerNote) : null);
+              } },
               { label: 'Tanggal', render: function (i) { return i.type === 'overtime' ? i.period.replace(/^\d{4}-\d{2}-\d{2}/, function (m) { return T.dayLabel(m, true) + ','; }) : period(i); } },
               { label: 'Alasan', render: function (i) { return h('span', { class: 'small' }, i.reason); } },
               { label: 'Status', render: function (i) {
@@ -249,6 +362,13 @@
                   i.approvedMinutes ? h('span', { class: 'small' }, 'Disetujui ' + i.approvedMinutes + ' menit') : null);
               } },
               { label: 'Aksi', className: 'col-action', render: function (i) {
+                if (i.canRespond) {
+                  var yes = h('button', { class: 'btn btn-primary btn-small', type: 'button' }, 'Setuju');
+                  var no = h('button', { class: 'btn btn-secondary btn-small', type: 'button' }, 'Tolak');
+                  yes.addEventListener('click', function () { swapRespond(i, 'setuju', loadAll); });
+                  no.addEventListener('click', function () { swapRespond(i, 'tolak', loadAll); });
+                  return h('span', { class: 'att-actions' }, yes, no);
+                }
                 if (!i.canCancel) return '';
                 var b = h('button', { class: 'btn btn-secondary btn-small', type: 'button' }, 'Batalkan');
                 b.addEventListener('click', function () {
