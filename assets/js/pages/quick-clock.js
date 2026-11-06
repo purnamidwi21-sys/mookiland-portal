@@ -284,9 +284,15 @@
       function submit(c, btn) {
         MklUI.clearFieldErrors(form); MklUI.clear(alertSlot);
         MklUI.setBusy(btn, true, 'Mengaktifkan...');
-        MklApi.call('me.quick.register', { pin: pin.input.value.trim(), pinConfirm: pin2.input.value.trim(), label: window.navigator.userAgent || '' }).then(function (res) {
+        MklApi.call('me.quick.register', { pin: pin.input.value.trim(), pinConfirm: pin2.input.value.trim(), label: String(window.navigator.userAgent || '').slice(0, 300) }).then(function (res) {
           MklUI.setBusy(btn, false);
-          if (!res.success) { if (!MklUI.showFieldErrors(form, res)) alertSlot.appendChild(MklUI.alertBox('error', res.message)); return; }
+          if (!res.success) {
+            if (!MklUI.showFieldErrors(form, res)) {
+              var f = res.details && res.details.fields;
+              alertSlot.appendChild(MklUI.alertBox('error', f ? Object.keys(f).map(function (k) { return f[k]; }).join(' ') : res.message));
+            }
+            return;
+          }
           var u = MklState.user || {};
           save({ deviceId: res.data.deviceId, token: res.data.token, name: String(u.displayName || '').split(' ')[0] });
           c.close();
