@@ -13,7 +13,7 @@
  * perm : null = semua pengguna; selain itu cukup salah satu permission
  */
 window.MklHelp = {
-  version: '0.16.0',
+  version: '0.16.1',
   // 0.11.0: kecepatan, hitung ulang per karyawan, cari/filter penggajian, impor jadwal
   updatedAt: '2026-11-01',
 
