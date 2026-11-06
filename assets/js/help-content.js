@@ -13,7 +13,7 @@
  * perm : null = semua pengguna; selain itu cukup salah satu permission
  */
 window.MklHelp = {
-  version: '0.14.3',
+  version: '0.15.0',
   // 0.11.0: kecepatan, hitung ulang per karyawan, cari/filter penggajian, impor jadwal
   updatedAt: '2026-11-01',
 
@@ -195,7 +195,30 @@ window.MklHelp = {
         'Jika pesan menyebut sinyal GPS kurang akurat, tunggu beberapa detik di tempat terbuka lalu tekan lagi.',
         'Lupa absen atau ponsel bermasalah? Hubungi HR untuk dicatat manual. Jangan meminta rekan memakai akun Anda.',
         'Tetap tempelkan jari di mesin fingerprint seperti biasa. Fingerprint dipakai sebagai cadangan bila absen portal kosong, dan untuk mencocokkan jam.',
-        'Aktifkan pengingat di HP agar diingatkan bila belum absen. Lihat topik "Memasang portal di HP dan menyalakan pengingat".'
+        'Aktifkan pengingat di HP agar diingatkan bila belum absen. Lihat topik "Memasang portal di HP dan menyalakan pengingat".',
+        'Ingin absen tanpa login? Lihat topik "Absen Cepat tanpa login (PIN)".'
+      ]
+    },
+    {
+      id: 'absen-cepat', guide: 'staff', perm: ['attendance.clock.own'], module: 'absen_hp', title: 'Absen Cepat tanpa login (PIN)',
+      intro: 'Setelah diaktifkan sekali, Anda bisa absen langsung dari ikon Mookiland di layar HP: tekan tombol Absen, lalu ketik PIN 6 angka. Tidak perlu username dan password.',
+      steps: [
+        'Pasang portal di layar utama HP (lihat topik "Memasang portal di HP dan menyalakan pengingat"), lalu buka portal dari ikon Mookiland.',
+        'Masuk dengan username dan password, buka menu Absen.',
+        'Pada kartu "Absen Cepat tanpa login", tekan Aktifkan di HP ini.',
+        'Buat PIN 6 angka, ulangi sekali, lalu tekan Aktifkan. Jika HP meminta izin notifikasi, pilih Izinkan.',
+        'Mulai sekarang, buka ikon Mookiland: tombol besar Absen Masuk langsung tampil. Tekan, ketik PIN, selesai.',
+        'Saat pulang, buka ikon lagi dan tekan Absen Pulang. Tombol ini aktif mulai 30 menit sebelum jam pulang shift.'
+      ],
+      result: 'Muncul tanda ✓ "Absen masuk tercatat ..." dan notifikasi di layar HP. Jamnya juga tampil di Absensi Saya.',
+      notes: [
+        'Lokasi tetap diperiksa: absen hanya bisa di area Mookiland, sama seperti absen biasa.',
+        'Harus pulang lebih awal (misalnya sakit)? Tekan Masuk ke portal lengkap, login, lalu buka menu Absen dan tekan Absen Pulang.',
+        'PIN salah 5 kali: Absen Cepat terkunci 15 menit. Absen tetap bisa lewat login biasa.',
+        'Satu akun hanya untuk satu HP. Ganti HP: aktifkan lagi di HP baru, yang lama otomatis mati.',
+        'Lupa PIN: login biasa, menu Absen, tekan Aktifkan di HP ini lagi dan buat PIN baru.',
+        'Jangan beri tahu PIN ke siapa pun dan jangan meminjamkan HP untuk absen orang lain.',
+        'Di iPhone, aktifkan dari ikon Mookiland di layar utama (bukan dari Safari).'
       ]
     },
     {

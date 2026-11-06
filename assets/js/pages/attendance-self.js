@@ -108,6 +108,7 @@
       root.appendChild(MklUI.pageHeader('Absen', 'Absen masuk dan pulang dari ponsel di lokasi kerja.'));
       var area = h('div');
       root.appendChild(area);
+      if (window.MklQuick) root.appendChild(MklQuick.setupCard());
       if (window.MklPush) root.appendChild(MklPush.card({ title: 'Pengingat absen di HP', compact: true }));
 
       function load() {

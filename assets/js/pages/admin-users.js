@@ -294,7 +294,7 @@
             });
           }, blocked);
         }
-        actionRow('Paksa keluar', 'Mengakhiri semua sesi aktif pengguna ini di semua perangkat.', 'Paksa Keluar', 'secondary', function () {
+        actionRow('Paksa keluar', 'Mengakhiri semua sesi aktif pengguna ini di semua perangkat, termasuk Absen Cepat di HP-nya (misalnya HP hilang).', 'Paksa Keluar', 'secondary', function () {
           MklUI.confirmAction({
             title: 'Paksa keluar ' + u.username,
             message: u.isSelf ? 'Anda juga akan dikeluarkan dari perangkat ini.' : 'Pengguna harus masuk kembali di semua perangkat.',

@@ -4,7 +4,7 @@
 (function () {
   'use strict';
   var h = MklUI.h;
-  var VERSION = '0.14.3';
+  var VERSION = '0.15.0';
 
   function appRoot() {
     return document.getElementById('app');
@@ -250,6 +250,10 @@
     });
     window.addEventListener('hashchange', route);
 
+    // Absen Cepat (0.15.0): HP yang sudah didaftarkan langsung membuka tombol absen, tanpa login.
+    if (!MklApi.getToken() && window.MklQuick && MklQuick.has() && /^(#\/?(beranda|masuk)?)?$/.test(window.location.hash)) {
+      try { window.history.replaceState(null, '', '#/absen-cepat'); } catch (e) { window.location.hash = '#/absen-cepat'; }
+    }
     if (!MklApi.getToken()) { route(); return; }
     MklApi.call('auth.me', {}).then(function (res) {
       if (res.success) {

@@ -571,3 +571,39 @@ fieldset[hidden] { display: none; }
 /* Pengajuan jadwal (0.14.0) */
 .sched-changes { margin: 4px 0 0; padding-left: 18px; }
 .sched-changes li { margin: 2px 0; }
+
+/* ---------- Absen Cepat (0.15.0) ---------- */
+.quick-wrap { width: 100%; max-width: 420px; display: flex; flex-direction: column; gap: 14px; }
+.quick-head { display: flex; align-items: center; gap: 12px; }
+.quick-title { margin: 0; font-size: 1.4rem; }
+.quick-head p { margin: 2px 0 0; }
+.quick-date { margin: 0; font-weight: 600; }
+.quick-btn-wrap { display: flex; justify-content: center; padding: 8px 0; }
+.quick-btn { width: 210px; height: 210px; border-radius: 50%; border: 0; color: #fff; font: inherit; font-size: 1.35rem; font-weight: 700;
+  box-shadow: var(--shadow-lg); cursor: pointer; touch-action: manipulation; -webkit-tap-highlight-color: transparent; }
+.quick-btn-in { background: #1d7a46; }
+.quick-btn-out { background: var(--brand); }
+.quick-btn:active:not(:disabled) { transform: scale(0.97); }
+.quick-btn:disabled { background: var(--muted-bg); color: var(--muted-text); box-shadow: none; cursor: not-allowed; font-size: 1.05rem; }
+.quick-btn:focus-visible { outline: 3px solid var(--focus); outline-offset: 4px; }
+.quick-btn-label { display: block; padding: 0 18px; }
+.quick-hint { margin: 0; }
+.quick-done { display: flex; flex-direction: column; align-items: center; gap: 4px; text-align: center; padding: 14px; border-radius: var(--radius);
+  background: var(--success-bg); color: var(--success-text); }
+.quick-done p { margin: 0; }
+.quick-check { font-size: 2.2rem; line-height: 1; }
+.quick-links { display: flex; flex-direction: column; gap: 8px; align-items: center; margin-top: 6px; }
+.pin-pad { display: flex; flex-direction: column; align-items: center; gap: 12px; }
+.pin-dots { display: flex; gap: 12px; }
+.pin-dot { width: 16px; height: 16px; border-radius: 50%; border: 2px solid var(--brand); }
+.pin-dot.filled { background: var(--brand); }
+.pin-status { margin: 0; min-height: 1.4em; text-align: center; color: var(--text-muted); }
+.pin-status.pin-error { color: var(--danger-text); font-weight: 600; }
+.pin-keys { display: grid; grid-template-columns: repeat(3, 72px); gap: 10px; }
+.pin-key { height: 60px; border-radius: 30px; border: 1px solid var(--border); background: var(--surface-2); color: var(--text); font: inherit;
+  font-size: 1.4rem; font-weight: 600; touch-action: manipulation; cursor: pointer; }
+.pin-key:active { background: var(--info-bg); }
+.pin-key:focus-visible { outline: 3px solid var(--focus); outline-offset: 2px; }
+.shake { animation: pin-shake 0.35s; }
+@keyframes pin-shake { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-8px); } 75% { transform: translateX(8px); } }
+@media (prefers-reduced-motion: reduce) { .shake { animation: none; } .quick-btn:active:not(:disabled) { transform: none; } }
