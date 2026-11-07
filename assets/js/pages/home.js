@@ -18,6 +18,71 @@
       h('span', { class: 'stat-value' }, String(value)), h('span', { class: 'stat-label' }, label));
   }
 
+  // 0.17.0: Kekuatan hari ini (pola minimal shift) untuk penyusun jadwal.
+  var STATUS = { hadir: ['Hadir', 'success'], menunggu: ['Belum waktunya', 'neutral'], belum_datang: ['Belum absen', 'danger'], tidak_datang: ['Tidak datang', 'danger'], dipanggil: ['Dipanggil', 'info'] };
+  function coverageCard() {
+    var body = h('div', { 'aria-live': 'polite' }, MklUI.loadingState('Memuat...'));
+    var card = MklUI.card('Kekuatan staff hari ini', body);
+    var canAssign = MklState.can('schedule.manage.all');
+    function paint(t) {
+      MklUI.clear(body);
+      if (!t.items.length) { body.appendChild(h('p', { class: 'muted' }, 'Pola minimal shift belum diatur. Atur di Susun Jadwal > Pola Minimal.')); return; }
+      body.appendChild(h('p', { class: 'muted small' }, 'Staff yang belum absen 30 menit setelah jam masuk dihitung belum datang.'));
+      t.items.forEach(function (it) {
+        var bad = !it.nowOk || !it.planOk;
+        var head = h('div', { class: 'cov-head' },
+          h('strong', null, it.position),
+          h('span', { class: 'cov-chip ' + (it.planOk ? 'is-ok' : 'is-bad') }, 'Jadwal ' + it.plan + (it.planOk ? ' ✓' : ' ✗')),
+          h('span', { class: 'cov-chip ' + (it.nowOk ? 'is-ok' : 'is-bad') }, 'Sekarang ' + it.now + (it.nowOk ? ' ✓' : ' ✗')));
+        var sec = h('section', { class: 'cov-pos' + (bad ? ' is-bad' : '') }, head);
+        if (it.people.length) {
+          sec.appendChild(h('ul', { class: 'plain-list cov-people' }, it.people.map(function (p) {
+            var st = STATUS[p.status] || [p.status, 'neutral'];
+            return h('li', null, h('span', null, p.name + ' · ' + p.shift + ' ' + p.start + (p.clockIn ? ' (masuk ' + p.clockIn + ')' : '')), ' ', MklUI.badge(st[0], st[1]));
+          })));
+        }
+        if (bad) {
+          sec.appendChild(h('p', { class: 'small' }, 'Pola yang boleh: ' + it.allowed.join(', ') + '.'));
+          if (!it.candidates.length) sec.appendChild(h('p', { class: 'small' }, 'Tidak ada staff ' + it.position + ' yang sedang libur hari ini.'));
+          else sec.appendChild(h('div', { class: 'cov-cands' }, h('span', { class: 'small' }, 'Calon pengganti (libur): '), it.candidates.map(function (c) {
+            if (!canAssign) return h('span', { class: 'small' }, c.name + ' ');
+            var b = h('button', { class: 'btn btn-secondary btn-small', type: 'button' }, 'Panggil ' + c.name);
+            b.addEventListener('click', function () { callModal(t, it, c); });
+            return b;
+          })));
+        }
+        body.appendChild(sec);
+      });
+    }
+    function callModal(t, it, c) {
+      var missing = it.absent.join(', ');
+      var form = h('form', { class: 'stack', novalidate: true });
+      var sh = MklUI.selectField({ label: 'Shift', name: 'shiftId', options: t.shifts.map(function (s) { return { value: s.shiftId, label: s.code + ' ' + s.startTime + '–' + s.endTime + ' (' + s.name + ')' }; }) });
+      var reason = MklUI.field({ label: 'Pesan untuk ' + c.name, name: 'reason', required: true, maxLength: 300, value: missing ? 'Menggantikan ' + missing + ' yang belum datang.' : 'Dibutuhkan untuk memenuhi pola minimal shift.' });
+      var alertSlot = h('div');
+      [h('p', null, c.name + ' akan langsung dijadwalkan hari ini dan mendapat notifikasi di HP.'), sh.wrap, reason.wrap, alertSlot].forEach(function (x) { form.appendChild(x); });
+      var m = MklUI.modal({ title: 'Panggil ' + c.name, content: form, actions: [
+        { label: 'Batal', onClick: function (x) { x.close(); } }, { label: 'Panggil', variant: 'primary', id: 'ok', onClick: submit }] });
+      form.addEventListener('submit', function (e) { e.preventDefault(); submit(m, m.buttons.ok); });
+      function submit(x, btn) {
+        MklUI.clearFieldErrors(form); MklUI.clear(alertSlot);
+        MklUI.setBusy(btn, true, 'Menyimpan...');
+        MklApi.call('time.coverage.assign', { employeeId: c.employeeId, date: t.date, shiftId: sh.input.value, reason: reason.input.value.trim() }).then(function (res) {
+          MklUI.setBusy(btn, false);
+          if (!res.success) { if (!MklUI.showFieldErrors(form, res)) alertSlot.appendChild(MklUI.alertBox('error', res.message)); return; }
+          x.close();
+          MklUI.toast(res.message, 'success');
+          paint(res.data);
+        });
+      }
+    }
+    MklApi.call('time.coverage.today', {}).then(function (res) {
+      if (!res.success) { MklUI.clear(body).appendChild(MklUI.alertBox('error', res.message)); return; }
+      paint(res.data);
+    });
+    return card;
+  }
+
   MklNav.register('/beranda', {
     title: 'Beranda',
     menu: { label: 'Beranda', order: 1 },
@@ -68,6 +133,8 @@
           });
         }));
       }
+
+      if (MklState.canAny(['schedule.manage.all', 'schedule.manage.team'])) root.appendChild(coverageCard());
 
       if (MklState.can('approval.queue')) {
         var apBody = h('div');

@@ -14,8 +14,23 @@
   function range(a, b) { return a === b ? T.dayLabel(a, true) : MklUI.fmtDate(a) + ' – ' + MklUI.fmtDate(b); }
 
   /** Baris rincian per jenis pengajuan. */
+  /** 0.17.0: akibat pada pola minimal shift (sebelum → sesudah). */
+  function coverageRow(d) {
+    var c = d.coverage;
+    if (!c || !c.rows || !c.rows.length) return null;
+    var list = h('ul', { class: 'plain-list cov-impact' }, c.rows.map(function (r) {
+      return h('li', { class: r.ok ? 'cov-ok' : 'cov-bad' },
+        h('span', { 'aria-hidden': 'true' }, r.ok ? '✓ ' : '✗ '),
+        r.position + ', ' + T.dayLabel(r.date, true) + ': ' + r.before + ' → ', h('strong', null, r.after),
+        r.ok ? h('span', { class: 'muted small' }, ' (masih sesuai)') : h('span', { class: 'small' }, ' — tidak sesuai pola (boleh: ' + r.allowed.join(', ') + ')' +
+          (r.candidates && r.candidates.length ? '. Calon pengganti yang libur: ' + r.candidates.join(', ') : '. Tidak ada staff jabatan ini yang libur')));
+    }));
+    return ['Pola minimal shift', c.problems.length ? h('div', null, MklUI.alertBox('warning', 'Bila disetujui, jumlah staff tidak sesuai pola. Menyetujui tetap bisa dengan menulis alasan.'), list) : list];
+  }
+
   function detailRows(it) {
     var d = it.detail;
+    var cov = it.status === 'menunggu' ? coverageRow(d) : null;
     if (d.kind === 'leave') {
       var rows = [['Jenis', d.leaveType], ['Tanggal', range(d.startDate, d.endDate) + ' (' + d.totalDays + ' hari)'], ['Alasan', d.reason]];
       if (d.balance) {
@@ -30,6 +45,7 @@
           rows.push(['Lampiran', b]);
         } else rows.push(['Lampiran', 'Ada (dibuka oleh HR)']);
       }
+      if (cov) rows.push(cov);
       return rows;
     }
     if (d.kind === 'overtime') {
@@ -59,6 +75,7 @@
       sr.push(['Alasan', d.reason]);
       if (d.warning) sr.push(['Perhatian', MklUI.alertBox('warning', d.warning)]);
       else if (it.status === 'menunggu') sr.push(['Setelah disetujui', 'Jadwal terbit langsung berubah dan karyawan mendapat notifikasi.']);
+      if (cov) sr.push(cov);
       return sr;
     }
     if (d.kind === 'identity') {
@@ -116,6 +133,13 @@
       minutes = MklUI.field({ label: 'Menit lembur disetujui', name: 'approvedMinutes', type: 'number', inputmode: 'numeric', value: String(it.detail.minutes), hint: 'Boleh lebih sedikit dari yang diajukan (' + it.detail.minutes + ' menit).' });
       form.appendChild(minutes.wrap);
     }
+    var override = null;
+    var covProblems = decision === 'setuju' && it.detail.coverage && it.detail.coverage.problems ? it.detail.coverage.problems : [];
+    if (covProblems.length) {
+      form.appendChild(MklUI.alertBox('warning', 'Pola minimal shift tidak sesuai bila disetujui: ' + covProblems.map(function (p) { return p.position + ' ' + T.dayLabel(p.date, true) + ' menjadi ' + p.after; }).join('; ') + '.'));
+      override = MklUI.field({ label: 'Alasan tetap menyetujui', name: 'overrideReason', required: true, multiline: true, rows: 2, maxLength: 300, hint: 'Contoh: "Sudah ada pengganti: Timo". Tercatat di log audit, tidak dikirim ke karyawan.' });
+      form.appendChild(override.wrap);
+    }
     var note = MklUI.field({ label: decision === 'tolak' ? 'Alasan penolakan' : 'Catatan (opsional)', name: 'note', required: decision === 'tolak', multiline: true, rows: 2, maxLength: 300, hint: 'Catatan ini dikirim ke karyawan.' });
     var alertSlot = h('div');
     form.insertBefore(h('p', null, h('strong', null, it.employee.fullName), ' · ' + it.typeLabel), form.firstChild);
@@ -133,6 +157,7 @@
       var p = { approvalId: it.approvalId, decision: decision, note: note.input.value.trim() };
       if (minutes && minutes.input.value) p.approvedMinutes = Number(minutes.input.value);
       if (loanF) { p.loanAmount = Number(loanF.a.input.value || 0); p.loanInstallments = Number(loanF.i.input.value); p.loanStartMonth = loanF.m.input.value; }
+      if (override) p.overrideReason = override.input.value.trim();
       MklUI.setBusy(btn, true, 'Menyimpan...');
       MklApi.call('approvals.decide', p).then(function (res) {
         MklUI.setBusy(btn, false);

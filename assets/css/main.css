@@ -607,3 +607,21 @@ fieldset[hidden] { display: none; }
 .shake { animation: pin-shake 0.35s; }
 @keyframes pin-shake { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-8px); } 75% { transform: translateX(8px); } }
 @media (prefers-reduced-motion: reduce) { .shake { animation: none; } .quick-btn:active:not(:disabled) { transform: none; } }
+
+/* ---------- Pola minimal shift (0.17.0) ---------- */
+.sched-grid tfoot th, .sched-grid tfoot td { border-top: 2px solid var(--border); }
+.cov-cell { text-align: center; font-size: 0.8rem; font-weight: 600; white-space: nowrap; }
+.cov-cell.is-ok { background: var(--success-bg); color: var(--success-text); }
+.cov-cell.is-bad { background: var(--danger-bg); color: var(--danger-text); }
+.cov-cell.is-empty { color: var(--text-muted); }
+.cov-impact li { margin: 2px 0; }
+.cov-impact .cov-ok { color: var(--success-text); }
+.cov-impact .cov-bad { color: var(--danger-text); }
+.cov-pos { border: 1px solid var(--border); border-radius: var(--radius); padding: 10px 12px; margin-top: 10px; }
+.cov-pos.is-bad { border-color: var(--danger); }
+.cov-head { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.cov-chip { font-size: 0.8rem; font-weight: 600; padding: 2px 8px; border-radius: 999px; }
+.cov-chip.is-ok { background: var(--success-bg); color: var(--success-text); }
+.cov-chip.is-bad { background: var(--danger-bg); color: var(--danger-text); }
+.cov-people { margin: 8px 0 0; display: flex; flex-direction: column; gap: 4px; font-size: 0.9rem; }
+.cov-cands { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin-top: 6px; }

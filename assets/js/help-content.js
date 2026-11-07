@@ -13,7 +13,7 @@
  * perm : null = semua pengguna; selain itu cukup salah satu permission
  */
 window.MklHelp = {
-  version: '0.16.1',
+  version: '0.17.0',
   // 0.11.0: kecepatan, hitung ulang per karyawan, cari/filter penggajian, impor jadwal
   updatedAt: '2026-11-01',
 
@@ -282,7 +282,8 @@ window.MklHelp = {
       notes: [
         'Pada tanggal yang ditukar, jadwal Anda dan rekan ditukar seluruhnya. Contoh: Anda masuk Senin dan libur Selasa, rekan libur Senin dan masuk Selasa; tukar Senin dan Selasa → Anda libur Senin dan masuk Selasa.',
         'Hanya tanggal yang sudah ada jadwal terbitnya, mulai besok. Tanggal cuti, sakit, atau izin tidak bisa diubah.',
-        'Pengajuan yang masih menunggu (rekan atau MO) bisa Anda batalkan. Bila jadwal sempat diubah HR sebelum disetujui, pengajuan akan ditolak dan perlu diajukan ulang.'
+        'Pengajuan yang masih menunggu (rekan atau MO) bisa Anda batalkan. Bila jadwal sempat diubah HR sebelum disetujui, pengajuan akan ditolak dan perlu diajukan ulang.',
+        'Pengajuan yang membuat jumlah staff di jabatan Anda tidak sesuai pola minimal (misalnya Game Operator pagi jadi kurang) langsung ditolak dengan penjelasannya. Pilih tanggal atau shift lain, atau bicarakan dengan Manajer Operasional.'
       ]
     },
     {
@@ -872,7 +873,27 @@ window.MklHelp = {
         'Persetujuan oleh Supervisor belum dipakai: semua pengajuan diputuskan Manajer Operasional.',
         'Cuti, izin, dan sakit yang disetujui otomatis mengubah jadwal karyawan: hari kerja di tanggal itu menjadi Libur (Cuti/Sakit/Izin) dan langsung terbit (draf yang belum terbit ikut diganti). Hari libur rutin tidak diubah; tanggal yang belum ada jadwalnya dibuatkan Libur (Cuti). Anda tidak perlu mengubah Jadwal Kerja secara manual.',
         'Ubah/tukar jadwal: rincian menampilkan jadwal sebelum → sesudah untuk setiap tanggal (pada tukar jadwal: kedua karyawan, setelah rekan setuju). Setelah disetujui, jadwal terbit langsung berubah; draf yang belum terbit untuk sel itu ikut diganti.',
+        'Pola minimal shift: rincian cuti/izin/sakit dan ubah/tukar jadwal menampilkan akibatnya, misalnya "Game Operator, Selasa: 3-1-2 → 2-1-2 (masih sesuai)". Bila menjadi tidak sesuai, tampil calon pengganti yang sedang libur, dan Setujui meminta Alasan tetap menyetujui (tercatat di log audit).',
         'Yang bisa menyetujui: akun dengan role HR Admin DAN Supervisor (Manajer Operasional). Akun HR Admin tanpa Supervisor (misalnya admin) mengelola data, tetapi tidak menyetujui pengajuan; lembur yang dicatatnya untuk karyawan menunggu persetujuan Manajer Operasional.'
+      ]
+    },
+    {
+      id: 'hr-pola-minimal', guide: 'hr', perm: ['schedule.manage.all', 'schedule.manage.team'], title: 'Pola minimal shift per jabatan',
+      intro: 'Pola minimal adalah susunan jumlah staff Pagi-Middle-Siang yang boleh dipakai per jabatan, misalnya Game Operator 3-1-2, 2-1-2, 3-1-3, atau 3-2-3. Sistem menjaganya di Susun Jadwal, Persetujuan, pengajuan staff, dan di Beranda (hari ini).',
+      steps: [
+        'Atur pola: buka Susun Jadwal → Pola Minimal. Tulis satu baris per jabatan, misalnya "Game Operator = 3-1-2, 2-1-2, 3-1-3, 3-2-3", "Barista = 1-1-1, 1-1-0, 1-0-1", "Cashier = 1-2, 2-2" (2 angka = Pagi-Siang). Isi alasan, lalu Simpan Pola.',
+        'Susun Jadwal: baris paling bawah tabel menampilkan susunan tiap jabatan per hari, langsung berubah saat Anda mengganti sel. Hijau ✓ = sesuai, merah ✗ = tidak sesuai.',
+        'Terbitkan: bila ada hari yang tidak sesuai, jadwal tidak langsung terbit. Perbaiki jadwalnya, atau tekan Tetap Terbitkan dan tulis alasannya (misalnya staff sakit dan pengganti belum ada).',
+        'Persetujuan: cuti/izin/sakit dan ubah/tukar jadwal menampilkan akibatnya pada pola. Bila menjadi tidak sesuai, tampil calon pengganti, dan menyetujui wajib dengan alasan.',
+        'Hari ini: di Beranda, kartu Kekuatan staff hari ini menampilkan susunan menurut jadwal dan menurut yang sudah datang. Staff yang belum absen 30 menit setelah jam masuk dihitung belum datang, dan Anda mendapat notifikasi di HP.',
+        'Tekan Panggil (nama) pada calon pengganti, pilih shift, lalu Panggil. Jadwalnya langsung terbit dan ia mendapat notifikasi.'
+      ],
+      result: 'Susunan staff tiap jabatan terjaga; setiap pengecualian tercatat dengan alasannya di log audit.',
+      notes: [
+        'Kelompok shift: P/P1 = Pagi, M/M1 = Middle, S = Siang. Shift lain dikelompokkan dari huruf pertama kodenya, atau atur di Pola Minimal (contoh "K:P").',
+        'Hari yang semua staff satu jabatan libur atau belum dijadwalkan (0-0-0) tidak dianggap salah, misalnya saat park tutup.',
+        'Staff tidak bisa mengajukan ubah/tukar jadwal yang membuat pola tidak sesuai. Cuti, izin, dan sakit tetap bisa diajukan; Anda yang memutuskan.',
+        'Notifikasi "kurang" dikirim sekali untuk setiap keadaan yang sama, agar tidak berulang setiap 10 menit.'
       ]
     },
     {

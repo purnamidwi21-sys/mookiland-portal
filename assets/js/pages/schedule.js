@@ -35,6 +35,62 @@
     return s ? shiftLabel(s) + ' (' + s.name + ')' : '?';
   }
 
+  // ------------------------------------------------------------------ Pola minimal shift (0.17.0)
+  /** Hitung susunan satu jabatan pada satu hari dari isi sel (draf + perubahan yang belum disimpan). */
+  function coverageOf(rule, emps, d, valueOf, slots) {
+    var c = { P: 0, M: 0, S: 0, X: 0 };
+    emps.forEach(function (e) {
+      var v = valueOf(e.employeeId, d);
+      if (!v || v === OFF || v.indexOf(OFF + '|') === 0) return;
+      c[slots[v] || 'X']++;
+    });
+    var text = rule.twoSlot ? c.P + '-' + c.S + (c.M ? ' +' + c.M + 'M' : '') : c.P + '-' + c.M + '-' + c.S;
+    if (c.X) text += ' +' + c.X;
+    var empty = !c.P && !c.M && !c.S && !c.X;
+    var ok = empty || rule.patterns.some(function (p) { return p[0] === c.P && p[1] === c.M && p[2] === c.S && !c.X; });
+    return { text: text, ok: ok, empty: empty };
+  }
+
+  function rulesModal(done) {
+    var body = h('div', { class: 'stack' }, MklUI.loadingState('Memuat...'));
+    var ctl = MklUI.modal({ title: 'Pola Minimal Shift', content: body, actions: [{ label: 'Tutup', onClick: function (c) { c.close(); } }] });
+    MklApi.call('time.coverage.rules', {}).then(function (res) {
+      MklUI.clear(body);
+      if (!res.success) { body.appendChild(MklUI.alertBox('error', res.message)); return; }
+      var d = res.data;
+      var form = h('form', { class: 'stack', novalidate: true });
+      var pat = MklUI.field({ label: 'Pola per jabatan (satu baris satu jabatan)', name: 'patterns', multiline: true, rows: 5, maxLength: 2000,
+        value: (d.patterns || '').split(';').map(function (x) { return x.trim(); }).filter(Boolean).join('\n'),
+        hint: 'Format: Jabatan = pola, pola. 3 angka = Pagi-Middle-Siang (3-1-2), 2 angka = Pagi-Siang (1-2). Kosongkan semua untuk mematikan pemeriksaan.' });
+      var map = MklUI.field({ label: 'Kelompok shift (kode:P/M/S)', name: 'slotMap', value: d.slotMap || '', maxLength: 500,
+        hint: 'P = Pagi, M = Middle, S = Siang. Shift yang tidak disebut dikelompokkan dari huruf pertama kodenya.' });
+      var reason = MklUI.field({ label: 'Alasan perubahan', name: 'reason', required: true, maxLength: 300 });
+      var alertSlot = h('div');
+      var NAMES = { P: 'Pagi', M: 'Middle', S: 'Siang', X: 'Tidak dihitung' };
+      form.appendChild(pat.wrap);
+      form.appendChild(map.wrap);
+      form.appendChild(h('p', { class: 'muted small' }, 'Kelompok sekarang: ' + d.shifts.map(function (s) { return s.code + ' ' + s.startTime + ' = ' + NAMES[s.slot]; }).join(' · ')));
+      form.appendChild(h('p', { class: 'muted small' }, 'Jabatan: ' + d.positions.join(', ') + '.'));
+      form.appendChild(reason.wrap);
+      form.appendChild(alertSlot);
+      var save = h('button', { class: 'btn btn-primary', type: 'submit' }, 'Simpan Pola');
+      form.appendChild(h('div', { class: 'form-actions' }, save));
+      body.appendChild(form);
+      form.addEventListener('submit', function (e) {
+        e.preventDefault();
+        MklUI.clearFieldErrors(form); MklUI.clear(alertSlot);
+        MklUI.setBusy(save, true, 'Menyimpan...');
+        MklApi.call('time.coverage.saveRules', { patterns: pat.input.value, slotMap: map.input.value.trim(), reason: reason.input.value.trim() }).then(function (r) {
+          MklUI.setBusy(save, false);
+          if (!r.success) { if (!MklUI.showFieldErrors(form, r)) alertSlot.appendChild(MklUI.alertBox('error', r.message)); return; }
+          ctl.close();
+          MklUI.toast(r.message, 'success');
+          done();
+        });
+      });
+    });
+  }
+
   function eventsTable(list, full) {
     return h('div', { class: 'recap-table' }, MklUI.table([
       { label: 'Jam', render: function (e) { return e.time || '-'; } },
@@ -249,7 +305,8 @@
       var impBtn = canAll ? h('button', { class: 'btn btn-secondary btn-small', type: 'button' }, 'Impor dari Excel') : null;
       var tplBtn = h('button', { class: 'btn btn-secondary btn-small', type: 'button' }, 'Unduh Template');
       var calLink = canAll ? h('a', { class: 'btn btn-ghost btn-small', href: '#/libur-event' }, 'Libur & Event') : null;
-      root.appendChild(MklUI.pageHeader('Susun Jadwal', 'Atur shift per karyawan per hari (dikelompokkan per section), lalu terbitkan agar terlihat oleh karyawan. Klik tanggal untuk melihat jadwal harian, hari libur, dan event.', [impBtn, tplBtn, calLink]));
+      var covBtn = canAll ? h('button', { class: 'btn btn-secondary btn-small', type: 'button' }, 'Pola Minimal') : null;
+      root.appendChild(MklUI.pageHeader('Susun Jadwal', 'Atur shift per karyawan per hari (dikelompokkan per section), lalu terbitkan agar terlihat oleh karyawan. Klik tanggal untuk melihat jadwal harian, hari libur, dan event.', [impBtn, tplBtn, covBtn, calLink]));
 
       var prev = h('button', { class: 'btn btn-secondary btn-small', type: 'button' }, '← Minggu lalu');
       var thisWeek = h('button', { class: 'btn btn-ghost btn-small', type: 'button' }, 'Minggu ini');
@@ -279,6 +336,8 @@
       thisWeek.addEventListener('click', guard(function () { weekStart = T.mondayOf(MklUI.todayYmd()); load(); }));
       if (impBtn) impBtn.addEventListener('click', guard(function () { importModal(load); }));
       tplBtn.addEventListener('click', function () { templateModal(weekStart); });
+      if (covBtn) covBtn.addEventListener('click', guard(function () { rulesModal(load); }));
+      var covCells = []; // [{ rule, emps, date, td }]
 
       function paintInfo() {
         MklUI.clear(info);
@@ -303,6 +362,7 @@
           data = res.data;
           copyBtn.disabled = false;
           paintGrid();
+          paintCoverage();
           paintInfo();
         });
       }
@@ -341,6 +401,20 @@
           })));
         var tbody = h('tbody');
         var lastSection = null;
+        // Baris pola minimal per jabatan (dihitung langsung dari isi sel).
+        covCells = [];
+        var cov = data.coverage || { rules: [], slots: {} };
+        var tfoot = cov.rules.length ? h('tfoot') : null;
+        cov.rules.forEach(function (rule) {
+          var emps = data.employees.filter(function (e) { return (e.positionName || '').toLowerCase() === rule.position.toLowerCase(); });
+          var tr = h('tr', { class: 'cov-row' }, h('th', { scope: 'row', class: 'sched-name' }, h('span', null, rule.position), h('br'), h('span', { class: 'muted small' }, (rule.twoSlot ? 'P-S: ' : 'P-M-S: ') + rule.labels.join(' / '))));
+          data.dates.forEach(function (d) {
+            var td = h('td', { class: 'cov-cell' });
+            covCells.push({ rule: rule, emps: emps, date: d, td: td });
+            tr.appendChild(td);
+          });
+          tfoot.appendChild(tr);
+        });
         data.employees.forEach(function (e) {
           var sec = e.positionName || '-';
           if (sec !== lastSection) {
@@ -375,6 +449,7 @@
               if (sel.value === current) delete pending[key]; else pending[key] = sel.value;
               mark();
               paintInfo();
+              paintCoverage();
             });
             mark();
             row.appendChild(td);
@@ -382,7 +457,8 @@
           tbody.appendChild(row);
         });
         area.appendChild(MklUI.card(null, [
-          h('div', { class: 'grid-scroll', tabindex: '0', role: 'region', 'aria-label': 'Tabel jadwal minggu ini' }, h('table', { class: 'sched-grid' }, thead, tbody)),
+          h('div', { class: 'grid-scroll', tabindex: '0', role: 'region', 'aria-label': 'Tabel jadwal minggu ini' }, h('table', { class: 'sched-grid' }, thead, tbody, tfoot)),
+          tfoot ? h('p', { class: 'muted small' }, 'Baris paling bawah = pola minimal shift per jabatan (✓ sesuai, ✗ tidak sesuai). Jadwal yang tidak sesuai hanya bisa diterbitkan dengan alasan.') : null,
           h('div', { class: 'sched-legend muted small' },
             h('span', null, h('span', { class: 'legend-box is-draft' }), ' Draf (belum terlihat karyawan)'),
             h('span', null, h('span', { class: 'legend-box is-dirty' }), ' Diubah, belum disimpan'),
@@ -390,6 +466,55 @@
             active.map(function (s) { return h('span', null, T.shiftChip(s), ' ' + s.name + ' ' + s.startTime + '–' + s.endTime); })),
           h('p', { class: 'muted small' }, 'Jadwal tidak dipakai untuk menghitung gaji; gaji dihitung dari absensi.')
         ]));
+      }
+
+      function covProblems() {
+        var today = MklUI.todayYmd();
+        return covCells.filter(function (c) { return c.date >= today; }).map(function (c) {
+          var r = coverageOf(c.rule, c.emps, c.date, valueOf, data.coverage.slots);
+          return r.ok ? null : c.rule.position + ' ' + T.dayLabel(c.date, true) + ': ' + r.text;
+        }).filter(Boolean);
+      }
+
+      function paintCoverage() {
+        covCells.forEach(function (c) {
+          var r = coverageOf(c.rule, c.emps, c.date, valueOf, data.coverage.slots);
+          MklUI.clear(c.td);
+          c.td.className = 'cov-cell ' + (r.empty ? 'is-empty' : (r.ok ? 'is-ok' : 'is-bad'));
+          c.td.appendChild(document.createTextNode(r.empty ? '–' : (r.ok ? '✓ ' : '✗ ') + r.text));
+          c.td.title = r.empty ? 'Belum ada yang dijadwalkan' : (r.ok ? 'Sesuai pola' : 'Tidak sesuai pola: ' + c.rule.labels.join(', '));
+        });
+      }
+
+      function publish(reason) {
+        return MklApi.call('time.schedules.publish', reason ? { weekStart: weekStart, overrideReason: reason } : { weekStart: weekStart }).then(function (res) {
+          if (res.success) { MklUI.toast(res.message, 'success'); load(); return res; }
+          if (res.details && res.details.needReason && !reason) { setTimeout(function () { reasonModal(res); }, 0); return { success: true }; }
+          return res;
+        });
+      }
+
+      function reasonModal(res) {
+        var form = h('form', { class: 'stack', novalidate: true });
+        var reason = MklUI.field({ label: 'Alasan tetap menerbitkan', name: 'overrideReason', required: true, multiline: true, rows: 2, maxLength: 300, hint: 'Contoh: "Dua staff sakit, pengganti belum ada". Tercatat di log audit.' });
+        var alertSlot = h('div');
+        form.appendChild(MklUI.alertBox('warning', res.message.replace(/ Tulis alasan.*$/, '')));
+        form.appendChild(reason.wrap);
+        form.appendChild(alertSlot);
+        var m = MklUI.modal({ title: 'Pola minimal shift tidak sesuai', content: form, actions: [
+          { label: 'Perbaiki Jadwal Dulu', onClick: function (c) { c.close(); } },
+          { label: 'Tetap Terbitkan', variant: 'primary', id: 'ok', onClick: submit }] });
+        form.addEventListener('submit', function (e) { e.preventDefault(); submit(m, m.buttons.ok); });
+        function submit(c, btn) {
+          MklUI.clear(alertSlot);
+          if (reason.input.value.trim().length < 5) { alertSlot.appendChild(MklUI.alertBox('error', 'Tulis alasan minimal 5 karakter.')); return; }
+          MklUI.setBusy(btn, true, 'Menerbitkan...');
+          publish(reason.input.value.trim()).then(function (r) {
+            MklUI.setBusy(btn, false);
+            if (!r.success) { alertSlot.appendChild(MklUI.alertBox('error', r.message)); return; }
+            c.close();
+          });
+        }
       }
 
       function save() {
@@ -412,21 +537,20 @@
 
       pubBtn.addEventListener('click', function () {
         var n = dirtyCount();
+        var probs = covProblems();
         MklUI.confirmAction({
           title: 'Terbitkan jadwal',
           message: h('div', null,
             h('p', null, 'Terbitkan jadwal ' + T.rangeLabel(weekStart, T.addDays(weekStart, 6)) + '?'),
             n ? h('p', null, n + ' perubahan yang belum disimpan akan disimpan dulu.') : null,
+            probs.length ? MklUI.alertBox('warning', 'Tidak sesuai pola minimal: ' + probs.join('; ') + '. Anda akan diminta menulis alasan.') : null,
             h('p', { class: 'muted small' }, 'Karyawan yang jadwalnya berubah mendapat notifikasi. Absensi memakai jadwal yang sudah terbit.')),
           confirmLabel: 'Terbitkan',
           onConfirm: function () {
             var first = n ? save() : Promise.resolve({ success: true });
             return first.then(function (r) {
               if (!r.success) return r;
-              return MklApi.call('time.schedules.publish', { weekStart: weekStart }).then(function (res) {
-                if (res.success) { MklUI.toast(res.message, 'success'); load(); }
-                return res;
-              });
+              return publish('');
             });
           }
         });
