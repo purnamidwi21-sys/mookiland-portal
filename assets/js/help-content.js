@@ -13,7 +13,7 @@
  * perm : null = semua pengguna; selain itu cukup salah satu permission
  */
 window.MklHelp = {
-  version: '0.17.2',
+  version: '0.18.0',
   // 0.11.0: kecepatan, hitung ulang per karyawan, cari/filter penggajian, impor jadwal
   updatedAt: '2026-11-07',
 
@@ -895,6 +895,40 @@ window.MklHelp = {
         'Hari yang semua staff satu jabatan libur atau belum dijadwalkan (0-0-0) tidak dianggap salah, misalnya saat park tutup.',
         'Staff tidak bisa mengajukan ubah/tukar jadwal yang membuat pola tidak sesuai. Cuti, izin, dan sakit tetap bisa diajukan; Anda yang memutuskan.',
         'Notifikasi "kurang" dikirim sekali untuk setiap keadaan yang sama, agar tidak berulang setiap 10 menit.'
+      ]
+    },
+    {
+      id: 'hr-atur-ulang', guide: 'hr', perm: ['schedule.manage.all'], title: 'Mengatur ulang jadwal saat ada staff mendadak tidak masuk',
+      intro: 'Bila staff mendadak tidak masuk (hari ini sampai 7 hari ke depan), sistem mengusulkan susunan baru yang sesuai pola minimal shift: memindah shift sesama jabatan dan/atau memanggil staff yang sedang libur.',
+      steps: [
+        'Buka menu Atur Ulang Jadwal (atau tekan Atur Ulang Jadwal di kartu Kekuatan staff di Beranda).',
+        'Tekan Tandai Tidak Masuk. Pilih staff, tanggal (bisa beberapa hari), dan alasan (Sakit, Izin mendadak, Tanpa kabar, atau Lainnya dengan keterangan). Tekan Simpan.',
+        'Di bagian Kekurangan staff dan usulan tampil setiap hari dan jabatan yang tidak sesuai pola, siapa yang tidak masuk, dan usulan susunan baru dengan perubahan paling sedikit. Contoh: "Pindahkan Eko dari Middle ke Pagi" atau "Panggil Fani (sedang libur) masuk Siang".',
+        'Tekan Terapkan pada usulan yang dipilih, periksa alasannya (dikirim ke staff), lalu Terapkan. Jadwal terbit langsung berubah dan staff yang terkena mendapat notifikasi di portal/HP.',
+        'Di jendela Kabari staff, tekan Kirim WA ke (nama). WhatsApp terbuka dengan pesan siap kirim; tekan Kirim di WhatsApp.'
+      ],
+      result: 'Pola minimal shift terpenuhi lagi, staff yang terkena tahu perubahannya, dan semuanya tercatat di log audit.',
+      notes: [
+        'Tanda tidak masuk tidak mengubah jadwal staff itu dan tidak memengaruhi gaji. Absensinya tetap tercatat apa adanya. Cuti, izin, atau sakit resmi tetap diajukan lewat portal dan disetujui seperti biasa.',
+        'Usulan hanya memakai staff jabatan yang sama. Staff yang sedang cuti/izin/sakit atau ditandai tidak masuk tidak diusulkan. Untuk hari ini, shift yang tinggal kurang dari 1 jam tidak diusulkan, dan staff yang sudah absen masuk tidak dipindah.',
+        'Bila tidak ada usulan, ubah jadwal manual di Susun Jadwal atau hubungi staff lewat Kirim Pesan WA.',
+        'Salah tandai? Tekan Batalkan pada daftar Staff tidak masuk.'
+      ]
+    },
+    {
+      id: 'hr-kirim-wa', guide: 'hr', perm: ['schedule.manage.all', 'employee.manage'], title: 'Mengirim pesan WhatsApp ke staff',
+      intro: 'Portal menyiapkan nomor dan isi pesan, lalu membuka WhatsApp di HP atau komputer Anda. Anda sendiri yang menekan Kirim, dari nomor Anda sendiri. Tidak ada biaya dan tidak perlu pendaftaran.',
+      steps: [
+        'Buka menu Kirim Pesan WA.',
+        'Pilih penerima: saring per jabatan atau cari nama, lalu centang staff (atau Pilih semua yang tampil). Staff yang belum punya nomor HP di data karyawan tidak bisa dipilih.',
+        'Pilih jenis pesan (Perubahan jadwal, Minta bantuan masuk, Pengingat absen, Info umum, atau Tulis sendiri) dan ubah isinya bila perlu. Tulis {nama} untuk nama panggilan staff.',
+        'Tekan Siapkan Pesan, lalu tekan Buka WhatsApp untuk tiap staff satu per satu, dan tekan Kirim di WhatsApp.'
+      ],
+      result: 'Pesan terkirim dari WhatsApp Anda. Portal mencatat siapa yang dikirimi pesan (tanpa isi pesannya) di log audit.',
+      notes: [
+        'WhatsApp hanya bisa membuka satu penerima setiap kali tombol ditekan.',
+        'Nomor HP diambil dari data karyawan (Nomor HP/WhatsApp). Perbaiki di menu Karyawan bila salah.',
+        'Di komputer, tautan membuka WhatsApp Desktop atau WhatsApp Web.'
       ]
     },
     {

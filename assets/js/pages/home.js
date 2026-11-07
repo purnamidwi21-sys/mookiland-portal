@@ -19,7 +19,7 @@
   }
 
   // 0.17.0: Kekuatan hari ini (pola minimal shift) untuk penyusun jadwal.
-  var STATUS = { hadir: ['Hadir', 'success'], menunggu: ['Belum waktunya', 'neutral'], belum_datang: ['Belum absen', 'danger'], tidak_datang: ['Tidak datang', 'danger'], dipanggil: ['Dipanggil', 'info'] };
+  var STATUS = { hadir: ['Hadir', 'success'], menunggu: ['Belum waktunya', 'neutral'], belum_datang: ['Belum absen', 'danger'], tidak_datang: ['Tidak datang', 'danger'], dipanggil: ['Dipanggil', 'info'], tidak_masuk: ['Tidak masuk', 'warning'] };
   // 0.17.2: kartu utama Beranda. Satu kotak per jabatan, angka besar per shift (Pagi-Middle-Siang).
   var SLOT_NAMES = { 3: ['Pagi', 'Middle', 'Siang'], 2: ['Pagi', 'Siang'] };
   // Shift yang di bawah angka terkecil dari semua pola yang boleh ditandai merah.
@@ -68,6 +68,7 @@
         if (it.people.length) {
           sec.appendChild(h('ul', { class: 'cov-people' }, it.people.map(function (p) {
             var st = STATUS[p.status] || [p.status, 'neutral'];
+            if (p.status === 'tidak_masuk' && p.reasonLabel) st = ['Tidak masuk (' + p.reasonLabel + ')', 'warning'];
             return h('li', null,
               h('span', { class: 'cov-person' }, p.name + ' · ' + p.shift + ' ' + p.start + (p.clockIn ? ' (masuk ' + p.clockIn + ')' : '')),
               ' ', MklUI.badge(st[0], st[1]));
@@ -87,6 +88,10 @@
         grid.appendChild(sec);
       });
       body.appendChild(grid);
+      if (badCount && canAssign) {
+        body.appendChild(h('p', { class: 'cov-link' }, h('a', { class: 'btn btn-secondary btn-small', href: '#/atur-ulang' }, 'Atur Ulang Jadwal'),
+          h('span', { class: 'small muted' }, ' Usulan susunan baru (pindah shift atau panggil staff libur) untuk hari ini sampai 7 hari ke depan.')));
+      }
       body.appendChild(h('p', { class: 'muted small cov-foot' }, 'Angka besar = staff yang sudah hadir atau masih menunggu jam masuk. Staff yang belum absen 30 menit setelah jam masuk dihitung belum datang.'));
     }
     function load() {
@@ -117,6 +122,10 @@
           x.close();
           MklUI.toast(res.message, 'success');
           paint(res.data);
+          if (res.data.notify && window.MklWaUI) {
+            MklUI.modal({ title: 'Kabari ' + c.name, content: MklWaUI.notifyList(res.data.notify, 'Panggil masuk'),
+              actions: [{ label: 'Selesai', variant: 'primary', onClick: function (z) { z.close(); } }] });
+          }
         });
       }
     }
