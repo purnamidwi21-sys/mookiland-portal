@@ -144,7 +144,10 @@
               { label: 'Belum lengkap', render: function (i) { return i.summary.incomplete ? MklUI.badge(String(i.summary.incomplete), 'warning') : '0'; } },
               { label: 'Cuti / sakit / izin', render: function (i) { var s = i.summary; return (s.leave || 0) + ' / ' + (s.sick || 0) + ' / ' + (s.permit || 0); } },
               { label: 'Lembur disetujui', render: function (i) { return i.summary.overtimeMinutes ? T.fmtMinutes(i.summary.overtimeMinutes) : '0'; } },
-              { label: 'Jam kerja', render: function (i) { return T.fmtMinutes(i.summary.workedMinutes); } },
+              { label: 'Lama hadir', render: function (i) {
+                var sm = i.summary;
+                return h('span', null, mins(sm.spanMinutes), sm.paidMinutes ? h('span', { class: 'small muted d-block' }, 'dibayar ' + mins(sm.paidMinutes)) : null);
+              } },
               { label: 'Aksi', className: 'col-action', render: function (i) {
                 var b = h('button', { class: 'btn btn-secondary btn-small', type: 'button' }, 'Rincian');
                 b.addEventListener('click', function () { openDetail(i.employeeId, d.canEdit); });
@@ -189,6 +192,21 @@
         });
       }
 
+      // 0.18.1: menit berpecahan (ketelitian detik dari Penggajian) ditampilkan dibulatkan ke bawah.
+      function mins(m) { return T.fmtMinutes(Math.floor((m || 0) + 1e-9)); }
+      // Istirahat dari fingerprint Raptor, sama seperti di Penggajian.
+      function breakCell(x) {
+        if (!x.clockIn) return '';
+        if (x.breakKind === 'otomatis') return h('span', null, '1 j', h('span', { class: 'small muted d-block' }, 'otomatis (profil gaji)'));
+        if (x.breakKind === 'tidak_istirahat') return h('span', null, '-', h('span', { class: 'small muted d-block' }, 'Tidak istirahat: +' + x.breakCredit + ' m kerja'));
+        if (x.breakKind === 'tidak_tercatat') return h('span', { class: 'small muted' }, 'Tidak tercatat');
+        if (x.breakKind !== 'fingerprint') return '';
+        var over = Math.floor(x.breakOver || 0);
+        return h('span', null, mins(x.breakMinutes),
+          x.breakCredit ? h('span', { class: 'small muted d-block' }, '+' + mins(x.breakCredit) + ' dihitung kerja') : null,
+          over ? h('span', { class: 'd-block' }, MklUI.badge('lebih ' + over + ' m', 'warning')) : null);
+      }
+
       function openDetail(employeeId, canEdit) {
         MklUI.clear(detail).appendChild(MklUI.loadingState('Memuat rincian...'));
         detail.scrollIntoView({ block: 'start' });
@@ -209,7 +227,14 @@
               { label: 'Pulang', render: function (x) { return x.clockOut ? x.clockOut + (x.clockOutNextDay ? ' (+1)' : '') : ''; } },
               { label: 'Status', render: function (x) { return T.statusBadge(x.status, x.statusLabel); } },
               { label: 'Terlambat', render: function (x) { return x.lateMinutes ? x.lateMinutes + ' m' : ''; } },
-              { label: 'Jam kerja', render: function (x) { return x.workedMinutes ? T.fmtMinutes(x.workedMinutes) : ''; } },
+              { label: 'Istirahat', render: breakCell },
+              { label: 'Lama hadir', render: function (x) {
+                if (!x.spanMinutes) return '';
+                var sub = [];
+                if (x.paidMinutes && Math.floor(x.paidMinutes) !== Math.floor(x.spanMinutes)) sub.push('dibayar ' + mins(x.paidMinutes));
+                if (x.payNote) sub.push(x.payNote);
+                return h('span', null, mins(x.spanMinutes), sub.length ? h('span', { class: 'small muted d-block' }, sub.join('; ')) : null);
+              } },
               { label: 'Sumber', render: function (x) { return sourceText(x.source); } },
               { label: 'Keterangan', render: function (x) { return x.notes ? h('span', { class: 'small' }, x.notes) : ''; } },
               canEdit ? { label: 'Aksi', className: 'col-action', render: function (x) {
@@ -219,6 +244,7 @@
                 return b;
               } } : null
             ].filter(Boolean), days, 'Tidak ada jadwal atau absen pada rentang ini.')),
+            h('p', { class: 'muted small' }, 'Istirahat diambil dari fingerprint Raptor (jeda antara dua sesi). Lama hadir dihitung sama seperti di Penggajian: jam masuk dibulatkan sesuai Profil Gaji, istirahat 1 jam ikut dibayar, dan istirahat yang lebih pendek menambah jam kerja.'),
             canEdit ? h('p', { class: 'muted small' }, 'Catat/Ubah dipakai bila karyawan lupa absen atau ponselnya bermasalah. Setiap perubahan wajib beralasan dan tercatat di audit log.') : null
           ]));
           heading.focus();

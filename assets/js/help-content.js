@@ -13,7 +13,7 @@
  * perm : null = semua pengguna; selain itu cukup salah satu permission
  */
 window.MklHelp = {
-  version: '0.18.0',
+  version: '0.18.1',
   // 0.11.0: kecepatan, hitung ulang per karyawan, cari/filter penggajian, impor jadwal
   updatedAt: '2026-11-07',
 
@@ -432,14 +432,18 @@ window.MklHelp = {
     },
     {
       id: 'rekap-absensi', guide: 'supervisor', perm: ['attendance.read.all', 'attendance.read.team'], title: 'Melihat rekap absensi',
-      intro: 'Rekap Absensi menampilkan kehadiran, keterlambatan, dan jam kerja per karyawan. Supervisor hanya melihat anggota timnya.',
+      intro: 'Rekap Absensi menampilkan kehadiran, keterlambatan, dan lama hadir per karyawan. Supervisor hanya melihat anggota timnya.',
       steps: [
         'Buka menu Rekap Absensi.',
         'Isi Dari dan Sampai (maksimal 62 hari), lalu tekan Tampilkan.',
-        'Tekan Rincian pada seorang karyawan untuk melihat setiap hari: jadwal, jam masuk/pulang, status, dan sumber data (Aplikasi, Raptor, atau Dicatat HR).'
+        'Tekan Rincian pada seorang karyawan untuk melihat setiap hari: jadwal, jam masuk/pulang, status, istirahat, lama hadir, dan sumber data (Aplikasi, Raptor, atau Dicatat HR).'
       ],
       result: 'Rekap dan rincian per hari tampil di layar.',
-      notes: ['Tidak hadir = ada jadwal terbit tetapi tidak ada absen. Belum lengkap = absen masuk tanpa absen pulang.']
+      notes: [
+        'Tidak hadir = ada jadwal terbit tetapi tidak ada absen. Belum lengkap = absen masuk tanpa absen pulang.',
+        'Istirahat diambil dari fingerprint Raptor (jeda antara dua sesi). Absen lewat portal tidak mencatat istirahat (Tidak tercatat). Istirahat lebih dari 1 jam diberi tanda kuning.',
+        'Lama hadir dihitung sama seperti di Penggajian: jam masuk dibulatkan sesuai Profil Gaji, istirahat 1 jam ikut dibayar (shift 13:00–21:00 = 8 jam), dan istirahat yang lebih pendek dari 50 menit menambah jam kerja. Baris kecil "dibayar" menunjukkan jam yang dibayar (paling banyak sesuai batas jam per hari).'
+      ]
     },
 
     // ------------------------------------------------------------ HR Admin

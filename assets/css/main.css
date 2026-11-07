@@ -740,3 +740,4 @@ fieldset[hidden] { display: none; }
   .btn-wa { background: #2f9a64; color: #0e1319; }
   .btn-wa:hover { background: #3cb174; color: #0e1319; }
 }
+.d-block { display: block; }
