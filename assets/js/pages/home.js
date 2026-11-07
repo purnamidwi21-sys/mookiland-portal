@@ -20,40 +20,84 @@
 
   // 0.17.0: Kekuatan hari ini (pola minimal shift) untuk penyusun jadwal.
   var STATUS = { hadir: ['Hadir', 'success'], menunggu: ['Belum waktunya', 'neutral'], belum_datang: ['Belum absen', 'danger'], tidak_datang: ['Tidak datang', 'danger'], dipanggil: ['Dipanggil', 'info'] };
+  // 0.17.2: kartu utama Beranda. Satu kotak per jabatan, angka besar per shift (Pagi-Middle-Siang).
+  var SLOT_NAMES = { 3: ['Pagi', 'Middle', 'Siang'], 2: ['Pagi', 'Siang'] };
+  // Shift yang di bawah angka terkecil dari semua pola yang boleh ditandai merah.
+  function figure(now, allowed) {
+    var n = String(now).split('-');
+    var names = SLOT_NAMES[n.length] || n.map(function () { return ''; });
+    var min = n.map(function (v, i) {
+      var vals = (allowed || []).map(function (a) { return Number(String(a).split('-')[i]); }).filter(function (x) { return !isNaN(x); });
+      return vals.length ? Math.min.apply(null, vals) : 0;
+    });
+    return h('div', { class: 'cov-figure', 'aria-hidden': 'true' }, n.map(function (v, i) {
+      var short = Number(v) < min[i];
+      return h('div', { class: 'cov-slot' + (short ? ' is-short' : '') },
+        h('span', { class: 'cov-num' }, v), h('span', { class: 'cov-slot-name' }, names[i]));
+    }));
+  }
   function coverageCard() {
     var body = h('div', { 'aria-live': 'polite' }, MklUI.loadingState('Memuat...'));
-    var card = MklUI.card('Kekuatan staff hari ini', body, 'card-wide');
+    var summary = h('span', { class: 'cov-summary' });
+    var stamp = h('span', { class: 'muted small' });
+    var refresh = h('button', { class: 'btn btn-ghost btn-small', type: 'button' }, 'Perbarui');
+    var card = h('section', { class: 'card card-wide card-cov' },
+      h('div', { class: 'card-head' },
+        h('div', { class: 'cov-title' }, h('h2', { class: 'card-title' }, 'Kekuatan staff hari ini'), summary),
+        h('div', { class: 'cov-tools' }, stamp, refresh)),
+      body);
     var canAssign = MklState.can('schedule.manage.all');
     function paint(t) {
-      MklUI.clear(body);
+      MklUI.clear(body); MklUI.clear(summary);
+      stamp.textContent = 'Diperbarui ' + new Date().toLocaleTimeString('id-ID', { timeZone: 'Asia/Makassar', hour: '2-digit', minute: '2-digit' }) + ' WITA';
       if (!t.items.length) { body.appendChild(h('p', { class: 'muted' }, 'Pola minimal shift belum diatur. Atur di Susun Jadwal > Pola Minimal.')); return; }
-      body.appendChild(h('p', { class: 'muted small' }, 'Staff yang belum absen 30 menit setelah jam masuk dihitung belum datang.'));
+      var badCount = t.items.filter(function (it) { return !it.nowOk || !it.planOk; }).length;
+      summary.appendChild(badCount ? MklUI.badge(badCount + ' jabatan kurang', 'danger') : MklUI.badge('Semua jabatan sesuai pola', 'success'));
+      var grid = h('div', { class: 'cov-grid' });
       t.items.forEach(function (it) {
         var bad = !it.nowOk || !it.planOk;
-        var head = h('div', { class: 'cov-head' },
-          h('strong', null, it.position),
-          h('span', { class: 'cov-chip ' + (it.planOk ? 'is-ok' : 'is-bad') }, 'Jadwal ' + it.plan + (it.planOk ? ' ✓' : ' ✗')),
-          h('span', { class: 'cov-chip ' + (it.nowOk ? 'is-ok' : 'is-bad') }, 'Sekarang ' + it.now + (it.nowOk ? ' ✓' : ' ✗')));
-        var sec = h('section', { class: 'cov-pos' + (bad ? ' is-bad' : '') }, head);
+        var sec = h('section', { class: 'cov-pos' + (bad ? ' is-bad' : '') },
+          h('div', { class: 'cov-head' },
+            h('h3', { class: 'cov-name' }, it.position),
+            bad ? MklUI.badge('Kurang', 'danger') : MklUI.badge('Sesuai', 'success')),
+          h('p', { class: 'sr-only' }, 'Sekarang ' + it.now + (it.nowOk ? ', sesuai pola.' : ', tidak sesuai pola.')),
+          figure(it.now, it.allowed),
+          h('p', { class: 'cov-plan small' },
+            h('span', { class: 'cov-chip ' + (it.planOk ? 'is-ok' : 'is-bad') }, 'Jadwal ' + it.plan + (it.planOk ? ' ✓' : ' ✗')),
+            ' Pola yang boleh: ' + it.allowed.join(', ')));
         if (it.people.length) {
-          sec.appendChild(h('ul', { class: 'plain-list cov-people' }, it.people.map(function (p) {
+          sec.appendChild(h('ul', { class: 'cov-people' }, it.people.map(function (p) {
             var st = STATUS[p.status] || [p.status, 'neutral'];
-            return h('li', null, h('span', null, p.name + ' · ' + p.shift + ' ' + p.start + (p.clockIn ? ' (masuk ' + p.clockIn + ')' : '')), ' ', MklUI.badge(st[0], st[1]));
+            return h('li', null,
+              h('span', { class: 'cov-person' }, p.name + ' · ' + p.shift + ' ' + p.start + (p.clockIn ? ' (masuk ' + p.clockIn + ')' : '')),
+              ' ', MklUI.badge(st[0], st[1]));
           })));
+        } else {
+          sec.appendChild(h('p', { class: 'muted small' }, 'Tidak ada yang dijadwalkan hari ini.'));
         }
         if (bad) {
-          sec.appendChild(h('p', { class: 'small' }, 'Pola yang boleh: ' + it.allowed.join(', ') + '.'));
-          if (!it.candidates.length) sec.appendChild(h('p', { class: 'small' }, 'Tidak ada staff ' + it.position + ' yang sedang libur hari ini.'));
-          else sec.appendChild(h('div', { class: 'cov-cands' }, h('span', { class: 'small' }, 'Calon pengganti (libur): '), it.candidates.map(function (c) {
+          if (!it.candidates.length) sec.appendChild(h('p', { class: 'small cov-note' }, 'Tidak ada staff ' + it.position + ' yang sedang libur hari ini.'));
+          else sec.appendChild(h('div', { class: 'cov-cands' }, h('span', { class: 'small' }, 'Calon pengganti (libur):'), it.candidates.map(function (c) {
             if (!canAssign) return h('span', { class: 'small' }, c.name + ' ');
-            var b = h('button', { class: 'btn btn-secondary btn-small', type: 'button' }, 'Panggil ' + c.name);
+            var b = h('button', { class: 'btn btn-primary btn-small', type: 'button' }, 'Panggil ' + c.name);
             b.addEventListener('click', function () { callModal(t, it, c); });
             return b;
           })));
         }
-        body.appendChild(sec);
+        grid.appendChild(sec);
+      });
+      body.appendChild(grid);
+      body.appendChild(h('p', { class: 'muted small cov-foot' }, 'Angka besar = staff yang sudah hadir atau masih menunggu jam masuk. Staff yang belum absen 30 menit setelah jam masuk dihitung belum datang.'));
+    }
+    function load() {
+      MklUI.setBusy(refresh, true, 'Memuat...');
+      MklApi.call('time.coverage.today', {}).then(function (res) {
+        MklUI.setBusy(refresh, false);
+        if (!res.success) { MklUI.clear(body).appendChild(MklUI.alertBox('error', res.message)); return; }
+        paint(res.data);
       });
     }
+    refresh.addEventListener('click', load);
     function callModal(t, it, c) {
       var missing = it.absent.join(', ');
       var form = h('form', { class: 'stack', novalidate: true });
@@ -76,10 +120,7 @@
         });
       }
     }
-    MklApi.call('time.coverage.today', {}).then(function (res) {
-      if (!res.success) { MklUI.clear(body).appendChild(MklUI.alertBox('error', res.message)); return; }
-      paint(res.data);
-    });
+    load();
     return card;
   }
 
@@ -93,11 +134,17 @@
       var sub = u.previousLoginAt === undefined ? null
         : (u.previousLoginAt ? 'Masuk sebelumnya: ' + MklUI.fmtDateTime(u.previousLoginAt) : 'Ini pertama kali Anda masuk.');
       page.appendChild(MklUI.pageHeader('Selamat datang, ' + u.displayName, sub));
-      var root = h('div', { class: 'home-grid' });
-      page.appendChild(root);
+      // 0.17.2: Kekuatan staff jadi kartu utama (lebar penuh). Di bawahnya dua kolom:
+      // kiri lebar (ringkasan kerja), kanan sempit (urusan pribadi). Di HP kolom kanan tampil lebih dulu.
+      if (MklState.canAny(['schedule.manage.all', 'schedule.manage.team'])) page.appendChild(coverageCard());
+      var grid = h('div', { class: 'home-grid' });
+      var side = h('div', { class: 'home-side' });
+      var root = h('div', { class: 'home-main' });
+      grid.appendChild(side); grid.appendChild(root);
+      page.appendChild(grid);
 
       if (MklState.can('attendance.clock.own')) {
-        root.appendChild(summaryCard('Hari ini', function (body) {
+        side.appendChild(summaryCard('Hari ini', function (body) {
           MklApi.call('me.attendanceToday', {}).then(function (res) {
             MklUI.clear(body);
             if (!res.success) { body.appendChild(MklUI.alertBox('error', res.message)); return; }
@@ -128,7 +175,7 @@
       if (MklState.can('approval.queue')) {
         var apBody = h('div');
         var apCard = MklUI.card('Persetujuan', apBody);
-        root.appendChild(apCard);
+        side.appendChild(apCard);
         MklApi.call('approvals.count', {}).then(function (res) {
           if (!res.success) { apCard.parentNode && apCard.parentNode.removeChild(apCard); return; }
           var n = res.data.pending;
@@ -139,7 +186,7 @@
       if (MklState.can('announcement.read')) {
         var annBody = h('div');
         var annCard = MklUI.card('Pengumuman terbaru', annBody);
-        root.appendChild(annCard);
+        side.appendChild(annCard);
         MklApi.call('announcements.feed', {}).then(function (res) {
           if (!res.success || !res.data.items.length) { annCard.parentNode && annCard.parentNode.removeChild(annCard); return; }
           annBody.appendChild(h('ul', { class: 'link-list' }, res.data.items.slice(0, 3).map(function (a) {
@@ -151,7 +198,39 @@
         });
       }
 
-      if (MklState.canAny(['schedule.manage.all', 'schedule.manage.team'])) root.appendChild(coverageCard());
+      if (MklState.can('employee.manage')) {
+        root.appendChild(summaryCard('Ringkasan karyawan', function (body) {
+          MklApi.call('hr.employees.list', { status: 'active', pageSize: 100 }).then(function (res) {
+            MklUI.clear(body);
+            if (!res.success) { body.appendChild(MklUI.alertBox('error', res.message)); return; }
+            var items = res.data.items;
+            var incomplete = items.filter(function (v) { return v.missing && v.missing.length; }).length;
+            var noAccount = items.filter(function (v) { return !v.account; }).length;
+            var statsRow = h('div', { class: 'stats' },
+              stat('Karyawan aktif', res.data.total, '#/karyawan'),
+              stat('Data belum lengkap', incomplete, '#/karyawan', incomplete ? 'warning' : null),
+              stat('Belum punya akun', noAccount, '#/karyawan', noAccount ? 'warning' : null));
+            body.appendChild(statsRow);
+            if (MklState.can('contract.manage')) {
+              MklApi.call('hr.contracts.overview', { within: 30 }).then(function (c) {
+                if (c.success) statsRow.appendChild(stat('Kontrak berakhir ≤ 30 hari', c.data.counts.within30, '#/kontrak', c.data.counts.within30 ? 'warning' : null));
+              });
+            }
+            if (!res.data.total) {
+              body.appendChild(h('p', null, 'Belum ada data karyawan. ', h('a', { href: '#/karyawan/impor' }, 'Impor dari Excel'), ' atau tambahkan satu per satu di menu Karyawan.'));
+            }
+          });
+        }));
+      } else if (MklState.can('employee.read.team') && !MklState.can('employee.read.all')) {
+        root.appendChild(summaryCard('Tim Anda', function (body) {
+          MklApi.call('hr.employees.list', { status: 'active', pageSize: 5 }).then(function (res) {
+            MklUI.clear(body);
+            if (!res.success) { body.appendChild(MklUI.alertBox('error', res.message)); return; }
+            body.appendChild(h('div', { class: 'stats' }, stat('Anggota tim aktif', res.data.total, '#/karyawan')));
+            if (!res.data.total) body.appendChild(h('p', { class: 'muted small' }, 'Belum ada anggota tim. Anggota tim ditentukan HR melalui kolom Atasan langsung.'));
+          });
+        }));
+      }
 
       if (MklState.canAny(['payroll.prepare', 'payroll.approve'])) {
         var pyBody = h('div');
@@ -177,7 +256,7 @@
       if (MklState.can('payslip.read.own')) {
         var psBody = h('div');
         var psCard = MklUI.card('Slip gaji', psBody);
-        root.appendChild(psCard);
+        side.appendChild(psCard);
         MklApi.call('me.payslips', {}).then(function (res) {
           if (!res.success || !res.data.linked) { psCard.parentNode && psCard.parentNode.removeChild(psCard); return; }
           var last = res.data.items[0];
@@ -198,19 +277,17 @@
               body.appendChild(h('p', { class: 'muted' }, 'Akun Anda belum terhubung dengan data karyawan. Hubungi HR.'));
               return;
             }
-            if (me.missingContact && me.missingContact.length) {
-              body.appendChild(MklUI.alertBox('warning', 'Mohon lengkapi data kontak Anda: ' + me.missingContact.join(', ') + '.'));
-            }
+            body.appendChild(h('dl', { class: 'facts' }, [
+              ['Employee ID', me.employeeId], ['Jabatan', me.positionName], ['Atasan langsung', me.supervisorName], ['Masa kerja', me.tenure]
+            ].map(function (r) { return h('div', null, h('dt', null, r[0]), h('dd', null, r[1] || '-')); })));
+            // Data yang belum lengkap: satu pesan ringkas, bukan dua kotak besar.
+            var todo = [];
+            if (me.missingContact && me.missingContact.length) todo.push('Mohon lengkapi data kontak Anda: ' + me.missingContact.join(', ') + '.');
             var idt = me.identity;
             if (idt && !idt.pending && idt.missing && idt.missing.length && MklState.moduleOpen('kepegawaian')) {
-              body.appendChild(MklUI.alertBox('warning', 'Mohon lengkapi data diri Anda (' + idt.missing.join(', ') + ') di menu Profil Saya → Lengkapi Data Diri.'));
+              todo.push('Mohon lengkapi data diri Anda (' + idt.missing.join(', ') + ') di menu Profil Saya → Lengkapi Data Diri.');
             }
-            body.appendChild(MklUI.infoList([
-              ['Employee ID', me.employeeId],
-              ['Jabatan', me.positionName],
-              ['Atasan langsung', me.supervisorName],
-              ['Masa kerja', me.tenure]
-            ]));
+            if (todo.length) body.appendChild(h('div', { class: 'alert alert-warning todo-box', role: 'status' }, todo.map(function (t) { return h('p', null, t); })));
             body.appendChild(h('div', { class: 'form-actions' },
               h('a', { class: 'btn btn-secondary btn-small', href: '#/profil' }, 'Profil Saya'),
               h('a', { class: 'btn btn-secondary btn-small', href: '#/kepegawaian' }, 'Kepegawaian Saya')));
@@ -218,39 +295,6 @@
         }));
       }
 
-      if (MklState.can('employee.manage')) {
-        root.appendChild(summaryCard('Ringkasan karyawan', function (body) {
-          MklApi.call('hr.employees.list', { status: 'active', pageSize: 100 }).then(function (res) {
-            MklUI.clear(body);
-            if (!res.success) { body.appendChild(MklUI.alertBox('error', res.message)); return; }
-            var items = res.data.items;
-            var incomplete = items.filter(function (v) { return v.missing && v.missing.length; }).length;
-            var noAccount = items.filter(function (v) { return !v.account; }).length;
-            var statsRow = h('div', { class: 'stats' },
-              stat('Karyawan aktif', res.data.total, '#/karyawan'),
-              stat('Data belum lengkap', incomplete, '#/karyawan', incomplete ? 'warning' : null),
-              stat('Belum punya akun', noAccount, '#/karyawan', noAccount ? 'warning' : null));
-            body.appendChild(statsRow);
-            if (MklState.can('contract.manage')) {
-              MklApi.call('hr.contracts.overview', { within: 30 }).then(function (c) {
-                if (c.success) statsRow.appendChild(stat('Kontrak berakhir ≤ 30 hari', c.data.counts.within30, '#/kontrak', c.data.counts.within30 ? 'warning' : null));
-              });
-            }
-            if (!res.data.total) {
-              body.appendChild(h('p', null, 'Belum ada data karyawan. ', h('a', { href: '#/karyawan/impor' }, 'Impor dari Excel'), ' atau tambahkan satu per satu di menu Karyawan.'));
-            }
-          });
-        }, 'card-wide'));
-      } else if (MklState.can('employee.read.team') && !MklState.can('employee.read.all')) {
-        root.appendChild(summaryCard('Tim Anda', function (body) {
-          MklApi.call('hr.employees.list', { status: 'active', pageSize: 5 }).then(function (res) {
-            MklUI.clear(body);
-            if (!res.success) { body.appendChild(MklUI.alertBox('error', res.message)); return; }
-            body.appendChild(h('div', { class: 'stats' }, stat('Anggota tim aktif', res.data.total, '#/karyawan')));
-            if (!res.data.total) body.appendChild(h('p', { class: 'muted small' }, 'Belum ada anggota tim. Anggota tim ditentukan HR melalui kolom Atasan langsung.'));
-          });
-        }));
-      }
     }
   });
 })();

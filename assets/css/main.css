@@ -649,29 +649,65 @@ fieldset[hidden] { display: none; }
 .cov-impact li { margin: 2px 0; }
 .cov-impact .cov-ok { color: var(--success-text); }
 .cov-impact .cov-bad { color: var(--danger-text); }
-.cov-pos { border: 1px solid var(--border); border-radius: var(--radius); padding: 10px 12px; margin-top: 10px; }
-.cov-pos.is-bad { border-color: var(--danger); }
-.cov-head { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
-.cov-chip { font-size: 0.8rem; font-weight: 600; padding: 2px 8px; border-radius: 999px; }
-.cov-chip.is-ok { background: var(--success-bg); color: var(--success-text); }
-.cov-chip.is-bad { background: var(--danger-bg); color: var(--danger-text); }
-.cov-people { margin: 8px 0 0; display: flex; flex-direction: column; gap: 4px; font-size: 0.9rem; }
-.cov-cands { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin-top: 6px; }
 
-/* ---------- Tampilan 0.17.1: Beranda ---------- */
-.home-grid { display: grid; grid-template-columns: minmax(0, 1fr); gap: 16px; align-items: start; }
-.home-grid > .card { margin-bottom: 0; }
-@media (min-width: 1100px) {
-  .home-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-  .home-grid > .card-wide { grid-column: 1 / -1; }
+/* ---------- Beranda (0.17.1, ditata ulang 0.17.2) ---------- */
+.home-grid { display: flex; flex-direction: column; gap: 16px; }
+.home-side, .home-main { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
+.home-side:empty, .home-main:empty { display: none; }
+.home-grid .card { margin-bottom: 0; }
+@media (min-width: 1000px) {
+  .home-grid { display: grid; grid-template-columns: minmax(0, 1.7fr) minmax(300px, 1fr); align-items: start; }
+  .home-side { grid-column: 2; grid-row: 1; }
+  .home-main { grid-column: 1; grid-row: 1; }
+  .home-grid:has(.home-main:empty) { grid-template-columns: minmax(0, 1fr); }
+  .home-grid:has(.home-main:empty) .home-side { grid-column: 1; }
 }
 .today-shift { margin: 0 0 14px; display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 10px; }
 .today-time { font-size: 1.75rem; font-weight: 700; letter-spacing: -0.02em; line-height: 1.15; font-variant-numeric: tabular-nums; }
 .today-none { font-weight: 600; color: var(--text-muted); }
 .today-name { order: 2; color: var(--text-muted); font-weight: 600; }
-.today-facts { display: flex; flex-wrap: wrap; gap: 0; margin: 0; border: 1px solid var(--border); border-radius: var(--radius-sm); }
-.today-facts > div { flex: 1 1 0; min-width: 90px; padding: 8px 12px; }
-.today-facts > div + div { border-left: 1px solid var(--border); }
-.today-facts dt { font-size: 0.8125rem; color: var(--text-muted); }
-.today-facts dd { margin: 0; font-weight: 650; font-variant-numeric: tabular-nums; }
+.today-facts, .facts { display: flex; flex-wrap: wrap; margin: 0; border: 1px solid var(--border); border-radius: var(--radius-sm); }
+.today-facts > div, .facts > div { flex: 1 1 0; min-width: 96px; padding: 8px 12px; }
+.today-facts > div + div, .facts > div + div { border-left: 1px solid var(--border); }
+.today-facts dt, .facts dt { font-size: 0.8125rem; color: var(--text-muted); }
+.today-facts dd, .facts dd { margin: 0; font-weight: 650; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+@media (max-width: 520px) {
+  .facts > div { flex: 1 1 50%; }
+  .facts > div:nth-child(odd) { border-left: 0; }
+  .facts > div:nth-child(n+3) { border-top: 1px solid var(--border); }
+}
+.todo-box { margin-top: 12px; }
+.home-main .stats { grid-template-columns: repeat(auto-fit, minmax(125px, 1fr)); }
+.todo-box p { margin: 0; }
+.todo-box p + p { margin-top: 6px; }
 .link-list { padding-left: 18px; }
+
+/* Kekuatan staff hari ini: kartu utama Beranda */
+.card-cov { margin-bottom: 16px; border-top: 3px solid var(--brand); padding-top: 18px; }
+.card-cov .card-head { margin-bottom: 14px; }
+.cov-title { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 12px; }
+.card-cov .card-title { font-size: 1.125rem; }
+.cov-tools { display: flex; align-items: center; gap: 8px; }
+.cov-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 12px; }
+.cov-pos { display: flex; flex-direction: column; gap: 10px; border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 14px; margin: 0; background: var(--surface); }
+.cov-pos.is-bad { border-color: var(--danger); }
+.cov-head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 6px 8px; }
+.cov-name { margin: 0; font-size: 1rem; font-weight: 700; }
+.cov-figure { display: flex; gap: 8px; }
+.cov-slot { flex: 1 1 0; display: flex; flex-direction: column; align-items: center; padding: 8px 4px 6px; border-radius: var(--radius-sm); background: var(--surface-2); }
+.cov-num { font-size: 2rem; font-weight: 700; line-height: 1.05; letter-spacing: -0.02em; font-variant-numeric: tabular-nums; }
+.cov-slot-name { font-size: 0.75rem; color: var(--text-muted); font-weight: 600; }
+.cov-slot.is-short { background: var(--danger-bg); }
+.cov-slot.is-short .cov-num, .cov-slot.is-short .cov-slot-name { color: var(--danger-text); }
+.cov-plan { margin: 0; color: var(--text-muted); display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px; }
+.cov-chip { font-size: 0.75rem; font-weight: 600; padding: 2px 8px; border-radius: 999px; white-space: nowrap; }
+.cov-chip.is-ok { background: var(--success-bg); color: var(--success-text); }
+.cov-chip.is-bad { background: var(--danger-bg); color: var(--danger-text); }
+.cov-people { list-style: none; margin: 0; padding: 0; font-size: 0.875rem; border-top: 1px solid var(--border); }
+.cov-people li { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 6px 0; border-bottom: 1px solid var(--border); }
+.cov-people li:last-child { border-bottom: 0; }
+.cov-person { min-width: 0; }
+.cov-note { margin: 0; }
+.cov-cands { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.cov-foot { margin: 12px 0 0; }
+.sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }

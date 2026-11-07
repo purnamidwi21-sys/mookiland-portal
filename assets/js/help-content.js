@@ -13,7 +13,7 @@
  * perm : null = semua pengguna; selain itu cukup salah satu permission
  */
 window.MklHelp = {
-  version: '0.17.1',
+  version: '0.17.2',
   // 0.11.0: kecepatan, hitung ulang per karyawan, cari/filter penggajian, impor jadwal
   updatedAt: '2026-11-07',
 
@@ -886,7 +886,7 @@ window.MklHelp = {
         'Susun Jadwal: baris paling bawah tabel menampilkan susunan tiap jabatan per hari, langsung berubah saat Anda mengganti sel. Hijau ✓ = sesuai, merah ✗ = tidak sesuai.',
         'Terbitkan: bila ada hari yang tidak sesuai, jadwal tidak langsung terbit. Perbaiki jadwalnya, atau tekan Tetap Terbitkan dan tulis alasannya (misalnya staff sakit dan pengganti belum ada).',
         'Persetujuan: cuti/izin/sakit dan ubah/tukar jadwal menampilkan akibatnya pada pola. Bila menjadi tidak sesuai, tampil calon pengganti, dan menyetujui wajib dengan alasan.',
-        'Hari ini: di Beranda, kartu Kekuatan staff hari ini menampilkan susunan menurut jadwal dan menurut yang sudah datang. Staff yang belum absen 30 menit setelah jam masuk dihitung belum datang, dan Anda mendapat notifikasi di HP.',
+        'Hari ini: di Beranda, kartu Kekuatan staff hari ini (paling atas) punya satu kotak per jabatan. Angka besar = jumlah staff Pagi, Middle, dan Siang yang sudah hadir atau masih menunggu jam masuk; angka merah berarti kurang dari pola. Di bawahnya tertulis susunan menurut jadwal. Staff yang belum absen 30 menit setelah jam masuk dihitung belum datang, dan Anda mendapat notifikasi di HP. Tekan Perbarui untuk melihat keadaan terbaru.',
         'Tekan Panggil (nama) pada calon pengganti, pilih shift, lalu Panggil. Jadwalnya langsung terbit dan ia mendapat notifikasi.'
       ],
       result: 'Susunan staff tiap jabatan terjaga; setiap pengecualian tercatat dengan alasannya di log audit.',
