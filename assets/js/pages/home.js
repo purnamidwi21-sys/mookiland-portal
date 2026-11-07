@@ -1,5 +1,5 @@
 /*
- * Halaman Beranda: akun, ringkasan kepegawaian sendiri, dan ringkasan
+ * Halaman Beranda: jadwal hari ini, ringkasan kepegawaian sendiri, dan ringkasan
  * karyawan untuk HR atau tim untuk Supervisor, dan jadwal/absen hari ini.
  * Juga sisa cuti, antrean persetujuan, status penggajian, dan slip gaji terbaru.
  */
@@ -7,10 +7,10 @@
   'use strict';
   var h = MklUI.h;
 
-  function summaryCard(title, loader) {
+  function summaryCard(title, loader, extraClass) {
     var body = h('div', null, MklUI.loadingState('Memuat...'));
     loader(body);
-    return MklUI.card(title, body);
+    return MklUI.card(title, body, extraClass);
   }
 
   function stat(label, value, href, variant) {
@@ -22,7 +22,7 @@
   var STATUS = { hadir: ['Hadir', 'success'], menunggu: ['Belum waktunya', 'neutral'], belum_datang: ['Belum absen', 'danger'], tidak_datang: ['Tidak datang', 'danger'], dipanggil: ['Dipanggil', 'info'] };
   function coverageCard() {
     var body = h('div', { 'aria-live': 'polite' }, MklUI.loadingState('Memuat...'));
-    var card = MklUI.card('Kekuatan staff hari ini', body);
+    var card = MklUI.card('Kekuatan staff hari ini', body, 'card-wide');
     var canAssign = MklState.can('schedule.manage.all');
     function paint(t) {
       MklUI.clear(body);
@@ -86,9 +86,55 @@
   MklNav.register('/beranda', {
     title: 'Beranda',
     menu: { label: 'Beranda', order: 1 },
-    render: function (root) {
+    render: function (page) {
       var u = MklState.user;
-      root.appendChild(MklUI.pageHeader('Selamat datang, ' + u.displayName));
+      // 0.17.1: Beranda lebih ringkas. Kotak "Akun Anda" dan daftar tautan dihapus;
+      // waktu masuk sebelumnya tetap tampil di bawah salam (untuk keamanan).
+      var sub = u.previousLoginAt === undefined ? null
+        : (u.previousLoginAt ? 'Masuk sebelumnya: ' + MklUI.fmtDateTime(u.previousLoginAt) : 'Ini pertama kali Anda masuk.');
+      page.appendChild(MklUI.pageHeader('Selamat datang, ' + u.displayName, sub));
+      var root = h('div', { class: 'home-grid' });
+      page.appendChild(root);
+
+      if (MklState.can('attendance.clock.own')) {
+        root.appendChild(summaryCard('Hari ini', function (body) {
+          MklApi.call('me.attendanceToday', {}).then(function (res) {
+            MklUI.clear(body);
+            if (!res.success) { body.appendChild(MklUI.alertBox('error', res.message)); return; }
+            var t = res.data;
+            if (!t.linked) { body.appendChild(h('p', { class: 'muted' }, 'Akun Anda belum terhubung dengan data karyawan. Hubungi HR.')); return; }
+            body.appendChild(t.shift
+              ? h('p', { class: 'today-shift' }, h('span', { class: 'today-name' }, t.shift.name), ' ', h('span', { class: 'today-time' }, t.shift.start + '–' + t.shift.end))
+              : h('p', { class: 'today-shift' }, h('span', { class: t.off ? 'today-time' : 'today-none' }, t.off ? 'Libur' : 'Tidak ada jadwal terbit')));
+            var info = h('dl', { class: 'today-facts' },
+              h('div', null, h('dt', null, 'Masuk'), h('dd', null, t.clockIn || '–')),
+              h('div', null, h('dt', null, 'Pulang'), h('dd', null, t.clockOut || '–')));
+            body.appendChild(info);
+            if (MklState.can('leave.request.own')) {
+              MklApi.call('me.leave.summary', {}).then(function (ls) {
+                if (ls.success && ls.data.eligible && ls.data.balance) {
+                  info.appendChild(h('div', null, h('dt', null, 'Sisa cuti'), h('dd', null, ls.data.balance.available + ' hari')));
+                }
+              });
+            }
+            var label = t.canClockOut ? 'Absen Pulang' : (t.canClockIn ? 'Absen Masuk' : 'Lihat Absen');
+            body.appendChild(h('div', { class: 'form-actions' },
+              h('a', { class: 'btn ' + (t.canClockIn || t.canClockOut ? 'btn-primary' : 'btn-secondary') + ' btn-small', href: '#/absen' }, label),
+              MklState.can('schedule.read.own') ? h('a', { class: 'btn btn-secondary btn-small', href: '#/jadwal-saya' }, 'Jadwal Saya') : null));
+          });
+        }, 'card-today'));
+      }
+
+      if (MklState.can('approval.queue')) {
+        var apBody = h('div');
+        var apCard = MklUI.card('Persetujuan', apBody);
+        root.appendChild(apCard);
+        MklApi.call('approvals.count', {}).then(function (res) {
+          if (!res.success) { apCard.parentNode && apCard.parentNode.removeChild(apCard); return; }
+          var n = res.data.pending;
+          apBody.appendChild(h('div', { class: 'stats' }, stat('Menunggu persetujuan Anda', n, '#/persetujuan', n ? 'warning' : null)));
+        });
+      }
 
       if (MklState.can('announcement.read')) {
         var annBody = h('div');
@@ -101,51 +147,11 @@
               a.canAcknowledge && !a.read ? MklUI.badge('Baru', 'info') : null,
               a.requiresAck && a.canAcknowledge && !a.acknowledged ? MklUI.badge('Perlu konfirmasi', 'warning') : null);
           })));
-          if (res.data.items.length > 3) annBody.appendChild(h('p', null, h('a', { href: '#/pengumuman' }, 'Lihat semua pengumuman')));
+          if (res.data.items.length > 3) annBody.appendChild(h('p', { class: 'small' }, h('a', { href: '#/pengumuman' }, 'Lihat semua pengumuman')));
         });
-      }
-
-      if (MklState.can('attendance.clock.own')) {
-        root.appendChild(summaryCard('Hari ini', function (body) {
-          MklApi.call('me.attendanceToday', {}).then(function (res) {
-            MklUI.clear(body);
-            if (!res.success) { body.appendChild(MklUI.alertBox('error', res.message)); return; }
-            var t = res.data;
-            if (!t.linked) { body.appendChild(h('p', { class: 'muted' }, 'Akun Anda belum terhubung dengan data karyawan. Hubungi HR.')); return; }
-            var info = MklUI.infoList([
-              ['Jadwal', t.shift ? t.shift.name + ' ' + t.shift.start + '–' + t.shift.end : (t.off ? 'Libur' : 'Tidak ada jadwal terbit')],
-              ['Masuk', t.clockIn || '-'],
-              ['Pulang', t.clockOut || '-']
-            ]);
-            body.appendChild(info);
-            if (MklState.can('leave.request.own')) {
-              MklApi.call('me.leave.summary', {}).then(function (ls) {
-                if (ls.success && ls.data.eligible && ls.data.balance) {
-                  info.appendChild(h('dt', null, 'Sisa cuti'));
-                  info.appendChild(h('dd', null, ls.data.balance.available + ' hari'));
-                }
-              });
-            }
-            var label = t.canClockOut ? 'Absen Pulang' : (t.canClockIn ? 'Absen Masuk' : 'Lihat Absen');
-            body.appendChild(h('div', { class: 'form-actions' },
-              h('a', { class: 'btn ' + (t.canClockIn || t.canClockOut ? 'btn-primary' : 'btn-secondary') + ' btn-small', href: '#/absen' }, label),
-              MklState.can('schedule.read.own') ? h('a', { class: 'btn btn-secondary btn-small', href: '#/jadwal-saya' }, 'Jadwal Saya') : null));
-          });
-        }));
       }
 
       if (MklState.canAny(['schedule.manage.all', 'schedule.manage.team'])) root.appendChild(coverageCard());
-
-      if (MklState.can('approval.queue')) {
-        var apBody = h('div');
-        var apCard = MklUI.card('Persetujuan', apBody);
-        root.appendChild(apCard);
-        MklApi.call('approvals.count', {}).then(function (res) {
-          if (!res.success) { apCard.parentNode && apCard.parentNode.removeChild(apCard); return; }
-          var n = res.data.pending;
-          apBody.appendChild(h('div', { class: 'stats' }, stat('Menunggu persetujuan Anda', n, '#/persetujuan', n ? 'warning' : null)));
-        });
-      }
 
       if (MklState.canAny(['payroll.prepare', 'payroll.approve'])) {
         var pyBody = h('div');
@@ -234,7 +240,7 @@
               body.appendChild(h('p', null, 'Belum ada data karyawan. ', h('a', { href: '#/karyawan/impor' }, 'Impor dari Excel'), ' atau tambahkan satu per satu di menu Karyawan.'));
             }
           });
-        }));
+        }, 'card-wide'));
       } else if (MklState.can('employee.read.team') && !MklState.can('employee.read.all')) {
         root.appendChild(summaryCard('Tim Anda', function (body) {
           MklApi.call('hr.employees.list', { status: 'active', pageSize: 5 }).then(function (res) {
@@ -245,22 +251,6 @@
           });
         }));
       }
-
-      var info = [
-        ['Username', u.username],
-        ['Role', h('span', { class: 'badge-row' }, u.roles.map(function (r) { return MklUI.badge(r.name, 'info'); }))]
-      ];
-      if (u.previousLoginAt !== undefined) {
-        info.push(['Masuk sebelumnya', u.previousLoginAt ? MklUI.fmtDateTime(u.previousLoginAt) : 'Ini pertama kali Anda masuk']);
-      }
-      root.appendChild(MklUI.card('Akun Anda', MklUI.infoList(info)));
-
-      var available = MklNav.menuItems(MklState.canAny).filter(function (m) { return m.path !== '/beranda'; });
-      var list = h('ul', { class: 'link-list' },
-        available.map(function (m) { return h('li', null, h('a', { href: '#' + m.path }, m.label)); }),
-        h('li', null, h('a', { href: '#/ganti-password' }, 'Ganti Password')));
-      root.appendChild(MklUI.card('Yang bisa Anda lakukan saat ini', list));
-
     }
   });
 })();

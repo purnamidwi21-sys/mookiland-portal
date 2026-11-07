@@ -31,7 +31,7 @@
     title: 'Kontrak Saya',
     perm: 'contract.read.own',
     module: 'kepegawaian',
-    menu: { label: 'Kontrak Saya', order: 7 },
+    menu: { label: 'Kontrak Saya', order: 7, section: 'Data saya' },
     render: function (root) {
       root.appendChild(MklUI.pageHeader('Kontrak Saya', 'Kontrak kerja Anda yang sudah ditandatangani.'));
       loader(root, 'me.contracts', function (area, data) {
@@ -63,7 +63,7 @@
     title: 'BPJS Saya',
     perm: 'bpjs.read.own',
     module: 'kepegawaian',
-    menu: { label: 'BPJS Saya', order: 8 },
+    menu: { label: 'BPJS Saya', order: 8, section: 'Data saya' },
     render: function (root) {
       root.appendChild(MklUI.pageHeader('BPJS Saya', 'Status kepesertaan BPJS Anda yang tercatat di perusahaan.'));
       loader(root, 'me.bpjs', function (area, data) {
@@ -89,7 +89,7 @@
     title: 'Dokumen Saya',
     perm: 'profile.read.own',
     module: 'kepegawaian',
-    menu: { label: 'Dokumen Saya', order: 9 },
+    menu: { label: 'Dokumen Saya', order: 9, section: 'Data saya' },
     render: function (root) {
       root.appendChild(MklUI.pageHeader('Dokumen Saya', 'Dokumen Anda yang disimpan HR.'));
       loader(root, 'me.documents', function (area, data) {

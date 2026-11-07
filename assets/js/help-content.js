@@ -13,9 +13,9 @@
  * perm : null = semua pengguna; selain itu cukup salah satu permission
  */
 window.MklHelp = {
-  version: '0.17.0',
+  version: '0.17.1',
   // 0.11.0: kecepatan, hitung ulang per karyawan, cari/filter penggajian, impor jadwal
-  updatedAt: '2026-11-01',
+  updatedAt: '2026-11-07',
 
   topics: [
     // ------------------------------------------------------------ semua pengguna
@@ -83,10 +83,11 @@ window.MklHelp = {
       intro: 'Beranda adalah halaman pertama setelah masuk.',
       steps: [
         'Kotak Kepegawaian Anda menampilkan Employee ID, jabatan, atasan, dan masa kerja. Jika ada pesan kuning "Mohon lengkapi data kontak", buka Profil Saya.',
-        'Kotak Akun Anda menampilkan username, role, dan kapan Anda terakhir masuk. Jika waktu masuk sebelumnya tidak Anda kenali, segera ganti password dan hubungi admin.',
-        'Kotak Yang bisa Anda lakukan saat ini berisi tautan ke menu yang boleh Anda buka.'
+        'Di bawah salam tertulis kapan Anda terakhir masuk (Masuk sebelumnya). Jika waktu itu tidak Anda kenali, segera ganti password dan hubungi admin.',
+        'Kotak Hari ini menampilkan jadwal shift hari ini, jam masuk dan pulang, serta sisa cuti. Tekan Absen Masuk atau Absen Pulang untuk absen.',
+        'Semua menu ada di sebelah kiri (di HP: tekan Menu di kiri atas). Menu pribadi seperti Profil Saya, Kontrak Saya, dan BPJS Saya ada di kelompok Data saya. Pusat Bantuan, Ganti Password, dan Keluar ada di bagian paling bawah menu.'
       ],
-      result: 'Anda mengetahui akun dan menu apa saja yang bisa dipakai.'
+      result: 'Anda tahu jadwal hari ini dan di mana menemukan menu yang Anda perlukan.'
     },
     {
       id: 'profil', guide: 'staff', perm: ['profile.read.own'], title: 'Melihat dan memperbarui Profil Saya',

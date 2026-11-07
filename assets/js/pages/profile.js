@@ -113,7 +113,7 @@
   MklNav.register('/profil', {
     title: 'Profil Saya',
     perm: 'profile.read.own',
-    menu: { label: 'Profil Saya', order: 5 },
+    menu: { label: 'Profil Saya', order: 5, section: 'Data saya' },
     render: function (root) {
       root.appendChild(MklUI.pageHeader('Profil Saya', 'Data pribadi dan kontak Anda.'));
       var container = h('div');
@@ -197,7 +197,7 @@
   MklNav.register('/kepegawaian', {
     title: 'Kepegawaian Saya',
     perm: 'profile.read.own',
-    menu: { label: 'Kepegawaian Saya', order: 6 },
+    menu: { label: 'Kepegawaian Saya', order: 6, section: 'Data saya' },
     render: function (root) {
       root.appendChild(MklUI.pageHeader('Kepegawaian Saya', 'Jabatan, masa kerja, dan riwayat kepegawaian Anda.'));
       var container = h('div');

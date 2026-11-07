@@ -4,7 +4,7 @@
 (function () {
   'use strict';
   var h = MklUI.h;
-  var VERSION = '0.17.0';
+  var VERSION = '0.17.1';
 
   function appRoot() {
     return document.getElementById('app');
@@ -20,22 +20,33 @@
     return main;
   }
 
+  function initials(name) {
+    var parts = String(name || '').trim().split(/\s+/).filter(Boolean);
+    return ((parts[0] || '?').charAt(0) + (parts.length > 1 ? parts[1].charAt(0) : '')).toUpperCase();
+  }
+
   function shellLayout(activePath) {
     var root = appRoot();
     root.className = 'layout-shell';
     MklUI.clear(root);
     var user = MklState.user;
 
-    var menuBtn = h('button', { class: 'btn btn-ghost menu-toggle', type: 'button', 'aria-controls': 'sidebar', 'aria-expanded': 'false' }, 'Menu');
+    var menuBtn = h('button', { class: 'btn btn-ghost menu-toggle', type: 'button', 'aria-controls': 'sidebar', 'aria-expanded': 'false' },
+      h('span', { class: 'menu-icon', 'aria-hidden': 'true' }), 'Menu');
     var header = h('header', { class: 'app-header' },
       menuBtn,
       h('a', { class: 'brand', href: '#/beranda' },
         h('span', { class: 'brand-mark', 'aria-hidden': 'true' }, 'M'),
-        h('span', { class: 'brand-name' }, 'Mookiland Staff Portal')),
+        h('span', { class: 'brand-name' }, 'Mookiland', h('span', { class: 'brand-sub' }, ' Staff Portal'))),
       bellLink(),
-      h('span', { class: 'header-user' }, user.displayName));
+      h('span', { class: 'header-user' },
+        h('span', { class: 'avatar', 'aria-hidden': 'true' }, initials(user.displayName)),
+        h('span', { class: 'header-user-name' }, user.displayName)));
 
-    var items = MklNav.menuItems(MklState.canAny);
+    // 0.17.1: Pusat Bantuan pindah ke bagian bawah menu, bersama Ganti Password dan Keluar.
+    var all = MklNav.menuItems(MklState.canAny);
+    var helpItem = all.filter(function (it) { return it.path === '/bantuan'; })[0];
+    var items = all.filter(function (it) { return it !== helpItem; });
     var nav = h('nav', { class: 'sidebar', id: 'sidebar', 'aria-label': 'Menu utama' });
     var lastSection = null;
     var list = h('ul', { class: 'nav-list' });
@@ -56,6 +67,7 @@
     logoutBtn.addEventListener('click', function () { logout(); });
     nav.appendChild(list);
     nav.appendChild(h('ul', { class: 'nav-list nav-bottom' },
+      helpItem ? h('li', null, h('a', { href: '#/bantuan', class: 'nav-link', 'aria-current': (activePath === '/bantuan' || activePath.indexOf('/bantuan/') === 0) ? 'page' : null }, helpItem.label)) : null,
       h('li', null, h('a', { href: '#/ganti-password', class: 'nav-link', 'aria-current': activePath === '/ganti-password' ? 'page' : null }, 'Ganti Password')),
       h('li', null, logoutBtn)));
 
