@@ -42,7 +42,7 @@
     emps.forEach(function (e) {
       var v = valueOf(e.employeeId, d);
       if (!v || v === OFF || v.indexOf(OFF + '|') === 0) return;
-      c[slots[v] || 'X']++;
+      String(slots[v] || 'X').split('+').forEach(function (k) { c[k] = (c[k] || 0) + 1; }); // double shift (P+S) dihitung di dua kelompok
     });
     var text = rule.twoSlot ? c.P + '-' + c.S + (c.M ? ' +' + c.M + 'M' : '') : c.P + '-' + c.M + '-' + c.S;
     if (c.X) text += ' +' + c.X;
@@ -66,14 +66,18 @@
         value: (d.cover || '').split(';').map(function (x) { return x.trim(); }).filter(Boolean).join('\n'),
         hint: 'Staff jabatan ini ikut dihitung di pola jabatan lain pada hari tertentu. Format: Jabatan = Jabatan yang dibantu: hari. Contoh: Staff Admin = Cashier: Selasa-Jumat' });
       var map = MklUI.field({ label: 'Kelompok shift (kode:P/M/S)', name: 'slotMap', value: d.slotMap || '', maxLength: 500,
-        hint: 'P = Pagi, M = Middle, S = Siang. Shift yang tidak disebut dikelompokkan dari huruf pertama kodenya.' });
+        hint: 'P = Pagi, M = Middle, S = Siang. Shift yang tidak disebut dikelompokkan dari huruf pertama kodenya. Double shift dihitung di dua kelompok, contoh D:P+S.' });
+      var dbl = MklUI.field({ label: 'Double shift (boleh kosong)', name: 'double', value: (d.double || '').split(';').map(function (x) { return x.trim(); }).filter(Boolean).join('; '), maxLength: 500,
+        hint: 'Shift yang dipakai Atur Ulang Jadwal bila satu staff harus masuk pagi dan siang. Format: Jabatan = kode shift. Contoh: Cashier = D. Hari double shift dibayar per jam (lama hadir × tarif per jam).' });
       var reason = MklUI.field({ label: 'Alasan perubahan', name: 'reason', required: true, maxLength: 300 });
       var alertSlot = h('div');
       var NAMES = { P: 'Pagi', M: 'Middle', S: 'Siang', X: 'Tidak dihitung' };
+      var slotName = function (sl) { return String(sl || 'X').split('+').map(function (k) { return NAMES[k] || k; }).join(' + '); };
       form.appendChild(pat.wrap);
       form.appendChild(cover.wrap);
       form.appendChild(map.wrap);
-      form.appendChild(h('p', { class: 'muted small' }, 'Kelompok sekarang: ' + d.shifts.map(function (s) { return s.code + ' ' + s.startTime + ' = ' + NAMES[s.slot]; }).join(' · ')));
+      form.appendChild(h('p', { class: 'muted small' }, 'Kelompok sekarang: ' + d.shifts.map(function (s) { return s.code + ' ' + s.startTime + ' = ' + slotName(s.slot); }).join(' · ')));
+      form.appendChild(dbl.wrap);
       form.appendChild(h('p', { class: 'muted small' }, 'Jabatan: ' + d.positions.join(', ') + '.'));
       form.appendChild(reason.wrap);
       form.appendChild(alertSlot);
@@ -84,7 +88,7 @@
         e.preventDefault();
         MklUI.clearFieldErrors(form); MklUI.clear(alertSlot);
         MklUI.setBusy(save, true, 'Menyimpan...');
-        MklApi.call('time.coverage.saveRules', { patterns: pat.input.value, cover: cover.input.value, slotMap: map.input.value.trim(), reason: reason.input.value.trim() }).then(function (r) {
+        MklApi.call('time.coverage.saveRules', { patterns: pat.input.value, cover: cover.input.value, slotMap: map.input.value.trim(), double: dbl.input.value.trim(), reason: reason.input.value.trim() }).then(function (r) {
           MklUI.setBusy(save, false);
           if (!r.success) { if (!MklUI.showFieldErrors(form, r)) alertSlot.appendChild(MklUI.alertBox('error', r.message)); return; }
           ctl.close();

@@ -13,7 +13,7 @@
  * perm : null = semua pengguna; selain itu cukup salah satu permission
  */
 window.MklHelp = {
-  version: '0.19.1',
+  version: '0.19.2',
   // 0.11.0: kecepatan, hitung ulang per karyawan, cari/filter penggajian, impor jadwal
   updatedAt: '2026-11-07',
 
@@ -898,6 +898,7 @@ window.MklHelp = {
       notes: [
         'Bantu jabatan lain: bila staff jabatan lain membantu pada hari tertentu, tulis di isian Bantu jabatan lain, misalnya Staff Admin = Cashier: Selasa-Jumat. Pada hari itu Staff Admin ikut dihitung di pola Cashier (di Susun Jadwal, Persetujuan, Beranda, dan Atur Ulang Jadwal), dengan tanda (Staff Admin). Staff yang membantu tidak pernah diusulkan dipindah shift.',
         'Kelompok shift: P/P1 = Pagi, M/M1 = Middle, S = Siang. Shift lain dikelompokkan dari huruf pertama kodenya, atau atur di Pola Minimal (contoh "K:P").',
+        'Double shift: shift yang dihitung di dua kelompok, misalnya kasir D (08:00–20:20, istirahat 2 × 60 menit) ditulis D:P+S di Kelompok shift. Satu staff dengan shift D dihitung sebagai Pagi dan Siang sekaligus. Isi juga Double shift (contoh Cashier = D) agar Atur Ulang Jadwal bisa mengusulkannya. Gaji hari double shift dihitung per jam: lama hadir × tarif per jam, tanpa batas 8 jam.',
         'Hari yang semua staff satu jabatan libur atau belum dijadwalkan (0-0-0) tidak dianggap salah, misalnya saat park tutup.',
         'Staff tidak bisa mengajukan ubah/tukar jadwal yang membuat pola tidak sesuai. Cuti, izin, dan sakit tetap bisa diajukan; Anda yang memutuskan.',
         'Notifikasi "kurang" dikirim sekali untuk setiap keadaan yang sama, agar tidak berulang setiap 10 menit.'
@@ -916,6 +917,7 @@ window.MklHelp = {
       result: 'Pola minimal shift terpenuhi lagi, staff yang terkena tahu perubahannya, dan semuanya tercatat di log audit.',
       notes: [
         'Tanda tidak masuk tidak mengubah jadwal staff itu dan tidak memengaruhi gaji. Absensinya tetap tercatat apa adanya. Cuti, izin, atau sakit resmi tetap diajukan lewat portal dan disetujui seperti biasa.',
+        'Double shift: bila jabatan punya shift double (misalnya Cashier = D di Pola Minimal), usulan bisa berbunyi "Double shift: Intan dari Pagi menjadi Double Kasir 08:00–20:20". Usulan memindah atau memanggil staff tetap didahulukan bila ada; double shift dipakai bila tidak ada pilihan lain yang sama sederhana. Staff yang sudah absen pulang tidak diusulkan double.',
         'Usulan hanya memakai staff jabatan yang sama. Staff yang sedang cuti/izin/sakit atau ditandai tidak masuk tidak diusulkan. Untuk hari ini, shift yang tinggal kurang dari 1 jam tidak diusulkan, dan staff yang sudah absen masuk tidak dipindah.',
         'Bila tidak ada usulan, ubah jadwal manual di Susun Jadwal atau hubungi staff lewat Kirim Pesan WA.',
         'Salah tandai? Tekan Batalkan pada daftar Staff tidak masuk.'

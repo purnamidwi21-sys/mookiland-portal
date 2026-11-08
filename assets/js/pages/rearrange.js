@@ -13,6 +13,7 @@
   var T = window.MklTimeUI;
 
   function actionText(a) {
+    if (a.type === 'double') return 'Double shift: ' + a.name + ' dari ' + a.fromLabel + ' menjadi ' + a.label + ' (dibayar per jam)';
     return a.type === 'call'
       ? 'Panggil ' + a.name + ' (sedang libur) masuk ' + a.label
       : 'Pindahkan ' + a.name + ' dari ' + a.fromLabel + ' ke ' + a.label;
