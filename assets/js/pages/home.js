@@ -19,7 +19,15 @@
   }
 
   // 0.17.0: Kekuatan hari ini (pola minimal shift) untuk penyusun jadwal.
-  var STATUS = { hadir: ['Hadir', 'success'], menunggu: ['Belum waktunya', 'neutral'], belum_datang: ['Belum absen', 'danger'], tidak_datang: ['Tidak datang', 'danger'], dipanggil: ['Dipanggil', 'info'], tidak_masuk: ['Tidak masuk', 'warning'] };
+  var STATUS = { hadir: ['Hadir', 'success'], menunggu: ['Belum waktunya', 'neutral'], belum_datang: ['Belum absen', 'danger'], tidak_datang: ['Tidak datang', 'danger'], dipanggil: ['Dipanggil', 'info'], tidak_masuk: ['Tidak masuk', 'warning'], tanpa_jadwal: ['Masuk tanpa jadwal', 'warning'] };
+  function peopleList(list) {
+    return h('ul', { class: 'cov-people' }, list.map(function (p) {
+      var st = STATUS[p.status] || [p.status, 'neutral'];
+      if (p.status === 'tidak_masuk' && p.reasonLabel) st = ['Tidak masuk (' + p.reasonLabel + ')', 'warning'];
+      var txt = p.name + (p.shift ? ' · ' + p.shift + ' ' + p.start : '') + (p.clockIn ? ' (masuk ' + p.clockIn + ')' : '');
+      return h('li', null, h('span', { class: 'cov-person' }, txt), ' ', MklUI.badge(st[0], st[1]));
+    }));
+  }
   // 0.17.2: kartu utama Beranda. Satu kotak per jabatan, angka besar per shift (Pagi-Middle-Siang).
   var SLOT_NAMES = { 3: ['Pagi', 'Middle', 'Siang'], 2: ['Pagi', 'Siang'] };
   // Shift yang di bawah angka terkecil dari semua pola yang boleh ditandai merah.
@@ -50,7 +58,7 @@
     function paint(t) {
       MklUI.clear(body); MklUI.clear(summary);
       stamp.textContent = 'Diperbarui ' + new Date().toLocaleTimeString('id-ID', { timeZone: 'Asia/Makassar', hour: '2-digit', minute: '2-digit' }) + ' WITA';
-      if (!t.items.length) { body.appendChild(h('p', { class: 'muted' }, 'Pola minimal shift belum diatur. Atur di Susun Jadwal > Pola Minimal.')); return; }
+      if (!t.items.length) { body.appendChild(h('p', { class: 'muted' }, 'Pola minimal shift belum diatur. Atur di Susun Jadwal > Pola Minimal.')); paintOthers(t); return; }
       var badCount = t.items.filter(function (it) { return !it.nowOk || !it.planOk; }).length;
       summary.appendChild(badCount ? MklUI.badge(badCount + ' jabatan kurang', 'danger') : MklUI.badge('Semua jabatan sesuai pola', 'success'));
       var grid = h('div', { class: 'cov-grid' });
@@ -66,13 +74,7 @@
             h('span', { class: 'cov-chip ' + (it.planOk ? 'is-ok' : 'is-bad') }, 'Jadwal ' + it.plan + (it.planOk ? ' ✓' : ' ✗')),
             ' Pola yang boleh: ' + it.allowed.join(', ')));
         if (it.people.length) {
-          sec.appendChild(h('ul', { class: 'cov-people' }, it.people.map(function (p) {
-            var st = STATUS[p.status] || [p.status, 'neutral'];
-            if (p.status === 'tidak_masuk' && p.reasonLabel) st = ['Tidak masuk (' + p.reasonLabel + ')', 'warning'];
-            return h('li', null,
-              h('span', { class: 'cov-person' }, p.name + ' · ' + p.shift + ' ' + p.start + (p.clockIn ? ' (masuk ' + p.clockIn + ')' : '')),
-              ' ', MklUI.badge(st[0], st[1]));
-          })));
+          sec.appendChild(peopleList(it.people));
         } else {
           sec.appendChild(h('p', { class: 'muted small' }, 'Tidak ada yang dijadwalkan hari ini.'));
         }
@@ -88,11 +90,23 @@
         grid.appendChild(sec);
       });
       body.appendChild(grid);
+      paintOthers(t);
       if (badCount && canAssign) {
         body.appendChild(h('p', { class: 'cov-link' }, h('a', { class: 'btn btn-secondary btn-small', href: '#/atur-ulang' }, 'Atur Ulang Jadwal'),
           h('span', { class: 'small muted' }, ' Usulan susunan baru (pindah shift atau panggil staff libur) untuk hari ini sampai 7 hari ke depan.')));
       }
-      body.appendChild(h('p', { class: 'muted small cov-foot' }, 'Angka besar = staff yang sudah hadir atau masih menunggu jam masuk. Staff yang belum absen 30 menit setelah jam masuk dihitung belum datang.'));
+      body.appendChild(h('p', { class: 'muted small cov-foot' }, 'Angka besar = staff yang sudah hadir atau masih menunggu jam masuk. Staff yang belum absen 30 menit setelah jam masuk dihitung belum datang. Jabatan lain tidak punya pola minimal, jadi hanya ditampilkan.'));
+    }
+    // 0.18.2: jabatan tanpa pola minimal (mis. PA Cleaner, Staff Admin): daftar siapa masuk hari ini, tanpa pemeriksaan pola.
+    function paintOthers(t) {
+      if (!t.others || !t.others.length) return;
+      body.appendChild(h('h3', { class: 'cov-sub' }, 'Jabatan lain'));
+      body.appendChild(h('div', { class: 'cov-grid cov-grid-others' }, t.others.map(function (g) {
+        var here = g.people.filter(function (p) { return p.status === 'hadir' || p.status === 'tanpa_jadwal'; }).length;
+        return h('section', { class: 'cov-pos cov-other' },
+          h('div', { class: 'cov-head' }, h('h3', { class: 'cov-name' }, g.position), h('span', { class: 'small muted' }, here + ' dari ' + g.people.length + ' hadir')),
+          peopleList(g.people));
+      })));
     }
     function load() {
       MklUI.setBusy(refresh, true, 'Memuat...');

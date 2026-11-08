@@ -741,3 +741,5 @@ fieldset[hidden] { display: none; }
   .btn-wa:hover { background: #3cb174; color: #0e1319; }
 }
 .d-block { display: block; }
+.cov-sub { margin: 18px 0 10px; font-size: 0.9375rem; font-weight: 700; color: var(--text-muted); }
+.cov-other { gap: 8px; }
