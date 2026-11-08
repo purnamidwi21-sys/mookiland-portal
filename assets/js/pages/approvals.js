@@ -1,6 +1,7 @@
 /*
  * Persetujuan: antrean cuti/izin/sakit, lembur, dan koreksi absensi untuk
  * Manajer Operasional (dan Direktur untuk pengajuan Manajer Operasional).
+ * 0.19.0: Supervisor memberi persetujuan pertama (cuti/izin/sakit, lembur, koreksi, jadwal).
  * Hak memutuskan diperiksa server pada setiap keputusan.
  */
 (function () {
@@ -109,11 +110,23 @@
     ];
   }
 
+  /** 0.19.0: baris tahap Supervisor (persetujuan pertama). */
+  function supRow(it) {
+    var sp = it.supervisor;
+    if (!sp) return [];
+    if (sp.status === 'disetujui') return [['Supervisor', h('span', null, MklUI.badge('Disetujui', 'success'), ' ' + sp.by + ', ' + MklUI.fmtDateTime(sp.at) + (sp.note ? '. Catatan: ' + sp.note : ''))]];
+    return [['Supervisor', it.step === 'supervisor' ? 'Menunggu persetujuan Anda' : h('span', { class: 'muted' }, 'Belum. Anda boleh langsung memutuskan.')]];
+  }
+
   function decideModal(it, decision, done) {
     var form = h('form', { class: 'stack', novalidate: true });
+    var asSup = it.step === 'supervisor';
     var minutes = null;
     var loanF = null;
-    if (decision === 'setuju' && it.detail.kind === 'loan') {
+    if (asSup) form.appendChild(h('p', { class: 'small muted' }, decision === 'tolak'
+      ? 'Bila Anda menolak, pengajuan selesai (ditolak). Karyawan dan Manajer Operasional diberi tahu.'
+      : 'Ini persetujuan pertama (Supervisor). Keputusan akhir tetap oleh Manajer Operasional.'));
+    if (!asSup && decision === 'setuju' && it.detail.kind === 'loan') {
       var dd = it.detail;
       var la = MklUI.moneyPreview(MklUI.field({ label: 'Jumlah disetujui (Rp)', name: 'loanAmount', type: 'number', inputmode: 'numeric', required: true, value: String(dd.requestedAmount) }));
       var opts = [];
@@ -129,24 +142,24 @@
       [la.wrap, li.wrap, calc, lm.wrap].forEach(function (x) { form.appendChild(x); });
       loanF = { a: la, i: li, m: lm };
     }
-    if (decision === 'setuju' && it.detail.kind === 'overtime') {
+    if (!asSup && decision === 'setuju' && it.detail.kind === 'overtime') {
       minutes = MklUI.field({ label: 'Menit lembur disetujui', name: 'approvedMinutes', type: 'number', inputmode: 'numeric', value: String(it.detail.minutes), hint: 'Boleh lebih sedikit dari yang diajukan (' + it.detail.minutes + ' menit).' });
       form.appendChild(minutes.wrap);
     }
     var override = null;
-    var covProblems = decision === 'setuju' && it.detail.coverage && it.detail.coverage.problems ? it.detail.coverage.problems : [];
+    var covProblems = !asSup && decision === 'setuju' && it.detail.coverage && it.detail.coverage.problems ? it.detail.coverage.problems : [];
     if (covProblems.length) {
       form.appendChild(MklUI.alertBox('warning', 'Pola minimal shift tidak sesuai bila disetujui: ' + covProblems.map(function (p) { return p.position + ' ' + T.dayLabel(p.date, true) + ' menjadi ' + p.after; }).join('; ') + '.'));
       override = MklUI.field({ label: 'Alasan tetap menyetujui', name: 'overrideReason', required: true, multiline: true, rows: 2, maxLength: 300, hint: 'Contoh: "Sudah ada pengganti: Timo". Tercatat di log audit, tidak dikirim ke karyawan.' });
       form.appendChild(override.wrap);
     }
-    var note = MklUI.field({ label: decision === 'tolak' ? 'Alasan penolakan' : 'Catatan (opsional)', name: 'note', required: decision === 'tolak', multiline: true, rows: 2, maxLength: 300, hint: 'Catatan ini dikirim ke karyawan.' });
+    var note = MklUI.field({ label: decision === 'tolak' ? 'Alasan penolakan' : 'Catatan (opsional)', name: 'note', required: decision === 'tolak', multiline: true, rows: 2, maxLength: 300, hint: asSup ? 'Catatan ini dikirim ke karyawan dan Manajer Operasional.' : 'Catatan ini dikirim ke karyawan.' });
     var alertSlot = h('div');
     form.insertBefore(h('p', null, h('strong', null, it.employee.fullName), ' · ' + it.typeLabel), form.firstChild);
     form.appendChild(note.wrap);
     form.appendChild(alertSlot);
     var ctl = MklUI.modal({
-      title: decision === 'tolak' ? 'Tolak pengajuan' : 'Setujui pengajuan', content: form,
+      title: decision === 'tolak' ? 'Tolak pengajuan' : (asSup ? 'Setujui sebagai Supervisor' : 'Setujui pengajuan'), content: form,
       actions: [{ label: 'Batal', onClick: function (c) { c.close(); } },
         { label: decision === 'tolak' ? 'Tolak' : 'Setujui', variant: decision === 'tolak' ? 'danger' : 'primary', id: 'ok', onClick: submit }]
     });
@@ -241,7 +254,10 @@
               { label: 'Karyawan', render: function (it) { return it.employee.fullName; } },
               { label: 'Pengajuan', render: function (it) { return h('span', null, MklUI.badge(it.typeLabel, TYPE_VARIANT[it.type]), ' ', summaryText(it)); } },
               { label: 'Status', render: function (it) { return MklRequests.statusBadge(it.status, it.statusLabel); } },
-              { label: 'Oleh', render: function (it) { return it.decidedBy; } },
+              { label: 'Oleh', render: function (it) {
+                var sp = it.supervisor && it.supervisor.status === 'disetujui' ? h('span', { class: 'muted small d-block' }, 'Supervisor: ' + it.supervisor.by) : null;
+                return h('span', null, it.decidedBy, sp);
+              } },
               { label: 'Catatan', render: function (it) { return it.note ? h('span', { class: 'small' }, it.note) : ''; } },
               { label: 'Aksi', className: 'col-action', render: function (it) {
                 if (!it.canCancelApproved) return '';
@@ -279,7 +295,7 @@
       function pendingCard(it) {
         var actions = h('div', { class: 'form-actions' });
         if (it.canDecide) {
-          var ok = h('button', { class: 'btn btn-primary', type: 'button' }, 'Setujui');
+          var ok = h('button', { class: 'btn btn-primary', type: 'button' }, it.step === 'supervisor' ? 'Setujui sebagai Supervisor' : 'Setujui');
           var no = h('button', { class: 'btn btn-danger', type: 'button' }, 'Tolak');
           ok.addEventListener('click', function () { decideModal(it, 'setuju', load); });
           no.addEventListener('click', function () { decideModal(it, 'tolak', load); });
@@ -287,14 +303,15 @@
           actions.appendChild(no);
         } else {
           actions.appendChild(h('p', { class: 'muted small' }, MklState.user && it.employee.employeeId === MklState.user.employeeId
-            ? 'Ini pengajuan Anda sendiri; diputuskan oleh Direktur atau pengelola HR lain.' : 'Anda tidak bisa memutuskan pengajuan ini.'));
+            ? 'Ini pengajuan Anda sendiri; diputuskan oleh atasan Anda.'
+            : (it.supervisor && it.supervisor.status === 'disetujui' ? 'Anda sudah menyetujui sebagai Supervisor. Menunggu keputusan Manajer Operasional.' : 'Anda tidak bisa memutuskan pengajuan ini.')));
         }
         return h('section', { class: 'card approval-card' },
           h('div', { class: 'card-head' },
             h('h2', { class: 'card-title' }, it.employee.fullName),
             MklUI.badge(it.typeLabel, TYPE_VARIANT[it.type])),
           h('p', { class: 'muted small' }, (it.employee.positionName ? it.employee.positionName + ' · ' : '') + 'diajukan ' + MklUI.fmtDateTime(it.submittedAt) + (it.submittedBy ? ' oleh ' + it.submittedBy : '')),
-          MklUI.infoList(detailRows(it)),
+          MklUI.infoList(detailRows(it).concat(supRow(it))),
           actions);
       }
 

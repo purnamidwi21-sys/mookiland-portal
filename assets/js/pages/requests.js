@@ -356,7 +356,10 @@
               { label: 'Tanggal', render: function (i) { return i.type === 'overtime' ? i.period.replace(/^\d{4}-\d{2}-\d{2}/, function (m) { return T.dayLabel(m, true) + ','; }) : period(i); } },
               { label: 'Alasan', render: function (i) { return h('span', { class: 'small' }, i.reason); } },
               { label: 'Status', render: function (i) {
-                return h('div', { class: 'stack-tight' }, statusBadge(i.status, i.statusLabel),
+                // 0.19.0: tahap Supervisor (persetujuan pertama)
+                var sp = i.supervisor && i.supervisor.status === 'disetujui' ? h('span', { class: 'small' }, '✓ Disetujui Supervisor' + (i.supervisor.by ? ' (' + i.supervisor.by + ')' : '') + (i.status === 'menunggu' ? ', menunggu Manajer Operasional' : ''))
+                  : (i.supervisor && i.status === 'menunggu' ? h('span', { class: 'muted small' }, 'Menunggu Supervisor dan Manajer Operasional') : null);
+                return h('div', { class: 'stack-tight' }, statusBadge(i.status, i.statusLabel), sp,
                   i.decidedBy ? h('span', { class: 'muted small' }, 'oleh ' + i.decidedBy) : null,
                   i.decisionNote ? h('span', { class: 'small' }, 'Catatan: ' + i.decisionNote) : null,
                   i.approvedMinutes ? h('span', { class: 'small' }, 'Disetujui ' + i.approvedMinutes + ' menit') : null);
