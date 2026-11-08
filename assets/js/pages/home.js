@@ -24,7 +24,7 @@
     return h('ul', { class: 'cov-people' }, list.map(function (p) {
       var st = STATUS[p.status] || [p.status, 'neutral'];
       if (p.status === 'tidak_masuk' && p.reasonLabel) st = ['Tidak masuk (' + p.reasonLabel + ')', 'warning'];
-      var txt = p.name + (p.shift ? ' · ' + p.shift + ' ' + p.start : '') + (p.clockIn ? ' (masuk ' + p.clockIn + ')' : '');
+      var txt = p.name + (p.cover ? ' (' + p.cover + ')' : '') + (p.shift ? ' · ' + p.shift + ' ' + p.start : '') + (p.clockIn ? ' (masuk ' + p.clockIn + ')' : '');
       return h('li', null, h('span', { class: 'cov-person' }, txt), ' ', MklUI.badge(st[0], st[1]));
     }));
   }

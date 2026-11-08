@@ -62,12 +62,16 @@
       var pat = MklUI.field({ label: 'Pola per jabatan (satu baris satu jabatan)', name: 'patterns', multiline: true, rows: 5, maxLength: 2000,
         value: (d.patterns || '').split(';').map(function (x) { return x.trim(); }).filter(Boolean).join('\n'),
         hint: 'Format: Jabatan = pola, pola. 3 angka = Pagi-Middle-Siang (3-1-2), 2 angka = Pagi-Siang (1-2). Kosongkan semua untuk mematikan pemeriksaan.' });
+      var cover = MklUI.field({ label: 'Bantu jabatan lain (boleh kosong)', name: 'cover', multiline: true, rows: 2, maxLength: 1000,
+        value: (d.cover || '').split(';').map(function (x) { return x.trim(); }).filter(Boolean).join('\n'),
+        hint: 'Staff jabatan ini ikut dihitung di pola jabatan lain pada hari tertentu. Format: Jabatan = Jabatan yang dibantu: hari. Contoh: Staff Admin = Cashier: Selasa-Jumat' });
       var map = MklUI.field({ label: 'Kelompok shift (kode:P/M/S)', name: 'slotMap', value: d.slotMap || '', maxLength: 500,
         hint: 'P = Pagi, M = Middle, S = Siang. Shift yang tidak disebut dikelompokkan dari huruf pertama kodenya.' });
       var reason = MklUI.field({ label: 'Alasan perubahan', name: 'reason', required: true, maxLength: 300 });
       var alertSlot = h('div');
       var NAMES = { P: 'Pagi', M: 'Middle', S: 'Siang', X: 'Tidak dihitung' };
       form.appendChild(pat.wrap);
+      form.appendChild(cover.wrap);
       form.appendChild(map.wrap);
       form.appendChild(h('p', { class: 'muted small' }, 'Kelompok sekarang: ' + d.shifts.map(function (s) { return s.code + ' ' + s.startTime + ' = ' + NAMES[s.slot]; }).join(' · ')));
       form.appendChild(h('p', { class: 'muted small' }, 'Jabatan: ' + d.positions.join(', ') + '.'));
@@ -80,7 +84,7 @@
         e.preventDefault();
         MklUI.clearFieldErrors(form); MklUI.clear(alertSlot);
         MklUI.setBusy(save, true, 'Menyimpan...');
-        MklApi.call('time.coverage.saveRules', { patterns: pat.input.value, slotMap: map.input.value.trim(), reason: reason.input.value.trim() }).then(function (r) {
+        MklApi.call('time.coverage.saveRules', { patterns: pat.input.value, cover: cover.input.value, slotMap: map.input.value.trim(), reason: reason.input.value.trim() }).then(function (r) {
           MklUI.setBusy(save, false);
           if (!r.success) { if (!MklUI.showFieldErrors(form, r)) alertSlot.appendChild(MklUI.alertBox('error', r.message)); return; }
           ctl.close();
@@ -407,10 +411,18 @@
         var tfoot = cov.rules.length ? h('tfoot') : null;
         cov.rules.forEach(function (rule) {
           var emps = data.employees.filter(function (e) { return (e.positionName || '').toLowerCase() === rule.position.toLowerCase(); });
-          var tr = h('tr', { class: 'cov-row' }, h('th', { scope: 'row', class: 'sched-name' }, h('span', null, rule.position), h('br'), h('span', { class: 'muted small' }, (rule.twoSlot ? 'P-S: ' : 'P-M-S: ') + rule.labels.join(' / '))));
+          // 0.18.3: jabatan lain yang membantu pada hari tertentu (mis. Staff Admin = Cashier: Selasa-Jumat).
+          var helpers = (cov.covers || []).filter(function (c) { return c.to.toLowerCase() === rule.position.toLowerCase(); });
+          var helperNote = helpers.map(function (c) { return '+ ' + c.label.split(' = ')[0] + (c.days.length === 7 ? '' : ' (' + c.label.split(': ')[1] + ')'); }).join(' ');
+          var tr = h('tr', { class: 'cov-row' }, h('th', { scope: 'row', class: 'sched-name' }, h('span', null, rule.position), h('br'), h('span', { class: 'muted small' }, (rule.twoSlot ? 'P-S: ' : 'P-M-S: ') + rule.labels.join(' / ')),
+            helperNote ? h('span', { class: 'muted small d-block' }, helperNote) : null));
           data.dates.forEach(function (d) {
             var td = h('td', { class: 'cov-cell' });
-            covCells.push({ rule: rule, emps: emps, date: d, td: td });
+            var dow = new Date(d + 'T12:00:00Z').getUTCDay();
+            var dayEmps = emps.concat(data.employees.filter(function (e) {
+              return helpers.some(function (c) { return c.days.indexOf(dow) !== -1 && (e.positionName || '').toLowerCase() === c.from.toLowerCase(); });
+            }));
+            covCells.push({ rule: rule, emps: dayEmps, date: d, td: td });
             tr.appendChild(td);
           });
           tfoot.appendChild(tr);

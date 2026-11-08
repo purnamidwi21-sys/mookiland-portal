@@ -13,7 +13,7 @@
  * perm : null = semua pengguna; selain itu cukup salah satu permission
  */
 window.MklHelp = {
-  version: '0.18.2',
+  version: '0.18.3',
   // 0.11.0: kecepatan, hitung ulang per karyawan, cari/filter penggajian, impor jadwal
   updatedAt: '2026-11-07',
 
@@ -895,6 +895,7 @@ window.MklHelp = {
       ],
       result: 'Susunan staff tiap jabatan terjaga; setiap pengecualian tercatat dengan alasannya di log audit.',
       notes: [
+        'Bantu jabatan lain: bila staff jabatan lain membantu pada hari tertentu, tulis di isian Bantu jabatan lain, misalnya Staff Admin = Cashier: Selasa-Jumat. Pada hari itu Staff Admin ikut dihitung di pola Cashier (di Susun Jadwal, Persetujuan, Beranda, dan Atur Ulang Jadwal), dengan tanda (Staff Admin). Staff yang membantu tidak pernah diusulkan dipindah shift.',
         'Kelompok shift: P/P1 = Pagi, M/M1 = Middle, S = Siang. Shift lain dikelompokkan dari huruf pertama kodenya, atau atur di Pola Minimal (contoh "K:P").',
         'Hari yang semua staff satu jabatan libur atau belum dijadwalkan (0-0-0) tidak dianggap salah, misalnya saat park tutup.',
         'Staff tidak bisa mengajukan ubah/tukar jadwal yang membuat pola tidak sesuai. Cuti, izin, dan sakit tetap bisa diajukan; Anda yang memutuskan.',
