@@ -19,7 +19,7 @@
   }
 
   // 0.17.0: Kekuatan hari ini (pola minimal shift) untuk penyusun jadwal.
-  var STATUS = { hadir: ['Hadir', 'success'], menunggu: ['Belum waktunya', 'neutral'], belum_datang: ['Belum absen', 'danger'], tidak_datang: ['Tidak datang', 'danger'], dipanggil: ['Dipanggil', 'info'], tidak_masuk: ['Tidak masuk', 'warning'], tanpa_jadwal: ['Masuk tanpa jadwal', 'warning'] };
+  var STATUS = { hadir: ['Hadir', 'success'], menunggu: ['Belum waktunya', 'neutral'], belum_datang: ['Belum absen', 'danger'], tidak_datang: ['Tidak datang', 'danger'], dipanggil: ['Dipanggil', 'info'], tidak_masuk: ['Tidak masuk', 'warning'], tanpa_jadwal: ['Masuk tanpa jadwal', 'warning'], terjadwal: ['Terjadwal', 'neutral'] };
   function peopleList(list) {
     return h('ul', { class: 'cov-people' }, list.map(function (p) {
       var st = STATUS[p.status] || [p.status, 'neutral'];
@@ -49,18 +49,46 @@
     var summary = h('span', { class: 'cov-summary' });
     var stamp = h('span', { class: 'muted small' });
     var refresh = h('button', { class: 'btn btn-ghost btn-small', type: 'button' }, 'Perbarui');
+    // 0.19.4: pilihan Hari ini / Besok. Besok = rencana dari jadwal terbit.
+    var day = 'hari_ini', seq = 0;
+    var title = h('h2', { class: 'card-title' }, 'Kekuatan staff hari ini');
+    var tabToday = h('button', { class: 'tab', type: 'button', role: 'tab', 'aria-selected': 'true' }, 'Hari ini');
+    var tabTomorrow = h('button', { class: 'tab', type: 'button', role: 'tab', 'aria-selected': 'false' }, 'Besok');
+    var dateLabel = h('p', { class: 'muted small cov-date' });
     var card = h('section', { class: 'card card-wide card-cov' },
       h('div', { class: 'card-head' },
-        h('div', { class: 'cov-title' }, h('h2', { class: 'card-title' }, 'Kekuatan staff hari ini'), summary),
+        h('div', { class: 'cov-title' }, title, summary),
         h('div', { class: 'cov-tools' }, stamp, refresh)),
+      h('div', { class: 'tabs cov-tabs', role: 'tablist', 'aria-label': 'Hari' }, tabToday, tabTomorrow),
+      dateLabel,
       body);
+    function setDay(v) {
+      if (v === day) return;
+      day = v;
+      tabToday.setAttribute('aria-selected', String(v === 'hari_ini'));
+      tabTomorrow.setAttribute('aria-selected', String(v === 'besok'));
+      title.textContent = v === 'besok' ? 'Kekuatan staff besok' : 'Kekuatan staff hari ini';
+      MklUI.clear(body).appendChild(MklUI.loadingState('Memuat...'));
+      MklUI.clear(summary);
+      load();
+    }
+    tabToday.addEventListener('click', function () { setDay('hari_ini'); });
+    tabTomorrow.addEventListener('click', function () { setDay('besok'); });
     var canAssign = MklState.can('schedule.manage.all');
+    function fmtDate(ymd) {
+      try { return new Date(ymd + 'T12:00:00+08:00').toLocaleDateString('id-ID', { timeZone: 'Asia/Makassar', weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }); } catch (e) { return ymd; }
+    }
     function paint(t) {
       MklUI.clear(body); MklUI.clear(summary);
+      var tomorrow = t.day === 'besok';
+      var dayWord = tomorrow ? 'besok' : 'hari ini';
+      dateLabel.textContent = fmtDate(t.date) + (tomorrow ? ' · rencana dari jadwal yang sudah terbit' : '');
       stamp.textContent = 'Diperbarui ' + new Date().toLocaleTimeString('id-ID', { timeZone: 'Asia/Makassar', hour: '2-digit', minute: '2-digit' }) + ' WITA';
       if (!t.items.length) { body.appendChild(h('p', { class: 'muted' }, 'Pola minimal shift belum diatur. Atur di Susun Jadwal > Pola Minimal.')); paintOthers(t); return; }
       var badCount = t.items.filter(function (it) { return !it.nowOk || !it.planOk; }).length;
       summary.appendChild(badCount ? MklUI.badge(badCount + ' jabatan kurang', 'danger') : MklUI.badge('Semua jabatan sesuai pola', 'success'));
+      var nobody = !t.items.some(function (it) { return it.people.length; }) && !(t.others || []).length;
+      if (tomorrow && nobody) body.appendChild(MklUI.alertBox('info', 'Belum ada jadwal terbit untuk besok. Terbitkan jadwal di Susun Jadwal.'));
       var grid = h('div', { class: 'cov-grid' });
       t.items.forEach(function (it) {
         var bad = !it.nowOk || !it.planOk;
@@ -71,15 +99,15 @@
           h('p', { class: 'sr-only' }, 'Sekarang ' + it.now + (it.nowOk ? ', sesuai pola.' : ', tidak sesuai pola.')),
           figure(it.now, it.allowed),
           h('p', { class: 'cov-plan small' },
-            h('span', { class: 'cov-chip ' + (it.planOk ? 'is-ok' : 'is-bad') }, 'Jadwal ' + it.plan + (it.planOk ? ' ✓' : ' ✗')),
-            ' Pola yang boleh: ' + it.allowed.join(', ')));
+            tomorrow ? '' : h('span', { class: 'cov-chip ' + (it.planOk ? 'is-ok' : 'is-bad') }, 'Jadwal ' + it.plan + (it.planOk ? ' ✓' : ' ✗')),
+            (tomorrow ? '' : ' ') + 'Pola yang boleh: ' + it.allowed.join(', ')));
         if (it.people.length) {
           sec.appendChild(peopleList(it.people));
         } else {
-          sec.appendChild(h('p', { class: 'muted small' }, 'Tidak ada yang dijadwalkan hari ini.'));
+          sec.appendChild(h('p', { class: 'muted small' }, 'Tidak ada yang dijadwalkan ' + dayWord + '.'));
         }
         if (bad) {
-          if (!it.candidates.length) sec.appendChild(h('p', { class: 'small cov-note' }, 'Tidak ada staff ' + it.position + ' yang sedang libur hari ini.'));
+          if (!it.candidates.length) sec.appendChild(h('p', { class: 'small cov-note' }, 'Tidak ada staff ' + it.position + ' yang libur ' + dayWord + '.'));
           else sec.appendChild(h('div', { class: 'cov-cands' }, h('span', { class: 'small' }, 'Calon pengganti (libur):'), it.candidates.map(function (c) {
             if (!canAssign) return h('span', { class: 'small' }, c.name + ' ');
             var b = h('button', { class: 'btn btn-primary btn-small', type: 'button' }, 'Panggil ' + c.name);
@@ -95,7 +123,9 @@
         body.appendChild(h('p', { class: 'cov-link' }, h('a', { class: 'btn btn-secondary btn-small', href: '#/atur-ulang' }, 'Atur Ulang Jadwal'),
           h('span', { class: 'small muted' }, ' Usulan susunan baru (pindah shift atau panggil staff libur) untuk hari ini sampai 7 hari ke depan.')));
       }
-      body.appendChild(h('p', { class: 'muted small cov-foot' }, 'Angka besar = staff yang sudah hadir atau masih menunggu jam masuk. Staff yang belum absen 30 menit setelah jam masuk dihitung belum datang. Jabatan lain tidak punya pola minimal, jadi hanya ditampilkan.'));
+      body.appendChild(h('p', { class: 'muted small cov-foot' }, tomorrow
+        ? 'Angka besar = staff yang dijadwalkan besok (jadwal terbit). Staff yang cuti, izin, sakit, atau ditandai tidak masuk tidak dihitung. Jabatan lain tidak punya pola minimal, jadi hanya ditampilkan.'
+        : 'Angka besar = staff yang sudah hadir atau masih menunggu jam masuk. Staff yang belum absen 30 menit setelah jam masuk dihitung belum datang. Jabatan lain tidak punya pola minimal, jadi hanya ditampilkan.'));
     }
     // 0.18.2: jabatan tanpa pola minimal (mis. PA Cleaner, Staff Admin): daftar siapa masuk hari ini, tanpa pemeriksaan pola.
     function paintOthers(t) {
@@ -103,14 +133,17 @@
       body.appendChild(h('h3', { class: 'cov-sub' }, 'Jabatan lain'));
       body.appendChild(h('div', { class: 'cov-grid cov-grid-others' }, t.others.map(function (g) {
         var here = g.people.filter(function (p) { return p.status === 'hadir' || p.status === 'tanpa_jadwal'; }).length;
+        var planned = g.people.filter(function (p) { return p.status === 'terjadwal'; }).length;
         return h('section', { class: 'cov-pos cov-other' },
-          h('div', { class: 'cov-head' }, h('h3', { class: 'cov-name' }, g.position), h('span', { class: 'small muted' }, here + ' dari ' + g.people.length + ' hadir')),
+          h('div', { class: 'cov-head' }, h('h3', { class: 'cov-name' }, g.position), h('span', { class: 'small muted' }, t.day === 'besok' ? planned + ' dijadwalkan' : here + ' dari ' + g.people.length + ' hadir')),
           peopleList(g.people));
       })));
     }
     function load() {
       MklUI.setBusy(refresh, true, 'Memuat...');
-      MklApi.call('time.coverage.today', {}).then(function (res) {
+      var mine = ++seq;
+      MklApi.call('time.coverage.today', { day: day }).then(function (res) {
+        if (mine !== seq) return; // sudah pindah ke hari lain
         MklUI.setBusy(refresh, false);
         if (!res.success) { MklUI.clear(body).appendChild(MklUI.alertBox('error', res.message)); return; }
         paint(res.data);
@@ -123,7 +156,7 @@
       var sh = MklUI.selectField({ label: 'Shift', name: 'shiftId', options: t.shifts.map(function (s) { return { value: s.shiftId, label: s.code + ' ' + s.startTime + '–' + s.endTime + ' (' + s.name + ')' }; }) });
       var reason = MklUI.field({ label: 'Pesan untuk ' + c.name, name: 'reason', required: true, maxLength: 300, value: missing ? 'Menggantikan ' + missing + ' yang belum datang.' : 'Dibutuhkan untuk memenuhi pola minimal shift.' });
       var alertSlot = h('div');
-      [h('p', null, c.name + ' akan langsung dijadwalkan hari ini dan mendapat notifikasi di HP.'), sh.wrap, reason.wrap, alertSlot].forEach(function (x) { form.appendChild(x); });
+      [h('p', null, c.name + ' akan langsung dijadwalkan ' + (t.day === 'besok' ? 'besok (' + fmtDate(t.date) + ')' : 'hari ini') + ' dan mendapat notifikasi di HP.'), sh.wrap, reason.wrap, alertSlot].forEach(function (x) { form.appendChild(x); });
       var m = MklUI.modal({ title: 'Panggil ' + c.name, content: form, actions: [
         { label: 'Batal', onClick: function (x) { x.close(); } }, { label: 'Panggil', variant: 'primary', id: 'ok', onClick: submit }] });
       form.addEventListener('submit', function (e) { e.preventDefault(); submit(m, m.buttons.ok); });

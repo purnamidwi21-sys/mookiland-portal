@@ -688,6 +688,8 @@ fieldset[hidden] { display: none; }
 .cov-title { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 12px; }
 .card-cov .card-title { font-size: 1.125rem; }
 .cov-tools { display: flex; align-items: center; gap: 8px; }
+.card-cov .cov-tabs { margin: -4px 0 8px; }
+.cov-date { margin: 0 0 14px; }
 .cov-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 12px; }
 .cov-pos { display: flex; flex-direction: column; gap: 10px; border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 14px; margin: 0; background: var(--surface); }
 .cov-pos.is-bad { border-color: var(--danger); }
