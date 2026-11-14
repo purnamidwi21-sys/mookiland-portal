@@ -654,11 +654,12 @@
               { label: 'Jam', render: function (x) { return x.time || '-'; } },
               { label: 'Area', render: function (x) { return x.area || '-'; } },
               { label: 'Kategori', render: function (x) { return x.category || '-'; } },
-              { label: 'Nama', render: function (x) { return h('strong', null, x.name); } },
+              { label: 'Nama', render: function (x) { return h('span', null, h('strong', null, x.name), x.source === 'birthday' ? h('span', { class: 'badge badge-neutral', style: 'margin-left:6px' }, 'Birthday') : null); } },
               { label: 'Ringkasan', render: function (x) { return h('span', { class: 'small' }, x.summary || '-'); } },
               { label: 'Catatan', render: function (x) { return h('span', { class: 'small' }, x.remarks || '-'); } },
               { label: 'Anak / Dewasa', render: function (x) { return (x.children || 0) + ' / ' + (x.adults || 0); } },
               d.canEdit ? { label: 'Aksi', className: 'col-action', render: function (x) {
+                if (x.source === 'birthday') return h('span', { class: 'muted small' }, 'Ubah di aplikasi Birthday');
                 var e1 = h('button', { class: 'btn btn-secondary btn-small', type: 'button' }, 'Ubah');
                 var e2 = h('button', { class: 'btn btn-ghost btn-small', type: 'button' }, 'Hapus');
                 e1.addEventListener('click', function () { eventForm(x); });
@@ -667,8 +668,29 @@
               } } : null
             ].filter(Boolean), d.events, 'Belum ada event pada rentang ini.')),
             h('p', { class: 'muted small' }, 'Catatan event hanya terlihat oleh penyusun jadwal. Karyawan melihat jam, area, nama, dan ringkasan di Jadwal Saya.'),
+            bdayBox(d),
             addEv ? h('div', { class: 'form-actions' }, addEv) : null]));
         });
+      }
+
+      // 0.19.8: event dari aplikasi Birthday (diambil otomatis setiap 10 menit).
+      function bdayBox(d) {
+        var b = d.birthday || {};
+        if (!b.connected) return null;
+        var when = b.lastSync ? new Date(b.lastSync).toLocaleString('id-ID', { timeZone: 'Asia/Makassar', day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' }) + ' WITA' : 'belum pernah';
+        var btn = d.canEdit ? h('button', { class: 'btn btn-secondary btn-small', type: 'button' }, 'Ambil dari Birthday sekarang') : null;
+        if (btn) btn.addEventListener('click', function () {
+          MklUI.setBusy(btn, true, 'Mengambil...');
+          MklApi.call('time.calendar.birthdaySync', {}).then(function (r) {
+            MklUI.setBusy(btn, false);
+            if (!r.success) { MklUI.toast(r.message, 'error'); return; }
+            MklUI.toast(r.message, 'success');
+            load();
+          });
+        });
+        return h('div', { class: 'alert alert-info' },
+          h('p', { style: 'margin:0' }, 'Event bertanda Birthday diambil otomatis dari aplikasi Birthday setiap 10 menit (tanpa info DP dan kontak klien). Booking yang dibatalkan otomatis hilang. Terakhir diambil: ' + when + '.'),
+          btn ? h('p', { style: 'margin:8px 0 0' }, btn) : null);
       }
 
       function remove(action, payload, question) {

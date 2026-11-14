@@ -13,7 +13,7 @@
  * perm : null = semua pengguna; selain itu cukup salah satu permission
  */
 window.MklHelp = {
-  version: '0.19.7',
+  version: '0.19.8',
   // 0.11.0: kecepatan, hitung ulang per karyawan, cari/filter penggajian, impor jadwal
   updatedAt: '2026-11-07',
 
@@ -758,6 +758,8 @@ window.MklHelp = {
       notes: [
         'Daftar hari libur nasional mengikuti SKB Menteri yang berlaku; periksa setiap tahun [Perlu konfirmasi HR].',
         'Hari libur dan event tidak mengubah hitungan gaji.',
+        'Event pesta ulang tahun (bertanda Birthday) diambil otomatis dari aplikasi Birthday setiap 10 menit: booking yang sudah atau belum DP ikut tampil, booking yang dibatalkan hilang sendiri. Info DP, harga, email, dan nomor WhatsApp klien tidak diambil. Ubah event Birthday di aplikasi Birthday, bukan di portal. Tekan Ambil dari Birthday sekarang bila tidak ingin menunggu.',
+        'Jangan isi sheet Event di file Excel jadwal untuk pesta ulang tahun, agar tidak muncul dobel dengan event dari aplikasi Birthday.',
         'Semua perubahan tercatat di Audit Log.'
       ]
     },
