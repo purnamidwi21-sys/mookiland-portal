@@ -35,6 +35,13 @@
     return s ? shiftLabel(s) + ' (' + s.name + ')' : '?';
   }
 
+  /** 0.19.7: jadwal harian cukup jam mulai (08:00); libur/cuti tetap tertulis. */
+  function startText(v, shiftById) {
+    if (!v || v === OFF || v.indexOf(OFF + '|') === 0) return valueText(v, shiftById);
+    var s = shiftById(v);
+    return s ? s.startTime : '?';
+  }
+
   // ------------------------------------------------------------------ Pola minimal shift (0.17.0)
   /** Hitung susunan satu jabatan pada satu hari dari isi sel (draf + perubahan yang belum disimpan). */
   function coverageOf(rule, emps, d, valueOf, slots) {
@@ -142,12 +149,12 @@
       evs.length ? eventsTable(evs, true) : h('p', { class: 'muted small' }, 'Tidak ada event.'),
       h('h3', { class: 'daily-section' }, 'Karyawan'),
       h('div', { class: 'recap-table' }, h('table', { class: 'table' },
-        h('thead', null, h('tr', null, h('th', { scope: 'col' }, 'Section'), h('th', { scope: 'col' }, 'Nama'), h('th', { scope: 'col' }, 'Shift'))),
+        h('thead', null, h('tr', null, h('th', { scope: 'col' }, 'Section'), h('th', { scope: 'col' }, 'Nama'), h('th', { scope: 'col' }, 'Jam masuk'))),
         h('tbody', null, groups.map(function (g) {
           return g.rows.map(function (r, i) {
             return h('tr', null, i === 0 ? h('th', { scope: 'row', rowspan: String(g.rows.length) }, g.section) : null,
               h('td', null, r.e.nickname || r.e.fullName),
-              h('td', null, valueText(r.v, shiftById)));
+              h('td', null, startText(r.v, shiftById)));
           });
         })))),
       h('p', { class: 'muted small' }, 'Urut per section: pagi, middle, siang, lalu libur. Termasuk perubahan yang belum disimpan. Jadwal tidak dipakai untuk menghitung gaji.'));
