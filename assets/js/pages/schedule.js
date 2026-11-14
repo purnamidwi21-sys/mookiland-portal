@@ -122,6 +122,20 @@
       if (!last || last.section !== sec) { last = { section: sec, rows: [] }; groups.push(last); }
       last.rows.push({ e: e, v: valueOf(e.employeeId, d) });
     });
+    // 0.19.6: dalam satu section urut menurut jam masuk (pagi, middle, lalu siang), lalu libur/cuti, lalu yang belum dijadwalkan.
+    var rank = function (v) {
+      if (!v) return '3';
+      if (v === OFF || v.indexOf(OFF + '|') === 0) return '2';
+      var s = shiftById(v);
+      return s ? '1' + s.startTime + s.endTime : '2';
+    };
+    groups.forEach(function (g) {
+      g.rows.sort(function (a, b) {
+        var ka = rank(a.v), kb = rank(b.v);
+        if (ka !== kb) return ka < kb ? -1 : 1;
+        return String(a.e.nickname || a.e.fullName).localeCompare(String(b.e.nickname || b.e.fullName), 'id');
+      });
+    });
     var content = h('div', { class: 'stack' },
       hol ? MklUI.alertBox('error', 'Hari libur nasional: ' + hol.join(', ')) : h('p', { class: 'muted small' }, 'Bukan hari libur nasional.'),
       h('h3', { class: 'daily-section' }, 'Event di park (' + evs.length + ')'),
@@ -136,7 +150,7 @@
               h('td', null, valueText(r.v, shiftById)));
           });
         })))),
-      h('p', { class: 'muted small' }, 'Termasuk perubahan yang belum disimpan. Jadwal tidak dipakai untuk menghitung gaji.'));
+      h('p', { class: 'muted small' }, 'Urut per section: pagi, middle, siang, lalu libur. Termasuk perubahan yang belum disimpan. Jadwal tidak dipakai untuk menghitung gaji.'));
     MklUI.modal({ title: 'Jadwal ' + T.dayLabel(d, true), content: content, wide: true, actions: [{ label: 'Tutup', onClick: function (c) { c.close(); } }] });
   }
 
